@@ -60,7 +60,17 @@ def _self_blocks(state: GameState, card: Card, loc_idx: int, db: knowledge.GameD
             or (sr.not_idx is not None and loc_idx == sr.not_idx)
             or (sr.only_winning and loc.my_power <= loc.opp_power)
             or (sr.only_losing and loc.my_power >= loc.opp_power)
-            or (sr.max_turn is not None and state.turn > sr.max_turn))
+            or (sr.max_turn is not None and state.turn > sr.max_turn)
+            or (sr.not_after_playing and bool(state.played_last_turn)))
+
+
+def hand_control_blocked(state: GameState, db: knowledge.GameDB) -> str | None:
+    """手牌里有接管出牌的牌（Agatha Harkness：偶数回合由她替你出牌）：本回合我方不能自己出牌。"""
+    for c in state.hand:
+        ab = (db.ability(c.id) or "").lower()
+        if "controls your cards on even turns" in ab and state.turn % 2 == 0:
+            return f"{c.id} 在手：偶数回合由她替你出牌"
+    return None
 
 
 def forced_turn(name: str, db: knowledge.GameDB | None = None) -> int | None:
@@ -77,6 +87,8 @@ def blocked_reason(state: GameState, card: Card, loc_idx: int) -> str | None:
     if not loc.playable:
         return "该地点当前不可出牌"
     db = knowledge.default_db()
+    if reason := hand_control_blocked(state, db):
+        return reason
     for other in state.locations:
         if other.idx != loc_idx and other.revealed and forced_turn(other.name, db) == state.turn:
             return f"{other.name} 的限制：本回合所有牌必须打在那里"

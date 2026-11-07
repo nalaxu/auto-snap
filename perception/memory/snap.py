@@ -356,7 +356,7 @@ class SnapMemoryReader:
         mine = owner == self.local_id
         visible = mine or revealed or zone in ("Graveyard", "Banished") or (self.local_id in visible_to)
         out = {"entity": il.get_int(c, "EntityId"), "owner": "me" if mine else "opp", "zone": zone,
-               "revealed": revealed, "pos": il.get_int(c, "ZonePosition")}
+               "revealed": revealed, "pos": il.get_int(c, "ZonePosition"), "turn_revealed": il.get_int(c, "TurnRevealed")}
         if visible:
             out.update(
                 id=il.get_str(c, "CardDefId"),
@@ -429,6 +429,8 @@ class SnapMemoryReader:
                 # 对手的 CanRaiseStakes 在对方没 Snap 时也可能是 False，二者都不能用来判断对手是否 Snap
                 "snap_turns": il.list_ints(il.get_ptr(me, "_turnsOnStakesRaiseRequested"), limit=8),
                 "conceded": bool(il.get_int(me, "Conceded")),
+                # 本局我方激活次数（Card.Activated 对所有牌都是 True，不能判断某张牌是否激活过；用这个计数确认激活生效）
+                "activations": il.get_int(me, "NumberOfCardsActivatedByPlayerThisGame"),
                 "hand": hand,
                 "deck_count": deck_count,
                 "graveyard": seen_ids("Graveyard"),
@@ -480,7 +482,9 @@ def to_game_state(snap: dict, deck: list[str] | None = None) -> GameState:
             revealed=bool(l["revealed"] is not False),
             my_power=l["my_power"],
             opp_power=l["opp_power"],
-            my_cards=[_model_card(c) for c in l["my_cards"]],
+            my_cards=[_model_card(c, slot=c["pos"] if c.get("pos") in (0, 1, 2, 3) else i, activated=False,
+                                  turn_played=c.get("turn_revealed") or None)
+                      for i, c in enumerate(l["my_cards"])],
             opp_card_count=len(l["opp_cards"]),
             opp_cards=[_model_card(c) for c in l["opp_cards"] if c.get("id")],  # 仅已揭示的
         )
@@ -495,6 +499,8 @@ def to_game_state(snap: dict, deck: list[str] | None = None) -> GameState:
         **_timer_fields(snap),
         can_snap=bool(snap["me"].get("can_raise_stakes")) and not snap["me"].get("snap_turns"),
         opp_snapped=bool((snap.get("opp") or {}).get("snap_turns")),
+        played_last_turn=any(c.get("turn_revealed") == (snap["turn"] or 0) - 1
+                             for l in snap["locations"] for c in l["my_cards"]),
         opp_snap_turn=max((snap.get("opp") or {}).get("snap_turns") or [0]) or None,
         turn_timer=not snap.get("no_turn_timer", False),
         hand=hand,

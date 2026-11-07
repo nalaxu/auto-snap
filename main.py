@@ -127,6 +127,7 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
     decide, decider = make_decider(settings)
     ex = Executor(source.snapshot, client, dry_run=not live)
     snap_enabled = bool(settings.get("brain", {}).get("snap", True))
+    activated_cards: set[tuple] = set()   # (game_id, entity)：已激活过的场上牌
     retreat_enabled = bool(settings.get("brain", {}).get("retreat", True))
     retreat_threshold = settings.get("brain", {}).get("retreat_win_prob")   # None = 按期望方块计算
     from brain.llm.decider import retreat_check
@@ -322,6 +323,9 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
             wait_tutorial()
             state = source.read_state() or state
             state.forbidden = forbidden.get(key, [])
+            for l in state.locations:   # 本程序激活过的牌（内存里没有可靠的「已激活」标志）
+                for c in l.my_cards:
+                    c.activated = (snap["game_id"], c.entity) in activated_cards
             board.update(snap["game_id"], state)
             if state.board_notes:
                 print("  场上要点：\n    " + "\n    ".join(state.board_notes))
@@ -345,6 +349,8 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
             stake = f" 赌注{state.cube_stake}" + ("（对手已 Snap）" if state.opp_snapped else "")
             if state.turn_seconds_left is not None:
                 stake += f" 计时{state.turn_seconds_left:.0f}/{state.turn_seconds_total:.0f}s"
+            if d.activate:
+                acts = "激活 " + ", ".join(f"{a.card}@地点{a.location}" for a in d.activate) + "；" + acts
             print(f"T{state.turn} 能量{state.energy}{stake} [{d.source} {dec_s:.1f}s] {acts}" + ("  + SNAP" if d.snap else ""))
             if d.reason:
                 print(f"    理由：{d.reason}")
@@ -384,6 +390,19 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                     except ActionFailed as e:
                         executed.append({"snap": True, "ok": False, "error": str(e)})
                         print(f"  ⚠ Snap 失败：{e}")
+                for a in d.activate:   # 激活先于出牌
+                    try:
+                        ex.activate(a.card, a.location)
+                        ent = next((c.entity for c in state.locations[a.location].my_cards if c.id == a.card), None)
+                        activated_cards.add((snap["game_id"], ent))
+                        executed.append({"activate": a.card, "location": a.location, "ok": True})
+                        print(f"  ✦ 激活 {a.card}（地点{a.location}）")
+                        time.sleep(0.5)
+                    except GameOver:
+                        raise
+                    except ActionFailed as e:
+                        executed.append({"activate": a.card, "location": a.location, "ok": False, "error": str(e)})
+                        print(f"  ⚠ 激活失败：{e}")
                 for a in d.actions:
                     ex.play(a.card, a.location)
                     executed.append({"card": a.card, "location": a.location, "ok": True})

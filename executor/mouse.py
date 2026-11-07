@@ -133,3 +133,17 @@ def key(name: str, hold_s: float = 0.05) -> None:
     win32api.keybd_event(vk, 0, 0, 0)
     time.sleep(hold_s)
     win32api.keybd_event(vk, 0, win32con.KEYEVENTF_KEYUP, 0)
+
+
+def press(pos: tuple[int, int], hold_s: float = 1.2) -> None:
+    """长按（激活场上牌）。"""
+    check_abort()
+    move(pos)
+    time.sleep(0.05)
+    _send(MOUSEEVENTF_LEFTDOWN)
+    end = time.time() + hold_s
+    while time.time() < end:
+        time.sleep(0.05)
+        if abort_pressed():
+            break
+    _send(MOUSEEVENTF_LEFTUP)

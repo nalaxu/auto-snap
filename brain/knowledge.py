@@ -165,6 +165,7 @@ class SelfRestriction:
     only_winning: bool = False
     only_losing: bool = False
     max_turn: int | None = None
+    not_after_playing: bool = False   # Infinaut：上回合出过牌就不能打
 
 
 _POS = {"left": 0, "middle": 1, "right": 2}
@@ -185,4 +186,6 @@ def parse_self_restriction(text: str) -> SelfRestriction | None:
         kw["only_losing"] = True
     if m := re.search(r"You can't play this after turn (\d+)", t):
         kw["max_turn"] = int(m.group(1))
+    if re.search(r"If you played a card last turn, you can't play this", t):
+        kw["not_after_playing"] = True
     return SelfRestriction(**kw) if kw else None

@@ -14,7 +14,7 @@ from datetime import datetime
 from pathlib import Path
 
 from . import mouse
-from .layout import END_TURN_BUTTON, LOCATION_DROP, RETREAT_BUTTON, SNAP_BUTTON, Rect, hand_card_pos
+from .layout import END_TURN_BUTTON, LOCATION_DROP, RETREAT_BUTTON, SNAP_BUTTON, Rect, board_slot_pos, hand_card_pos
 from .window import WindowNotFound, client_rect, find_window, is_foreground, wait_foreground
 
 log = logging.getLogger(__name__)
@@ -209,6 +209,30 @@ class Executor:
             time.sleep(0.3)
         self.save_evidence(f"snap_failed_T{s.get('turn')}")
         raise ActionFailed("点击魔方后赌注没有变化")
+
+    def activate(self, card_id: str, location: int) -> None:
+        """长按我方场上牌触发激活（Activate）能力，用内存 Activated 标志确认。"""
+        s = _live(self.snapshot())
+        mine = s["locations"][location]["my_cards"]
+        i, card = next(((i, c) for i, c in enumerate(mine) if c.get("id") == card_id), (None, None))
+        if card is None:
+            raise ActionFailed(f"地点{location} 没有 {card_id}：{[c.get('id') for c in mine]}")
+        slot = card["pos"] if card.get("pos") in (0, 1, 2, 3) else i   # ZonePosition = 格子（与列表顺序不同）
+        before = s["me"].get("activations") or 0
+        assert self.rect is not None
+        pos = self.rect.to_px(*board_slot_pos(location, slot))
+        log.info("激活 %s（地点%d 第%d格）长按 %s，已激活次数 %s", card_id, location, slot, pos, before)
+        if self.dry_run:
+            return
+        for hold in (1.2, 2.0):
+            self._guard()
+            mouse.press(pos, hold_s=hold)
+            if self._wait(lambda s2: (s2["me"].get("activations") or 0) > before):
+                return
+        self.save_evidence(f"activate_failed_T{s.get('turn')}_{card_id}")
+        mouse.key("esc")   # 长按没激活可能打开了卡牌详情
+        time.sleep(0.4)
+        raise ActionFailed(f"长按 {card_id} 后未激活")
 
     def retreat(self) -> None:
         """点左下 RETREAT，用内存确认（我方 Conceded 或对局结束）。

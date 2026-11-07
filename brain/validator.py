@@ -48,4 +48,20 @@ def validate(state: GameState, decision: TurnDecision) -> list[str]:
 
     if decision.snap and not state.can_snap:
         errors.append("当前不能 Snap")
+    avail = {(c.id, l.idx) for l in state.locations for c in activatable(state, l)}
+    for a in decision.activate:
+        if (a.card, a.location) not in avail:
+            errors.append(f"激活 {a.card}@地点{a.location} 不可用（不是我方场上可激活的牌、本回合刚打出或已激活过）")
     return errors
+
+
+def activatable(state: GameState, loc) -> list:
+    """该地点我方可激活的场上牌：能力含 Activate、不是本回合打出、尚未激活。"""
+    from .knowledge import default_db
+
+    db = default_db()
+    out = []
+    for c in loc.my_cards:
+        if c.activated is False and c.turn_played is not None and 0 < c.turn_played < state.turn                 and "Activate:" in (db.ability(c.id) or ""):
+            out.append(c)
+    return out

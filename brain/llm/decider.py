@@ -20,8 +20,8 @@ from typing import Any
 
 from .. import rule_based, strategy
 from ..locations import phase
-from ..models import GameState, PlayAction, TurnDecision
-from ..validator import validate
+from ..models import ActivateAction, GameState, PlayAction, TurnDecision
+from ..validator import activatable, validate
 from .base import LLMClient, LLMError, TaskConfig
 
 log = logging.getLogger(__name__)
@@ -76,7 +76,10 @@ SYSTEM = """你是《漫威终极逆转》（Marvel Snap 国服）的顶尖玩�
      · 不要 Snap：只领先 1 路、分差都很小、关键场地未揭示、对手手牌多且能量高、或我方后续没有关键牌。
    - 对手已 Snap（opp_snapped=true）说明对手有信心：我方没有明显优势时不跟。
 
-5. win_probability：按本回合出牌后的局面，估计我方最终赢下本局的概率（0–100 整数）。要现实：对手已揭示牌的威胁、
+5. activate：「激活」（Activate）类场上牌不在打出当回合生效，之后的回合可以主动激活一次触发效果（如 Danger：
+   摧毁此处一张战力比它低的敌方牌）。activatable 列出本回合可激活的我方场上牌及其能力；判断现在激活是否有利
+   （目标是否存在、时机是否最佳——有的效果留到后面更好），要激活就写进 activate（card + location）。激活先于本回合出牌执行。
+6. win_probability：按本回合出牌后的局面，估计我方最终赢下本局的概率（0–100 整数）。要现实：对手已揭示牌的威胁、
    对手剩余手牌数与能量、各路分差与空位、我方剩余回合能补的战力都要考虑。程序据此计算是否撤退（不要自己判断撤退）。
 只输出 JSON。card 用 hand 中的 id，location 用场地 idx（0/1/2）。不出牌时 actions 为空数组。
 文字字段用中文且尽量简短：每个 effect / why ≤ 20 字，plan 与 reason 各 ≤ 40 字（回合有计时，越快越好）。"""
@@ -113,8 +116,18 @@ SCHEMA: dict[str, Any] = {
         "reason": {"type": "string"},
         "snap": {"type": "boolean"},
         "win_probability": {"type": "integer", "minimum": 0, "maximum": 100},
+        "activate": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {"card": {"type": "string"}, "location": _LOC},
+                "required": ["card", "location"],
+                "additionalProperties": False,
+            },
+        },
     },
-    "required": ["location_assessment", "target_locations", "plan", "actions", "reason", "snap", "win_probability"],
+    "required": ["location_assessment", "target_locations", "plan", "actions", "reason", "snap", "win_probability",
+                 "activate"],
     "additionalProperties": False,
 }
 
@@ -193,6 +206,9 @@ def build_prompt(state: GameState, advisor=None, cards_db: dict | None = None) -
         "cube_stake": state.cube_stake, "cube_next": state.cube_next,
         "can_snap": state.can_snap, "opp_snapped": state.opp_snapped,
         "stakes_hint": stakes_hint(state),
+        "activatable": [{"card": c.id, "location": l.idx, "ability": (cards_db.get(c.id) or {}).get("ability", "")}
+                        for l in state.locations for c in activatable(state, l)],
+        "played_last_turn": state.played_last_turn,
         "hand": [hand_card(c) for c in state.hand],
         "deck_remaining": [note(c) for c in state.deck_remaining],
         "my_deck_count": state.my_deck_count,
@@ -312,6 +328,7 @@ class LLMDecider:
             try:
                 p = d.get("win_probability")
                 decision = TurnDecision(actions=[PlayAction(**a) for a in d["actions"]], reason=d["reason"],
+                                        activate=[ActivateAction(**a) for a in d.get("activate") or []],
                                         snap=bool(d.get("snap")) and state.can_snap,
                                         win_probability=p / 100 if isinstance(p, (int, float)) else None,
                                         source=f"llm:{task.model}/{task.effort}")

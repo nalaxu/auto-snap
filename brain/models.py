@@ -18,6 +18,8 @@ class Card(BaseModel):
     hand_index: int | None = None  # 在手牌中的位置（从左到右，0 起）；执行层用来定位
     entity: int | None = None      # 游戏内实体 id（区分同名卡）
     turn_played: int | None = None  # 场上牌：打出（揭示）的回合；由 brain/board.py 跟踪填写
+    activated: bool | None = None   # 我方场上牌：激活（Activate）能力是否已用；非场上牌为 None
+    slot: int | None = None         # 我方场上牌在该地点的格子（0 左上、1 右上、2 左下、3 右下）
 
 
 class Location(BaseModel):
@@ -45,6 +47,7 @@ class GameState(BaseModel):
     turn_timer: bool = True          # 本局是否有回合计时（Game.NoTurnTimer 取反）
     can_snap: bool = True            # 我方本局还没 Snap（每局一次）
     opp_snapped: bool = False        # 对手已 Snap
+    played_last_turn: bool | None = None   # 我方上回合是否出过牌（Infinaut 类限制）；读不到为 None
     opp_snap_turn: int | None = None # 对手 Snap 的回合（撤退判断：对手刚 Snap 的那一回合）
     cube_next: int | None = None     # 下回合生效的赌注（Snap 后翻倍）
     turn_seconds_left: float | None = None   # 本回合倒计时剩余秒数（内存 TurnTimer；读不到为 None）
@@ -72,8 +75,14 @@ class PlayAction(BaseModel):
     location: int = Field(ge=0, lt=NUM_LOCATIONS)
 
 
+class ActivateAction(BaseModel):
+    card: str                    # 我方场上牌的 id
+    location: int = Field(ge=0, lt=NUM_LOCATIONS)
+
+
 class TurnDecision(BaseModel):
     actions: list[PlayAction] = Field(default_factory=list)  # 按执行顺序（影响揭示顺序）
+    activate: list[ActivateAction] = Field(default_factory=list)  # 本回合要激活的场上牌（先于出牌执行）
     snap: bool = False
     retreat: bool = False
     win_probability: float | None = None   # 大模型估计的最终胜率（0–1），用于撤退期望计算

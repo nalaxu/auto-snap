@@ -42,7 +42,8 @@ class BoardTracker:
                     if key not in self.played:
                         # 中途接管时，首个局面里已在场上的牌回合未知
                         self.played[key] = None if state.turn == self.first_turn and state.turn > 1 else max(0, state.turn - 1)
-                    c.turn_played = self.played[key]
+                    if c.turn_played is None:   # 内存读到的揭示回合（TurnRevealed）优先
+                        c.turn_played = self.played[key]
         state.board_notes = build_notes(state, db)
         return state
 

@@ -27,6 +27,17 @@ SNAP_BUTTON = (0.792, 0.640)        # 右侧赌注立方体
 LOCATION_DROP = [(0.370, 0.600), (0.500, 0.600), (0.630, 0.600)]  # 我方一侧落点
 LOCATION_CENTER = [(0.370, 0.413), (0.500, 0.400), (0.630, 0.413)]
 
+# 我方场上牌格子（相对地点中心 x 的偏移；两列两行，按打出顺序 0 左上、1 右上、2 左下、3 右下）
+# 标定：2026-11-07 对局截图（2000×1125）右路 IronPatriot/WhiteQueen/GreenGoblin、中路 Valentina/Mirage
+SLOT_DX = (-0.024, 0.027)
+SLOT_Y = (0.595, 0.715)
+
+
+def board_slot_pos(location: int, slot: int) -> tuple[float, float]:
+    x = LOCATION_DROP[location][0] + SLOT_DX[slot % 2]
+    return (x, SLOT_Y[min(slot // 2, 1)])
+
+
 HAND_CENTER_X = 0.4963
 HAND_SPACING = 0.0731
 HAND_Y = 0.876
