@@ -178,6 +178,20 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
         print("  ⚠ 等待指引超时，继续尝试")
 
     played_games: set[str] = set()
+    from concurrent.futures import ThreadPoolExecutor
+    decide_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="decide")
+
+    def decide_watching(st, game_id: str):
+        """后台决策，同时每 0.3s 看一眼内存：对局结束（如对手撤退）就放弃决策，返回 None。"""
+        fut = decide_pool.submit(decide, st)
+        while True:
+            try:
+                return fut.result(timeout=0.3)
+            except TimeoutError:
+                pass
+            cur = source.snapshot()
+            if cur and cur.get("game_id") == game_id and cur.get("finished"):
+                return None
     last_menu_check = 0.0
     last_overlay_check = 0.0
 
@@ -258,6 +272,8 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
         while True:
             state = source.read_state()
             snap = source.last_snapshot
+            if snap and not snap.get("finished"):
+                played_games.add(snap["game_id"])   # 见过进行中的对局：结束后（含对手 T1 撤退）立即领奖励
             if snap and snap.get("finished") and snap["game_id"] in played_games and snap["game_id"] not in finished_games:
                 finished_games.add(snap["game_id"])
                 summary = rec.end(snap) or {}
@@ -295,7 +311,11 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
             if state.board_notes:
                 print("  场上要点：\n    " + "\n    ".join(state.board_notes))
             t_dec = time.time()
-            d = decide(state)
+            d = decide_watching(state, snap["game_id"])
+            if d is None:
+                print(f"  ■ 对局已结束（{'对手撤退' if (source.last_snapshot or {}).get('opp', {}).get('conceded') else '结束'}），放弃本回合决策")
+                done.add(key)
+                continue
             if validate(state, d):
                 d = rule_based.decide(state)
             if d.snap and not snap_enabled:

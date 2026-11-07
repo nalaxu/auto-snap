@@ -1,5 +1,8 @@
 """感知层：快照 -> GameState、剩余牌库推算、出牌阶段判断、卡组读取（不需要游戏进程）。"""
 import json
+from types import SimpleNamespace as NS
+
+import pytest
 
 from brain.validator import validate
 from brain import rule_based
@@ -127,12 +130,63 @@ def test_turn_gate_waits_for_real_hand_ids():
 
 def test_stakes_fields_map_to_game_state():
     s = snap(cube_value=1, cube_value_next=2, stakes_raised=1)
-    s["me"]["can_raise_stakes"] = False          # 我方刚 Snap
-    s["opp"]["can_raise_stakes"] = True
+    s["me"].update(can_raise_stakes=False, snap_turns=[4])     # 我方 T4 Snap（实测 b03082ae）
+    s["opp"].update(can_raise_stakes=False, snap_turns=[])     # 对手没 Snap，但 CanRaiseStakes 也是 False
     gs = to_game_state(s, DECK)
     assert gs.can_snap is False and gs.opp_snapped is False and gs.cube_next == 2
-    s["me"]["can_raise_stakes"], s["opp"]["can_raise_stakes"] = True, False   # 对手 Snap
+    s["me"].update(can_raise_stakes=True, snap_turns=[])
+    s["opp"]["snap_turns"] = [3]                                # 对手 Snap
     gs = to_game_state(s, DECK)
     assert gs.can_snap is True and gs.opp_snapped is True
     s.pop("stakes_raised"); s["me"].pop("can_raise_stakes")                    # 字段缺失（如国际服未适配）：保守不 Snap
     assert to_game_state(s, DECK).can_snap is False
+
+
+def test_reader_holds_finished_game_without_rescanning():
+    """对手撤退后：刚结束的对局在 hold 期内直接复用（不做 8-10s 的全堆重扫）。"""
+    from perception.memory.snap import SnapMemoryReader
+
+    r = SnapMemoryReader.__new__(SnapMemoryReader)
+    r.game, r.game_id, r._last_scan, r.rescan_interval = 0x1000, "g" * 36, 0.0, 5.0
+    r.finished_hold_s, r._finished_since, r._seen_live = 30.0, None, False
+    finished = {"v": False}
+    r._is_game = lambda g: True
+    r._finished = lambda g: finished["v"]
+    r.il = NS(get_str=lambda obj, name: r.game_id)
+    scans = []
+    r.find_games = lambda: scans.append(1) or []
+    assert r.select_game() and not scans
+    finished["v"] = True
+    assert r.select_game() and r.select_game() and not scans     # 刚结束：复用，不重扫
+    r._finished_since -= 31
+    r.select_game()
+    assert scans                                                  # hold 期过后才重扫找新对局
+
+
+def test_executor_wait_aborts_on_game_over():
+    from executor.actions import Executor, GameOver
+
+    ex = Executor.__new__(Executor)
+    ex.verify_timeout_s = 5
+    ex.snapshot = lambda: {"finished": True, "opp": {"conceded": True}}
+    import time as _t
+    t = _t.time()
+    with pytest.raises(GameOver, match="对手撤退"):
+        ex._wait(lambda s: False)
+    assert _t.time() - t < 0.5
+
+
+def test_reader_does_not_hold_game_that_was_already_finished():
+    """启动时选中的旧对局本来就已结束：不能 hold，否则新对局晚 30s 才被发现（实测 T1 几乎超时）。"""
+    from perception.memory.snap import SnapMemoryReader
+
+    r = SnapMemoryReader.__new__(SnapMemoryReader)
+    r.game, r.game_id, r._last_scan, r.rescan_interval = 0x1000, "g" * 36, 0.0, 5.0
+    r.finished_hold_s, r._finished_since, r._seen_live = 30.0, None, False
+    r._is_game = lambda g: True
+    r._finished = lambda g: True
+    r.il = NS(get_str=lambda obj, name: r.game_id)
+    scans = []
+    r.find_games = lambda: scans.append(1) or []
+    r.select_game()
+    assert scans

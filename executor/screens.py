@@ -7,6 +7,7 @@
 - end_turn：对局中（右下 END TURN）
 - never_seen：对手打出未见过的新卡，全屏展示（点任意位置跳过）
 - tap_to_snap：新手指引「Tap to SNAP!」（必须点右侧魔方才能继续）
+- card_detail：卡牌详情弹窗（左下「Esc Close」）：误点到卡牌时弹出，挡住棋盘导致拖牌全部失败
 """
 from __future__ import annotations
 
@@ -27,12 +28,14 @@ ROIS = {
     "play": (0.35, 0.72, 0.65, 0.97),
     "never_seen": (0.30, 0.00, 0.70, 0.20),
     "tap_to_snap": (0.60, 0.25, 0.95, 0.60),
+    "card_detail": (0.00, 0.85, 0.20, 1.00),
 }
 
 # 已知全屏提示 -> 点击位置（相对坐标）。其余模糊遮罩（如撤退指引）不自动点，交给玩家。
 OVERLAY_CLICKS = {
     "never_seen": (0.12, 0.50),     # 新卡展示：点左侧空白处跳过
     "tap_to_snap": (0.792, 0.640),  # SNAP 指引：点魔方（= layout.SNAP_BUTTON）
+    "card_detail": (0.066, 0.933),  # 卡牌详情：点左下 Esc Close
 }
 
 

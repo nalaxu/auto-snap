@@ -45,6 +45,9 @@ class SnapMemoryReader:
         self.game_id: str | None = None
         self.local_id: int | None = None
         self._local_confirmed = False   # 已用手牌证据确认我方（否则每次快照重试）
+        self.finished_hold_s = 30.0     # 对局刚结束的这段时间不重扫（全堆扫描 8-10s，会拖慢撤退后的领奖励流程）
+        self._finished_since: float | None = None
+        self._seen_live = False         # 当前对局是否被看到过「进行中」：只有亲眼看到结束的对局才 hold
         self.rescan_interval = rescan_interval
         self._last_scan = 0.0
         self._stale_ids: set[str] | None = None
@@ -118,12 +121,23 @@ class SnapMemoryReader:
         当前对局有效且未结束 -> 直接复用（不扫描）；已结束 -> 每 rescan_interval 秒重扫一次找新对局。
         """
         valid = bool(self.game) and self._is_game(self.game) and self.il.get_str(self.game, "Id") == self.game_id
-        if valid and not force and not self._finished(self.game):
-            return True
         now = time.time()
+        if valid and not force:
+            if not self._finished(self.game):
+                self._finished_since, self._seen_live = None, True
+                return True
+            # 刚看着它结束（如对手撤退）：继续返回终局快照（毫秒级），让上层立刻去领奖励。
+            # 一开始就已结束的旧对局不 hold，否则会延误发现新对局（实测晚 30s，T1 几乎超时）
+            if self._seen_live:
+                if self._finished_since is None:
+                    self._finished_since = now
+                if now - self._finished_since < self.finished_hold_s:
+                    return True
+
         if not force and now - self._last_scan < self.rescan_interval:
             return valid
         self._last_scan = now
+        self._finished_since, self._seen_live = None, False
         games = self.find_games()
         if not games:
             self.game = 0
@@ -279,6 +293,9 @@ class SnapMemoryReader:
                 "max_energy": il.get_int(me, "MaxEnergy"),
                 "ended_turn": il.get_int(me, "EndedTurn"),
                 "can_raise_stakes": il.get_bool(me, "CanRaiseStakes"),
+                # 该玩家主动 Snap 的回合列表（非空 = 已 Snap）。StakesRaisedCount 会把终局自动翻倍也算进去，
+                # 对手的 CanRaiseStakes 在对方没 Snap 时也可能是 False，二者都不能用来判断对手是否 Snap
+                "snap_turns": il.list_ints(il.get_ptr(me, "_turnsOnStakesRaiseRequested"), limit=8),
                 "conceded": bool(il.get_int(me, "Conceded")),
                 "hand": hand,
                 "deck_count": deck_count,
@@ -289,6 +306,7 @@ class SnapMemoryReader:
                 "entity": pid[1 - me_idx],
                 "hand_count": len(zone_cards(opp, "Hand")),
                 "can_raise_stakes": il.get_bool(opp, "CanRaiseStakes"),
+                "snap_turns": il.list_ints(il.get_ptr(opp, "_turnsOnStakesRaiseRequested"), limit=8),
                 "conceded": bool(il.get_int(opp, "Conceded")),
                 "deck_count": len(zone_cards(opp, "Deck")),
             },
@@ -335,9 +353,8 @@ def to_game_state(snap: dict, deck: list[str] | None = None) -> GameState:
         energy=snap["me"]["energy"] or 0,
         cube_stake=snap["cube_value"] or 1,
         cube_next=snap.get("cube_value_next") or snap["cube_value"] or 1,
-        can_snap=bool(snap["me"].get("can_raise_stakes")),
-        # 对手 CanRaiseStakes=False 且本局有过加注 -> 对手已 Snap
-        opp_snapped=bool(snap.get("stakes_raised")) and (snap.get("opp") or {}).get("can_raise_stakes") is False,
+        can_snap=bool(snap["me"].get("can_raise_stakes")) and not snap["me"].get("snap_turns"),
+        opp_snapped=bool((snap.get("opp") or {}).get("snap_turns")),
         turn_timer=not snap.get("no_turn_timer", False),
         hand=hand,
         deck_remaining=remaining_deck(deck, snap) if deck else [],

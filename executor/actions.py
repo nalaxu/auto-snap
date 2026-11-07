@@ -86,6 +86,8 @@ class Executor:
         while time.time() < end:
             mouse.check_abort()
             s = self.snapshot()
+            if s and s.get("finished"):
+                _live(s)          # 对手撤退等：立即中止，不再等确认
             if s and cond(s):
                 return s
             time.sleep(0.1)
