@@ -4,6 +4,7 @@
 """
 from __future__ import annotations
 
+import bisect
 import ctypes as C
 import ctypes.wintypes as W
 import struct
@@ -61,7 +62,9 @@ class Process:
             pids = name.find_pids()
             label = name.describe()
         else:
-            pids = [p.pid for p in psutil.process_iter(["name"]) if (p.info["name"] or "").lower() == name.lower()]
+            from clients import process_images
+
+            pids = [pid for pid, exe in process_images() if exe.replace("/", "\\").rsplit("\\", 1)[-1].lower() == name.lower()]
             label = name
         if not pids:
             raise ProcessNotFound(f"{label} 未运行")
@@ -151,8 +154,21 @@ class Process:
                 break
             addr = nxt
 
-    def _chunks(self, types, writable, overlap: int = 0) -> Iterator[tuple[int, bytes]]:
+    def region_base(self, addr: int) -> int | None:
+        """addr 所在内存区域（与 regions() 枚举结果一致）的基址，用于记住「热区域」，下次优先只扫这些区域。"""
+        for _ in range(2):
+            regs = getattr(self, "_region_list", None)
+            if regs:
+                i = bisect.bisect_right(regs, (addr, float("inf"))) - 1
+                if i >= 0 and regs[i][0] <= addr < regs[i][0] + regs[i][1]:
+                    return regs[i][0]
+            self._region_list = sorted((b, s) for b, s, _ in self.regions())   # 新分配的区域：刷新一次
+        return None
+
+    def _chunks(self, types, writable, overlap: int = 0, bases: set[int] | None = None) -> Iterator[tuple[int, bytes]]:
         for base, size, _ in self.regions(types, writable):
+            if bases is not None and base not in bases:
+                continue
             off = 0
             while off < size:
                 n = min(CHUNK, size - off)
@@ -172,11 +188,12 @@ class Process:
                 i = data.find(needle, i + 1)
         return sorted(set(hits))
 
-    def find_u64(self, values: Iterable[int], types=(MEM_PRIVATE,), writable: bool | None = True) -> dict[int, list[int]]:
-        """一次扫描查找多个 8 字节对齐的指针值 -> {value: [地址...]}。"""
+    def find_u64(self, values: Iterable[int], types=(MEM_PRIVATE,), writable: bool | None = True,
+                 bases: set[int] | None = None) -> dict[int, list[int]]:
+        """一次扫描查找多个 8 字节对齐的指针值 -> {value: [地址...]}。bases：只扫这些区域（热区域快速扫描）。"""
         vals = np.array(sorted(set(values)), dtype="<u8")
         out: dict[int, list[int]] = {int(v): [] for v in vals}
-        for addr, data in self._chunks(types, writable):
+        for addr, data in self._chunks(types, writable, bases=bases):
             arr = np.frombuffer(data[: len(data) // 8 * 8], dtype="<u8")
             idx = np.flatnonzero(np.isin(arr, vals))
             for i in idx:

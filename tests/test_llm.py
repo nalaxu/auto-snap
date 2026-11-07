@@ -275,3 +275,27 @@ def test_decider_snap_flag_respects_can_snap():
            "actions": [{"card": "Medusa", "location": 1}]}
     assert LLMDecider(OpenAIClient("k", client=FakeOpenAI(out)), llm.TaskConfig("m")).decide(state(True)).snap is True
     assert LLMDecider(OpenAIClient("k", client=FakeOpenAI(out)), llm.TaskConfig("m")).decide(state(False)).snap is False
+
+
+def test_decider_respects_turn_timer_budget():
+    """回合剩余时间不够：直接规则 AI，不调用大模型；剩余有限：截止时间收紧到预算。"""
+    import time as _t
+
+    from brain.llm.decider import LLMDecider
+    from brain.models import Card, GameState, Location
+
+    class Boom:
+        def complete_json(self, *a, **k):
+            raise AssertionError("不应调用大模型")
+
+    st = GameState(turn=2, energy=2, hand=[Card(id="Medusa", cost=2, power=2)],
+                   locations=[Location(idx=i, name="Ruins") for i in range(3)],
+                   turn_seconds_left=9.0, timer_read_at=_t.monotonic())
+    dec = LLMDecider(Boom(), llm.TaskConfig("m"), deadline_timed_s=16, timer_reserve_s=7, min_llm_s=5)
+    d = dec.decide(st)
+    assert d.source == "rule_based" and "回合剩余" in d.reason and d.actions
+
+    st.turn_seconds_left, st.timer_read_at = 30.0, _t.monotonic()
+    assert 22 < dec.time_budget(st) <= 23                     # 30 − 7
+    st.turn_seconds_left = None
+    assert dec.time_budget(st) is None                         # 读不到计时：按配置截止

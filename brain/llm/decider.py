@@ -64,6 +64,12 @@ SYSTEM = """你是《漫威终极逆转》（Marvel Snap 国服）的顶尖玩�
      · 应当 Snap：预计领先 2 路且每路领先 ≥ 5（或一路大幅领先 ≥ 10、另一路稳定领先），
        对手已揭示牌里没有明显的翻盘威胁；我方后续手牌/能量曲线更强时也应 Snap。
      · 第 1–2 回合信息太少，一般不 Snap。
+     · 目标是期望方块数最大，而不是 Snap 次数。最理想的时机是中期第 3–5 回合，并且在我方 Key 牌（决定胜负的核心牌，
+       如 Loki、终局大牌、combo 收尾牌）亮出来之前 Snap：Key 牌揭示后对手就会看清局势而撤退。
+       计划下回合打出 Key 牌时，本回合就是 Snap 的好时机。
+     · 最后一回合（turns_left_after_this=0）若我方已明显领先、对手看得出自己要输，不要 Snap：Snap 会直接吓跑对手
+       （对手撤退我方只得当前赌注，不 Snap 打完终局自动翻倍反而更多）。最后一回合只在局势仍不明朗、
+       而我方本回合出牌后能确保翻盘/锁定胜局（对手看不出来）时才考虑 Snap。
      · 不要 Snap：只领先 1 路、分差都很小、关键场地未揭示、对手手牌多且能量高、或我方后续没有关键牌。
    - 对手已 Snap（opp_snapped=true）说明对手有信心：我方没有明显优势时不跟。
 
@@ -178,7 +184,8 @@ class LLMDecider:
 
     def __init__(self, client: LLMClient, task: TaskConfig, max_attempts: int = 2,
                  effort_timed: str | None = "low", deadline_s: float = 40.0, deadline_timed_s: float = 12.0,
-                 deadline_late_s: float | None = None, late_from_turn: int = 5):
+                 deadline_late_s: float | None = None, late_from_turn: int = 5,
+                 timer_reserve_s: float = 7.0, min_llm_s: float = 5.0):
         self.client = client
         self.task = task
         self.max_attempts = max_attempts
@@ -187,6 +194,8 @@ class LLMDecider:
         self.deadline_timed_s = deadline_timed_s
         self.deadline_late_s = deadline_late_s if deadline_late_s is not None else deadline_timed_s
         self.late_from_turn = late_from_turn
+        self.timer_reserve_s = timer_reserve_s   # 留给出牌 + 结束回合的时间（拖一张约 1-1.5s，结束回合约 1-3s）
+        self.min_llm_s = min_llm_s               # 剩余预算低于这个就不问大模型，直接规则 AI
         self.last_raw: dict | None = None
         self.last_latency: float | None = None
         self.last_note = ""
@@ -211,9 +220,28 @@ class LLMDecider:
             return task, deadline
         return self.task, self.deadline_s
 
+    def time_budget(self, state: GameState) -> float | None:
+        """按内存里的回合倒计时算大模型可用时间：剩余 − 读取后已过去的时间 − 执行预留。读不到计时返回 None。"""
+        if state.turn_seconds_left is None:
+            return None
+        left = state.turn_seconds_left
+        if state.timer_read_at is not None:
+            left -= max(0.0, time.monotonic() - state.timer_read_at)
+        return left - self.timer_reserve_s
+
     def decide(self, state: GameState) -> TurnDecision:
         self.last_raw, self.last_latency, self.last_note = None, None, ""
         task, deadline = self._task_for(state)
+        budget = self.time_budget(state)
+        if budget is not None and budget < self.min_llm_s:
+            # 回合快结束（如上回合没出牌导致本回合时间极短、或很晚才识别到对局）：不等大模型
+            self.last_latency, self.last_note = 0.0, f"回合剩余 {state.turn_seconds_left:.0f}s，不够大模型思考"
+            d = rule_based.decide(state)
+            d.reason = f"[{self.last_note}，规则AI] " + d.reason
+            return d
+        if budget is not None and budget < deadline:
+            deadline = budget
+            task = replace(task, timeout_s=min(task.timeout_s, deadline + 5))
         start = time.time()
         future = self._pool.submit(self._ask, state, task, start + deadline)
         try:

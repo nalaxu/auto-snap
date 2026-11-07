@@ -64,6 +64,10 @@ deadline_s = 40               # 无计时：最多等 40s
 deadline_timed_s = 16         # 有计时 T1-T4：实测（2026-11-07，18 回合串行重放）中位 8.0s、p90 14.4s；实战偶有 12.5s 迟到
 deadline_late_s = 25          # 有计时 T5 起：实战 15-20s 常见，另留一次不合法重试的余量；官方回合约 1 分钟
 late_from_turn = 5
+# 读到回合倒计时（内存 TurnTimer）时：大模型截止 = min(上面的截止, 剩余 − timer_reserve_s)；
+# 预算 < min_llm_s 直接用规则 AI（上回合没出牌时下回合时间会极短，见 2026-11-07 b03082ae）
+timer_reserve_s = 7
+min_llm_s = 5
 max_output_tokens = 8000
 timeout_s = 45
 max_retries = 0

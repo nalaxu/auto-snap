@@ -198,8 +198,8 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
     def want_more() -> bool:
         return not max_games or len(finished_games) < max_games
 
-    def menu_step(press_play: bool) -> str | None:
-        """对局外：识别界面并点击下一步按钮。返回识别到的界面名。"""
+    def menu_step(press_play: bool, check_guide: bool = True) -> str | None:
+        """对局外：识别界面并点击下一步按钮。返回识别到的界面名。check_guide=False：不读内存查新手指引（启动时抢先点 PLAY）。"""
         m = ex.screen()
         if m is None:
             return None
@@ -208,7 +208,8 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
             ex.click_rel(m.center, m.name)
             time.sleep(2.5)
         elif m.name == "play" and press_play:
-            wait_tutorial()
+            if check_guide:
+                wait_tutorial()
             # 匹配界面（Searching For Opponent）没有 PLAY 按钮，所以只要 PLAY 还在就说明点击没生效，可以立即重点；
             # 不要在这里读内存（对局结束后的重扫会阻塞 10s 以上，拖慢重试）
             for attempt in range(1, 4):
@@ -261,8 +262,19 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                         "bias": info.bias_at(st.turn, st.max_turn) if info else 0,
                         "source": info.source if info else None, "effect": info.effect if info else None})
         return out
-    if hasattr(source, "tutorial_running"):  # 预热：定位 TutorialManager（约 10s），避免占用第一回合
+    if live and want_more() and not skip_current:
+        # 先点 PLAY（只需截图识别，不读内存），附加进程 / 扫描内存放到匹配等待期间做
+        try:
+            m0 = ex.screen()
+            if m0 and m0.name == "play":
+                print("  ▶ 主界面：先点 PLAY，匹配期间再预热内存读取")
+                menu_step(press_play=True, check_guide=False)
+        except ActionFailed as e:
+            print(f"  ⚠ 界面操作失败：{e}")
+    if hasattr(source, "tutorial_running"):  # 预热：附加进程、定位类与 TutorialManager（有缓存时毫秒级）
+        t0 = time.time()
         source.tutorial_running()
+        print(f"  内存读取就绪（{time.time() - t0:.1f}s）")
     if skip_current:  # 当前回合留给玩家手动完成，从下一回合开始接管
         cur = source.snapshot()
         if cur and not cur.get("finished"):
@@ -324,6 +336,8 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
             dec_s = time.time() - t_dec
             acts = ", ".join(f"{a.card}→地点{a.location}" for a in d.actions) or "不出牌"
             stake = f" 赌注{state.cube_stake}" + ("（对手已 Snap）" if state.opp_snapped else "")
+            if state.turn_seconds_left is not None:
+                stake += f" 计时{state.turn_seconds_left:.0f}/{state.turn_seconds_total:.0f}s"
             print(f"T{state.turn} 能量{state.energy}{stake} [{d.source} {dec_s:.1f}s] {acts}" + ("  + SNAP" if d.snap else ""))
             if d.reason:
                 print(f"    理由：{d.reason}")

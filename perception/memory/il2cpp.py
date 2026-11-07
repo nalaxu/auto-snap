@@ -113,6 +113,15 @@ class Il2Cpp:
             out[k] = sorted(set(out[k]), key=lambda c: -len(self.fields(c)))
         return out
 
+    def check_classes(self, found: dict) -> bool:
+        """缓存的类地址是否仍然有效（同一进程内 klass 地址不变）。"""
+        for (name, ns), ks in found.items():
+            for k in ks:
+                kns, kname = self.class_name(k)
+                if kname != name or (ns is not None and kns != ns):
+                    return False
+        return True
+
     # ------------------------------------------------------------ 字段
     def _probe_fields_slot(self, klass: int) -> int | None:
         for slot in range(0x60, 0x120, 8):

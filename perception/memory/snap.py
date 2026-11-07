@@ -7,8 +7,13 @@
 """
 from __future__ import annotations
 
+import json
 import logging
+import threading
 import time
+from pathlib import Path
+
+import psutil
 
 from brain.models import Card, GameState, Location
 
@@ -25,10 +30,14 @@ CLASSES = [
     ("Location", "CubeGame"),
     ("GameManager", None),
     ("TutorialManager", "CubeUnity.App.Tutorials"),
+    ("TurnTimer", "CubeUnity.App.Game"),
 ]
 
 
 log = logging.getLogger(__name__)
+
+
+CACHE_DIR = Path(__file__).resolve().parents[2] / "logs" / ".cache"
 
 
 class NotInGame(RuntimeError):
@@ -53,14 +62,57 @@ class SnapMemoryReader:
         self._stale_ids: set[str] | None = None
         self._tutorial_mgr = 0
         self._tutorial_scan = 0.0
+        self._hot: set[int] = set()     # 曾经找到过 Game 对象的内存区域（托管堆），快速扫描只扫这些
+        self._last_fast = 0.0
+        self._timer = 0                 # CubeUnity.App.Game.TurnTimer 实例（END TURN 按钮外圈的倒计时）
+        self._timer_scan = 0.0
+        self._timer_thread: threading.Thread | None = None
 
     def close(self) -> None:
         self.p.close()
 
     # ------------------------------------------------------------ 定位
+    def _cache_path(self) -> Path | None:
+        try:
+            created = int(psutil.Process(self.p.pid).create_time())
+        except (psutil.Error, OSError):
+            return None
+        return CACHE_DIR / f"classes_{self.p.pid}_{created}.json"
+
     def resolve_classes(self) -> dict:
+        """按名字定位 IL2CPP 类（约 7-12s）。结果按「进程 ID + 启动时间」缓存：同一游戏进程再次启动程序时直接复用。"""
+        path = self._cache_path()
+        if path and path.exists():
+            try:
+                raw = json.loads(path.read_text("utf-8"))
+                found = {(n, ns): ks for n, ns, ks in raw["classes"]}
+                if set(found) == set(CLASSES) and self.il.check_classes(found):
+                    self.il._fields_slot = raw.get("fields_slot")
+                    self._hot = set(raw.get("hot", []))
+                    self._tutorial_mgr = int(raw.get("tutorial_mgr") or 0)
+                    self.classes = found
+                    log.info("类定位：使用缓存 %s", path.name)
+                    return self.classes
+            except (OSError, ValueError, KeyError, TypeError):
+                pass
         self.classes = self.il.find_classes(CLASSES)
+        self._save_cache()
         return self.classes
+
+    def _save_cache(self) -> None:
+        path = self._cache_path()
+        if not path or not self.classes:
+            return
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            for old in path.parent.glob("classes_*.json"):   # 只保留当前进程的缓存
+                if old != path:
+                    old.unlink(missing_ok=True)
+            path.write_text(json.dumps({"classes": [[n, ns, ks] for (n, ns), ks in self.classes.items()],
+                                        "fields_slot": self.il._fields_slot, "hot": sorted(self._hot),
+                                        "tutorial_mgr": self._tutorial_mgr}), "utf-8")
+        except OSError as e:
+            log.debug("写类缓存失败：%r", e)
 
     def _game_klasses(self) -> list[int]:
         if not self.classes:
@@ -77,14 +129,24 @@ class SnapMemoryReader:
         gid = il.get_str(g, "Id")
         return turn is not None and 0 <= turn <= 20 and len(players) == 2 and bool(gid) and len(gid) >= 32
 
-    def find_games(self) -> list[dict]:
-        """扫描堆中所有 Game 实例，返回摘要列表（调试/选择用）。"""
+    def find_games(self, hot_only: bool = False) -> list[dict]:
+        """扫描堆中所有 Game 实例，返回摘要列表（调试/选择用）。
+
+        hot_only：只扫曾经出现过 Game 对象的内存区域（约 80MB，全堆约 6.5GB），用于快速发现新对局。
+        """
         il = self.il
         out = []
-        for k, addrs in self.p.find_u64(self._game_klasses()).items():
+        if hot_only and not self._hot:
+            return out
+        hits = self.p.find_u64(self._game_klasses(), bases=self._hot if hot_only else None)
+        for k, addrs in hits.items():
             for g in addrs:
                 if not self._is_game(g):
                     continue
+                base = self.p.region_base(g)
+                if base is not None and base not in self._hot:
+                    self._hot.add(base)
+                    self._save_cache()
                 out.append({
                     "addr": g,
                     "id": il.get_str(g, "Id"),
@@ -122,6 +184,9 @@ class SnapMemoryReader:
         """
         valid = bool(self.game) and self._is_game(self.game) and self.il.get_str(self.game, "Id") == self.game_id
         now = time.time()
+        if valid and not force and not self._finished(self.game):
+            self._finished_since, self._seen_live = None, True
+            return True
         if valid and not force:
             if not self._finished(self.game):
                 self._finished_since, self._seen_live = None, True
@@ -134,11 +199,21 @@ class SnapMemoryReader:
                 if now - self._finished_since < self.finished_hold_s:
                     return True
 
-        if not force and now - self._last_scan < self.rescan_interval:
-            return valid
-        self._last_scan = now
+        games = None
+        if not force and self._hot and now - self._last_fast >= 1.0:
+            # 快速扫描热区域（几十毫秒级）：新对局通常分配在同一批托管堆区域里
+            self._last_fast = now
+            fast = self.find_games(hot_only=True)
+            if any(not g["finished"] and g["id"] not in (self._stale_ids or set()) and g["id"] != self.game_id
+                   for g in fast):
+                games = fast
+                log.info("快速扫描发现新对局")
+        if games is None:
+            if not force and now - self._last_scan < self.rescan_interval:
+                return valid
+            self._last_scan = now
+            games = self.find_games()
         self._finished_since, self._seen_live = None, False
-        games = self.find_games()
         if not games:
             self.game = 0
             return False
@@ -177,6 +252,60 @@ class SnapMemoryReader:
             self.local_id, self._local_confirmed = self._local_player_id(set(ids)), False
 
     # ------------------------------------------------------------ 新手指引
+    # ------------------------------------------------------------ 回合计时
+    def _timer_alive(self, t: int) -> bool:
+        """是真正的 TurnTimer 对象：Unity 原生指针有效，且 _endTurnButton 指向 EndTurnButton 对象。"""
+        il = self.il
+        cached = il.get_ptr(t, "m_CachedPtr")        # 销毁后为 0
+        if not cached or cached == 0xFFFFFFFF:
+            return False
+        btn = il.get_ptr(t, "_endTurnButton")
+        return bool(btn) and il.object_class_name(btn) == "EndTurnButton"
+
+    def _timer_values(self, t: int) -> dict:
+        il, p = self.il, self.p
+        f_rem, f_start = il.field(t, "_timeRemaining"), il.field(t, "_startingSeconds")
+        rem = p.f32(t + f_rem.offset) if f_rem else None
+        start = p.f32(t + f_start.offset) if f_start else None
+        active = bool(il.get_bool(t, "Active"))
+        ok = rem is not None and start is not None and 1 <= start <= 600 and -1 <= rem <= start + 15
+        return {"remaining": round(rem, 2) if ok else None, "total": round(start, 2) if ok else None,
+                "active": active and ok, "no_timer": bool(il.get_bool(t, "_noTimer")),
+                "waiting_for_opponent": bool(il.get_bool(t, "_waitingForOpponent"))}
+
+    def _scan_timer(self) -> None:
+        ks = self.classes.get(("TurnTimer", "CubeUnity.App.Game")) or []
+        found: list[int] = []
+        for bases in ([self._hot] if self._hot else []) + [None]:   # 先扫热区域（~0.2s），找不到再全堆（~7s）
+            hits = self.p.find_u64(ks, bases=bases) if ks else {}
+            found = [a for _, addrs in hits.items() for a in addrs if self._timer_alive(a)]
+            if found:
+                break
+        for a in found:
+            base = self.p.region_base(a)
+            if base is not None:
+                self._hot.add(base)
+        self._timer = next((a for a in found if self._timer_values(a)["active"]), found[0] if found else 0)
+        log.info("回合计时器%s", f"定位于 {self._timer:#x}（候选 {len(found)}）" if self._timer else "未找到（可能不在对局中）")
+
+    def turn_timer(self) -> dict | None:
+        """本回合倒计时 {remaining, total, active, no_timer, waiting_for_opponent}；还没定位到返回 None。
+
+        定位要全堆扫描（约 7s），放在后台线程，不阻塞出牌；之后每次读取只是几次 ReadProcessMemory。
+        """
+        if not self.classes:
+            return None
+        if self._timer:
+            if self._timer_alive(self._timer):
+                return self._timer_values(self._timer)   # 不在计时（对手回合 / 揭示中）也保留实例
+            self._timer = 0   # 对象已销毁（换局 / 回主界面）
+        busy = self._timer_thread is not None and self._timer_thread.is_alive()
+        if not busy and time.time() - self._timer_scan > 10:
+            self._timer_scan = time.time()
+            self._timer_thread = threading.Thread(target=self._scan_timer, name="turn-timer-scan", daemon=True)
+            self._timer_thread.start()
+        return None
+
     def _is_tutorial_mgr(self, m: int) -> bool:
         return self.il.object_class_name(self.il.get_ptr(m, "IsRunningTutorial")).startswith("ObservableProperty")
 
@@ -201,6 +330,7 @@ class SnapMemoryReader:
                         break
             if not self._tutorial_mgr:
                 return None
+            self._save_cache()   # 单例，整个游戏进程内地址不变
         m = self._tutorial_mgr
         flag = il.get_bool(il.get_ptr(m, "IsRunningTutorial"), "_value")
         running = il.list_ptrs(il.get_ptr(m, "_runningTutorials"), limit=64)
@@ -282,6 +412,8 @@ class SnapMemoryReader:
             "turn": turn,
             "total_turns": il.get_int(g, "TotalTurns"),
             "cube_value": il.get_int(g, "CubeValue"),
+            "timer": self.turn_timer() if not self._finished(g) else None,
+            "read_at": time.monotonic(),
             # 赌注：Snap 后 CubeValueNextTurn 翻倍（下回合生效）；每名玩家一局只能 Snap 一次，Snap 后 CanRaiseStakes=False
             "cube_value_next": il.get_int(g, "CubeValueNextTurn"),
             "stakes_raised": il.get_int(g, "StakesRaisedCount"),
@@ -312,6 +444,13 @@ class SnapMemoryReader:
             },
             "locations": locs,
         }
+
+
+def _timer_fields(snap: dict) -> dict:
+    t = snap.get("timer") or {}
+    if not t or t.get("no_timer") or not t.get("active"):
+        return {}
+    return {"turn_seconds_left": t["remaining"], "turn_seconds_total": t["total"], "timer_read_at": snap.get("read_at")}
 
 
 def _model_card(c: dict, **kw) -> Card:
@@ -353,6 +492,7 @@ def to_game_state(snap: dict, deck: list[str] | None = None) -> GameState:
         energy=snap["me"]["energy"] or 0,
         cube_stake=snap["cube_value"] or 1,
         cube_next=snap.get("cube_value_next") or snap["cube_value"] or 1,
+        **_timer_fields(snap),
         can_snap=bool(snap["me"].get("can_raise_stakes")) and not snap["me"].get("snap_turns"),
         opp_snapped=bool((snap.get("opp") or {}).get("snap_turns")),
         turn_timer=not snap.get("no_turn_timer", False),

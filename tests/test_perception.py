@@ -149,6 +149,7 @@ def test_reader_holds_finished_game_without_rescanning():
     r = SnapMemoryReader.__new__(SnapMemoryReader)
     r.game, r.game_id, r._last_scan, r.rescan_interval = 0x1000, "g" * 36, 0.0, 5.0
     r.finished_hold_s, r._finished_since, r._seen_live = 30.0, None, False
+    r._hot, r._last_fast, r._stale_ids = set(), 0.0, None
     finished = {"v": False}
     r._is_game = lambda g: True
     r._finished = lambda g: finished["v"]
@@ -183,6 +184,7 @@ def test_reader_does_not_hold_game_that_was_already_finished():
     r = SnapMemoryReader.__new__(SnapMemoryReader)
     r.game, r.game_id, r._last_scan, r.rescan_interval = 0x1000, "g" * 36, 0.0, 5.0
     r.finished_hold_s, r._finished_since, r._seen_live = 30.0, None, False
+    r._hot, r._last_fast, r._stale_ids = set(), 0.0, None
     r._is_game = lambda g: True
     r._finished = lambda g: True
     r.il = NS(get_str=lambda obj, name: r.game_id)

@@ -189,6 +189,8 @@ python tools/mem_explore.py --client cn_steam   # 工具同样支持 --client（
   结束判断用 `ClientResultMessage` / `_resultCreated`（`Game.Winner` 对局中就有值）
 - **执行层**：比例坐标（手牌中心 0.4963、间距 0.0731、y 0.876；地点落点 x 0.37/0.50/0.63, y 0.60；结束回合 (0.907, 0.924)），
   任意窗口尺寸按比例换算；最小化时自动还原；`find_window` 改为句柄缓存 + 只枚举 UnityWndClass（7254ms → 2ms）
+- **启动提速**：进程枚举改用 EnumProcesses + QueryFullProcessImageNameW（psutil 本机 7.3s → 20ms）；类定位与 TutorialManager 地址按「进程 ID + 启动时间」缓存到 `logs/.cache/`（14.5s → 0.01s）；新对局 / 回合计时器先扫「热区域」（托管堆约 80MB，0.2s；全堆 6.5GB 约 8s）；启动时先点 PLAY 再预热
+- **回合计时**：`CubeUnity.App.Game.TurnTimer._timeRemaining / _startingSeconds`（每回合时长不同，实测 57–80s）；预算 = 剩余 − 7s，< 5s 直接规则 AI
 - **对手撤退**：对局结束后 30s 内不重扫（复用终局快照，毫秒级）；决策期间每 0.3s 检查对局是否结束，执行层每步检查（`GameOver`），发现结束立即 Collect Rewards → Next（此前全堆重扫让撤退后的操作拖慢约 75s）
 - **界面识别**：模板匹配 `end_turn` / `collect_rewards` / `next` / `play` / `never_seen` / `tap_to_snap`（阈值 0.75）；
   遮罩检测用棋盘区拉普拉斯方差（遮罩 ≈ 2，正常 ≥ 867）

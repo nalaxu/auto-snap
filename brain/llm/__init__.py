@@ -109,4 +109,6 @@ def make_decider(settings: dict):
                       deadline_s=float(t.get("deadline_s", 40)),
                       deadline_timed_s=float(t.get("deadline_timed_s", 12)),
                       deadline_late_s=float(t.get("deadline_late_s", t.get("deadline_timed_s", 12))),
-                      late_from_turn=int(t.get("late_from_turn", 5)))
+                      late_from_turn=int(t.get("late_from_turn", 5)),
+                      timer_reserve_s=float(t.get("timer_reserve_s", 7)),
+                      min_llm_s=float(t.get("min_llm_s", 5)))

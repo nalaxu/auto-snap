@@ -52,6 +52,31 @@ BUILTIN: dict[str, dict] = {
 }
 
 
+def process_images() -> list[tuple[int, str]]:
+    """本机进程 -> [(pid, exe 完整路径)]。EnumProcesses + QueryFullProcessImageNameW 约 20ms；
+    psutil.process_iter(["name"]) 在本机要 ~7s（会拖慢每次附加游戏进程）。"""
+    import ctypes as C
+    import ctypes.wintypes as W
+
+    k32, psapi = C.WinDLL("kernel32", use_last_error=True), C.WinDLL("psapi")
+    arr = (W.DWORD * 4096)()
+    needed = W.DWORD()
+    if not psapi.EnumProcesses(arr, C.sizeof(arr), C.byref(needed)):
+        return [(p.pid, p.info.get("exe") or "") for p in psutil.process_iter(["exe"])]
+    k32.OpenProcess.restype = W.HANDLE
+    out = []
+    buf = C.create_unicode_buffer(1024)
+    for pid in arr[: needed.value // C.sizeof(W.DWORD)]:
+        h = k32.OpenProcess(0x1000, False, pid)   # PROCESS_QUERY_LIMITED_INFORMATION
+        if not h:
+            continue
+        size = W.DWORD(len(buf))
+        if k32.QueryFullProcessImageNameW(h, 0, buf, C.byref(size)):
+            out.append((int(pid), buf.value))
+        k32.CloseHandle(h)
+    return out
+
+
 def _expand(p: str) -> Path:
     return Path(os.path.expandvars(os.path.expanduser(p))) if p else Path()
 
@@ -100,6 +125,9 @@ class ClientProfile:
         return True
 
     def matches_pid(self, pid: int) -> bool:
+        exe = next((e for p, e in process_images() if p == pid), None)
+        if exe:
+            return self.matches_exe(Path(exe).name, exe)
         try:
             p = psutil.Process(pid)
             name = p.name()
@@ -112,11 +140,7 @@ class ClientProfile:
         return self.matches_exe(name, exe)
 
     def find_pids(self) -> list[int]:
-        out = []
-        for p in psutil.process_iter(["name", "exe"]):
-            if self.matches_exe(p.info.get("name") or "", p.info.get("exe")):
-                out.append(p.pid)
-        return out
+        return [pid for pid, exe in process_images() if self.matches_exe(Path(exe).name, exe)]
 
     def running(self) -> bool:
         return bool(self.find_pids())

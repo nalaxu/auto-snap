@@ -46,6 +46,9 @@ class GameState(BaseModel):
     can_snap: bool = True            # 我方本局还没 Snap（每局一次）
     opp_snapped: bool = False        # 对手已 Snap
     cube_next: int | None = None     # 下回合生效的赌注（Snap 后翻倍）
+    turn_seconds_left: float | None = None   # 本回合倒计时剩余秒数（内存 TurnTimer；读不到为 None）
+    turn_seconds_total: float | None = None
+    timer_read_at: float | None = None       # 读取时刻（time.monotonic），用于折算决策开始时的剩余时间
     hand: list[Card]
     deck_remaining: list[str] = Field(default_factory=list)   # 我方剩余牌库（卡组 − 已见牌，无序）
     my_deck_count: int | None = None
