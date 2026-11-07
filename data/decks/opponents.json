@@ -1,0 +1,13 @@
+{
+  "zombie_galactus": {
+    "name": "丧尸吞心（Zombie Galactus）",
+    "core": "ZombieGalacti",
+    "signature": ["ZombieGalacti", "Wong", "Nakia", "Shuri", "HighEvolutionary", "PolarisHorseman"],
+    "plan": "开局选 6 张角色；终局打出 Zombie Galactus，把选中的牌全部变成它的复制（7 费 5 力 ×多张，散在三路）。Nakia 给手牌加战力、Shuri 加倍、Wong 让揭示效果重复；前期牌多为白板/辅助，场面看着弱。",
+    "counter": "前中期领先不代表稳：对手手牌多时 T6 可能三路同时暴涨；对它别大 Snap，终局胜率要按对手爆发估低；Cosmo 类封 On Reveal 的牌克制。",
+    "samples": [
+      {"game_id": "ee4fc27a", "date": "2026-11-07", "result": "loss", "cards": ["PolarisHorseman", "Shocker", "Nakia", "HighEvolutionary", "Wong", "ZombieGalacti", "Shuri"]}
+    ],
+    "seen_cards": {"PolarisHorseman": 1, "Shocker": 1, "Nakia": 1, "HighEvolutionary": 1, "Wong": 1, "ZombieGalacti": 1, "Shuri": 1}
+  }
+}

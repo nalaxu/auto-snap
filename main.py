@@ -127,7 +127,9 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
     decide, decider = make_decider(settings)
     ex = Executor(source.snapshot, client, dry_run=not live)
     snap_enabled = bool(settings.get("brain", {}).get("snap", True))
-    activated_cards: set[tuple] = set()   # (game_id, entity)：已激活过的场上牌
+    activated_cards: set[tuple] = set()
+    opp_seen: dict[str, list[str]] = {}    # game_id -> 对手揭示过的牌（卡组原型识别 + 赛后样本）
+    from brain import decks   # (game_id, entity)：已激活过的场上牌
     retreat_enabled = bool(settings.get("brain", {}).get("retreat", True))
     retreat_threshold = settings.get("brain", {}).get("retreat_win_prob")   # None = 按期望方块计算
     from brain.llm.decider import retreat_check
@@ -293,6 +295,11 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
             if snap and snap.get("finished") and snap["game_id"] in played_games and snap["game_id"] not in finished_games:
                 finished_games.add(snap["game_id"])
                 summary = rec.end(snap) or {}
+                final_opp = [c.get("id") for l in snap["locations"] for c in l["opp_cards"] if c.get("id")]
+                arche = decks.default_kb().record_game(snap["game_id"], opp_seen.get(snap["game_id"], []) + final_opp,
+                                                       summary.get("result"))
+                if arche:
+                    print(f"  对手卡组：{decks.default_kb().opponents[arche].get('name', arche)}（已记入样本）")
                 print(f"对局 {snap['game_id'][:8]} 结束：{summary.get('result')}（场地 {summary.get('my_locations_won')}:"
                       f"{summary.get('opp_locations_won')}，赌注 {summary.get('cube_value')}；已完成 {len(finished_games)} 局）")
                 if live:
@@ -323,6 +330,12 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
             wait_tutorial()
             state = source.read_state() or state
             state.forbidden = forbidden.get(key, [])
+            seen = opp_seen.setdefault(snap["game_id"], [])
+            for l in state.locations:
+                for c in l.opp_cards:
+                    if c.id not in seen:
+                        seen.append(c.id)
+            state.opp_seen, state.deck_name = list(seen), getattr(source, "deck_name", "")
             for l in state.locations:   # 本程序激活过的牌（内存里没有可靠的「已激活」标志）
                 for c in l.my_cards:
                     c.activated = (snap["game_id"], c.entity) in activated_cards
@@ -337,6 +350,9 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                 continue
             if validate(state, d):
                 d = rule_based.decide(state)
+            from brain.board import reorder_for_next_card
+            if note := reorder_for_next_card(state, d):
+                print(f"  ↕ 出牌顺序调整：{note}")
             if d.snap and not snap_enabled:
                 d.snap = False
                 d.reason += "（Snap 已在 config [brain].snap 关闭）"

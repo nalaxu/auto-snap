@@ -47,6 +47,8 @@ class GameState(BaseModel):
     turn_timer: bool = True          # 本局是否有回合计时（Game.NoTurnTimer 取反）
     can_snap: bool = True            # 我方本局还没 Snap（每局一次）
     opp_snapped: bool = False        # 对手已 Snap
+    deck_name: str = ""                     # 我方当前卡组名（卡组知识库索引）
+    opp_seen: list[str] = Field(default_factory=list)   # 本局对手揭示过的牌（含已离场），用于识别对手卡组原型
     played_last_turn: bool | None = None   # 我方上回合是否出过牌（Infinaut 类限制）；读不到为 None
     opp_snap_turn: int | None = None # 对手 Snap 的回合（撤退判断：对手刚 Snap 的那一回合）
     cube_next: int | None = None     # 下回合生效的赌注（Snap 后翻倍）

@@ -65,3 +65,20 @@ def test_rule_ai_keeps_middle_slot_for_medusa():
                   locations=[loc(0, op=10), loc(1, mine=mid, mp=4, op=4), loc(2, mine=[hawkeye(3)], mp=6)])
     d = rule_based.decide(s)
     assert ("Medusa", 1) in [(a.card, a.location) for a in d.actions], d.reason
+
+
+def test_shuri_next_card_note_and_reorder():
+    """用户复盘（ee4fc27a T5）：T4 Shuri 在右路，T5 先打了左路 Quinjet，Weapon H 没有被加倍。"""
+    from brain.board import build_notes, reorder_for_next_card
+    from brain.knowledge import default_db
+    from brain.models import Card, GameState, Location, PlayAction, TurnDecision
+
+    shuri = Card(id="Shuri", cost=4, power=3, entity=5, turn_played=4)
+    locs = [Location(idx=0, name="VibraniumMines"), Location(idx=1, name="Madripoor"), Location(idx=2, name="ZennLa", my_cards=[shuri])]
+    st = GameState(turn=5, energy=5, locations=locs,
+                   hand=[Card(id="Quinjet", cost=1, power=1), Card(id="WeaponH", cost=4, power=14)])
+    notes = build_notes(st, default_db())
+    assert any("出牌顺序" in n and "Shuri" in n for n in notes)
+    d = TurnDecision(actions=[PlayAction(card="Quinjet", location=0), PlayAction(card="WeaponH", location=2)])
+    assert reorder_for_next_card(st, d)
+    assert [a.card for a in d.actions] == ["WeaponH", "Quinjet"]

@@ -81,6 +81,8 @@ SYSTEM = """你是《漫威终极逆转》（Marvel Snap 国服）的顶尖玩�
    （目标是否存在、时机是否最佳——有的效果留到后面更好），要激活就写进 activate（card + location）。激活先于本回合出牌执行。
 6. win_probability：按本回合出牌后的局面，估计我方最终赢下本局的概率（0–100 整数）。要现实：对手已揭示牌的威胁、
    对手剩余手牌数与能量、各路分差与空位、我方剩余回合能补的战力都要考虑。程序据此计算是否撤退（不要自己判断撤退）。
+deck_notes（如有）：我方卡组的整体打法与当前手牌要点、已识别出的对手卡组原型及应对，结合局面参考。
+
 只输出 JSON。card 用 hand 中的 id，location 用场地 idx（0/1/2）。不出牌时 actions 为空数组。
 文字字段用中文且尽量简短：每个 effect / why ≤ 20 字，plan 与 reason 各 ≤ 40 字（回合有计时，越快越好）。"""
 
@@ -219,6 +221,12 @@ def build_prompt(state: GameState, advisor=None, cards_db: dict | None = None) -
         "card_info": card_info,
         "forbidden": [{"card": c, "location": i} for c, i in state.forbidden],
     }
+    from .. import decks
+
+    opp_cards = state.opp_seen or [c.id for l in state.locations for c in l.opp_cards]
+    notes = decks.default_kb().prompt_notes(state.deck_name, [c.id for c in state.hand], opp_cards)
+    if notes:
+        data["deck_notes"] = notes
     return "当前局面：\n" + json.dumps(data, ensure_ascii=False)
 
 

@@ -48,6 +48,51 @@ class BoardTracker:
         return state
 
 
+_NEXT_CARD = re.compile(r"\b(?:your )?next card(?: you play)?\b", re.I)
+_NEXT_ANY = re.compile(r"\bnext (?:turn|card|time)\b", re.I)
+
+
+def next_effect_note(where: str, card_id: str, ability: str, loc_name: str) -> str | None:
+    """上回合打出、效果落在「本回合 / 下一张牌」的我方牌 -> 本回合要点（通用：Shuri、Forge、Stick、Zero、Rescue、Jessica Jones…）。
+
+    「下一张牌」类效果只作用于本回合打出的第一张牌：提醒排序（actions 顺序 = 出牌顺序）。
+    """
+    if not ability or ability.startswith("Ongoing") or not _NEXT_ANY.search(ability):
+        return None
+    if _NEXT_CARD.search(ability):
+        here = re.search(r"at this location|here", ability, re.I)
+        order = f"actions 第一张必须打在 {where}" if here else "actions 第一张就是受影响的牌"
+        return f"【本回合有效·出牌顺序】{where} 我方 {card_id}：{ability} → {order}"
+    return f"【本回合有效】{where} 我方 {card_id}：{ability}"
+
+
+def reorder_for_next_card(state: GameState, decision, db: knowledge.GameDB | None = None) -> str | None:
+    """「下一张牌打在这里才生效」（如 Shuri 加倍）：本回合计划里有打到该地点的牌，就把其中战力最高的一张挪到第一张。
+
+    返回调整说明；无需调整返回 None。只处理指定地点的增益类（here / at this location），其余交给模型按要点排序。
+    """
+    db = db or knowledge.default_db()
+    last = state.turn - 1
+    if last < 1 or not decision.actions:
+        return None
+    for loc in state.locations:
+        for c in loc.my_cards:
+            ab = db.ability(c.id) or ""
+            if c.turn_played != last or not _NEXT_CARD.search(ab) or not re.search(r"at this location|here", ab, re.I):
+                continue
+            here = [i for i, a in enumerate(decision.actions) if a.location == loc.idx]
+            if not here:
+                return None
+            power = {h.id: h.power for h in state.hand}
+            best = max(here, key=lambda i: power.get(decision.actions[i].card, 0))
+            if best == 0:
+                return None
+            a = decision.actions.pop(best)
+            decision.actions.insert(0, a)
+            return f"{c.id} 的「下一张牌」效果：{a.card} 调到第一张出（地点{loc.idx}）"
+    return None
+
+
 def _turn_numbers(text: str) -> list[int]:
     return [int(x) for x in re.findall(r"turn (\d+)", text or "", flags=re.I)]
 
@@ -65,6 +110,9 @@ def build_notes(state: GameState, db: knowledge.GameDB) -> list[str]:
                     who = "我方" if side == "mine" else "对手"
                     pending.append(f"【本回合有效】{where} {_SIDE[side]} {c.id} 上回合打出：{who}本回合在此再出一张牌，它 +{bonus} 战力"
                                    + ("（尽量在此跟牌）" if side == "mine" else ""))
+                if not bonus and side == "mine" and c.turn_played == last and last >= 1:
+                    if note := next_effect_note(where, c.id, ability, loc.name):
+                        pending.append(note)
                 if ability.startswith("Ongoing"):
                     ongoing.append(f"【持续】{where} {_SIDE[side]} {c.id}：{ability}")
                 if side == "opp" and c.turn_played == last and last >= 1 and not ability.startswith("Ongoing"):
