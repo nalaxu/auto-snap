@@ -170,6 +170,16 @@ class SelfRestriction:
 
 _POS = {"left": 0, "middle": 1, "right": 2}
 
+_MOVE_TO = re.compile(r"(?:On turn (\d+), )?(?:you can move cards to this location|cards are Moveable to (?:here|this location))", re.I)
+
+
+def parse_move_to(effect: str) -> tuple[bool, int | None]:
+    """场地是否允许把牌移到这里 -> (允许, 仅限的回合)。如 New York：On turn 6, cards are Moveable to here。"""
+    m = _MOVE_TO.search(effect or "")
+    if not m:
+        return False, None
+    return True, int(m.group(1)) if m.group(1) else None
+
 
 def parse_self_restriction(text: str) -> SelfRestriction | None:
     if not text:

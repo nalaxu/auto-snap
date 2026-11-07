@@ -50,6 +50,8 @@ class GameState(BaseModel):
     deck_name: str = ""                     # 我方当前卡组名（卡组知识库索引）
     opp_seen: list[str] = Field(default_factory=list)   # 本局对手揭示过的牌（含已离场），用于识别对手卡组原型
     played_last_turn: bool | None = None   # 我方上回合是否出过牌（Infinaut 类限制）；读不到为 None
+    opp_destroyed: int | None = None        # 对手本局摧毁过的牌数（摧毁 combo 触发次数）
+    opp_energy_by_turn: dict[int, int] = Field(default_factory=dict)   # 对手每回合打出的已揭示牌总费用（brain/board.py 统计）
     opp_snap_turn: int | None = None # 对手 Snap 的回合（撤退判断：对手刚 Snap 的那一回合）
     cube_next: int | None = None     # 下回合生效的赌注（Snap 后翻倍）
     turn_seconds_left: float | None = None   # 本回合倒计时剩余秒数（内存 TurnTimer；读不到为 None）
@@ -82,9 +84,16 @@ class ActivateAction(BaseModel):
     location: int = Field(ge=0, lt=NUM_LOCATIONS)
 
 
+class MoveAction(BaseModel):
+    card: str
+    from_location: int = Field(ge=0, lt=NUM_LOCATIONS)
+    to_location: int = Field(ge=0, lt=NUM_LOCATIONS)
+
+
 class TurnDecision(BaseModel):
     actions: list[PlayAction] = Field(default_factory=list)  # 按执行顺序（影响揭示顺序）
-    activate: list[ActivateAction] = Field(default_factory=list)  # 本回合要激活的场上牌（先于出牌执行）
+    activate: list[ActivateAction] = Field(default_factory=list)
+    moves: list[MoveAction] = Field(default_factory=list)          # 本回合移动的场上牌（激活后、出牌前执行）  # 本回合要激活的场上牌（先于出牌执行）
     snap: bool = False
     retreat: bool = False
     win_probability: float | None = None   # 大模型估计的最终胜率（0–1），用于撤退期望计算

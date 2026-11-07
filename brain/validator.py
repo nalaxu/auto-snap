@@ -52,6 +52,15 @@ def validate(state: GameState, decision: TurnDecision) -> list[str]:
     for a in decision.activate:
         if (a.card, a.location) not in avail:
             errors.append(f"激活 {a.card}@地点{a.location} 不可用（不是我方场上可激活的牌、本回合刚打出或已激活过）")
+    for mv in decision.moves:
+        loc = state.locations[mv.from_location]
+        card = next((c for c in loc.my_cards if c.id == mv.card), None)
+        if card is None:
+            errors.append(f"移动 {mv.card}：地点{mv.from_location} 没有这张我方牌")
+            continue
+        from .location_rules import move_targets
+        if mv.to_location not in move_targets(state, card, mv.from_location):
+            errors.append(f"移动 {mv.card}：本回合不能从地点{mv.from_location} 移到地点{mv.to_location}")
     return errors
 
 

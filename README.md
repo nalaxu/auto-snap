@@ -192,6 +192,7 @@ python tools/mem_explore.py --client cn_steam   # 工具同样支持 --client（
   任意窗口尺寸按比例换算；最小化时自动还原；`find_window` 改为句柄缓存 + 只枚举 UnityWndClass（7254ms → 2ms）
 - **启动提速**：进程枚举改用 EnumProcesses + QueryFullProcessImageNameW（psutil 本机 7.3s → 20ms）；类定位与 TutorialManager 地址按「进程 ID + 启动时间」缓存到 `logs/.cache/`（14.5s → 0.01s）；新对局 / 回合计时器先扫「热区域」（托管堆约 80MB，0.2s；全堆 6.5GB 约 8s）；启动时先点 PLAY 再预热
 - **回合计时**：`CubeUnity.App.Game.TurnTimer._timeRemaining / _startingSeconds`（每回合时长不同，实测 57–80s）；预算 = 剩余 − 7s，< 5s 直接规则 AI
+- **场地与可操作项**：要点栈最前面列出本回合可主动做的事——【可激活】场上牌（含场地给的，如 Kvch；最后一回合标「最后机会」）、【可移动·本回合】（场地允许移入，如 New York 第 6 回合，或卡牌 Moveable）；定时场地事件倒计时、过期即删；【对手节奏】近 3 回合能量利用（已揭示牌费用）与摧毁 combo 次数。执行顺序：激活 → 移动 → 出牌
 - **关键信息栈**：上回合打出、效果落在「下一张牌 / 下回合」的我方牌自动进入【本回合有效】（通用正则，非逐卡）；「下一张牌打在这里」类（Shuri）提示出牌顺序，代码兜底把该路战力最高的牌调到第一张
 - **对手撤退**：对局结束后 30s 内不重扫（复用终局快照，毫秒级）；决策期间每 0.3s 检查对局是否结束，执行层每步检查（`GameOver`），发现结束立即 Collect Rewards → Next（此前全堆重扫让撤退后的操作拖慢约 75s）
 - **界面识别**：模板匹配 `end_turn` / `collect_rewards` / `next` / `play` / `never_seen` / `tap_to_snap`（阈值 0.75）；

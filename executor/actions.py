@@ -234,6 +234,29 @@ class Executor:
         time.sleep(0.4)
         raise ActionFailed(f"长按 {card_id} 后未激活")
 
+    def move(self, card_id: str, from_loc: int, to_loc: int) -> None:
+        """把我方场上牌从一个地点拖到另一个地点（场地允许移入 / 卡牌 Moveable），用内存确认它出现在目标地点。"""
+        s = _live(self.snapshot())
+        mine = s["locations"][from_loc]["my_cards"]
+        i, card = next(((i, c) for i, c in enumerate(mine) if c.get("id") == card_id), (None, None))
+        if card is None:
+            raise ActionFailed(f"地点{from_loc} 没有 {card_id}：{[c.get('id') for c in mine]}")
+        entity = card["entity"]
+        slot = card["pos"] if card.get("pos") in (0, 1, 2, 3) else i
+        assert self.rect is not None
+        src = self.rect.to_px(*board_slot_pos(from_loc, slot))
+        dst = self.rect.to_px(*LOCATION_DROP[to_loc])
+        log.info("移动 %s 地点%d(第%d格) -> 地点%d  %s -> %s", card_id, from_loc, slot, to_loc, src, dst)
+        if self.dry_run:
+            return
+        for drop in (dst, self.rect.to_px(LOCATION_DROP[to_loc][0], DROP_Y_FALLBACK)):
+            self._guard()
+            mouse.drag(src, drop)
+            if self._wait(lambda s2: any(c.get("entity") == entity for c in s2["locations"][to_loc]["my_cards"])):
+                return
+        self.save_evidence(f"move_failed_T{s.get('turn')}_{card_id}")
+        raise ActionFailed(f"{card_id} 没能移到地点{to_loc}")
+
     def retreat(self) -> None:
         """点左下 RETREAT，用内存确认（我方 Conceded 或对局结束）。
 

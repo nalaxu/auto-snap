@@ -20,7 +20,7 @@ from typing import Any
 
 from .. import rule_based, strategy
 from ..locations import phase
-from ..models import ActivateAction, GameState, PlayAction, TurnDecision
+from ..models import ActivateAction, GameState, MoveAction, PlayAction, TurnDecision
 from ..validator import activatable, validate
 from .base import LLMClient, LLMError, TaskConfig
 
@@ -79,6 +79,10 @@ SYSTEM = """你是《漫威终极逆转》（Marvel Snap 国服）的顶尖玩�
 5. activate：「激活」（Activate）类场上牌不在打出当回合生效，之后的回合可以主动激活一次触发效果（如 Danger：
    摧毁此处一张战力比它低的敌方牌）。activatable 列出本回合可激活的我方场上牌及其能力；判断现在激活是否有利
    （目标是否存在、时机是否最佳——有的效果留到后面更好），要激活就写进 activate（card + location）。激活先于本回合出牌执行。
+   激活不花能量、每张只能一次：留到终局还没用就是白白浪费，最迟最后一回合必须激活（除非激活会让我方输掉某一路）。
+   场地也可能给双方各一张激活牌（如 Kvch），一样要用。
+   moves：board_notes 出现【可移动·本回合】时（场地允许移入，如 New York 第 6 回合；或卡牌自带 Moveable），
+   判断移动能否多赢一路 / 守住一路，要移就写进 moves（card + from_location + to_location）。顺序：激活 → 移动 → 出牌。
 6. win_probability：按本回合出牌后的局面，估计我方最终赢下本局的概率（0–100 整数）。要现实：对手已揭示牌的威胁、
    对手剩余手牌数与能量、各路分差与空位、我方剩余回合能补的战力都要考虑。程序据此计算是否撤退（不要自己判断撤退）。
 deck_notes（如有）：我方卡组的整体打法与当前手牌要点、已识别出的对手卡组原型及应对，结合局面参考。
@@ -118,6 +122,15 @@ SCHEMA: dict[str, Any] = {
         "reason": {"type": "string"},
         "snap": {"type": "boolean"},
         "win_probability": {"type": "integer", "minimum": 0, "maximum": 100},
+        "moves": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {"card": {"type": "string"}, "from_location": _LOC, "to_location": _LOC},
+                "required": ["card", "from_location", "to_location"],
+                "additionalProperties": False,
+            },
+        },
         "activate": {
             "type": "array",
             "items": {
@@ -129,7 +142,7 @@ SCHEMA: dict[str, Any] = {
         },
     },
     "required": ["location_assessment", "target_locations", "plan", "actions", "reason", "snap", "win_probability",
-                 "activate"],
+                 "activate", "moves"],
     "additionalProperties": False,
 }
 
@@ -337,6 +350,7 @@ class LLMDecider:
                 p = d.get("win_probability")
                 decision = TurnDecision(actions=[PlayAction(**a) for a in d["actions"]], reason=d["reason"],
                                         activate=[ActivateAction(**a) for a in d.get("activate") or []],
+                                        moves=[MoveAction(**m) for m in d.get("moves") or []],
                                         snap=bool(d.get("snap")) and state.can_snap,
                                         win_probability=p / 100 if isinstance(p, (int, float)) else None,
                                         source=f"llm:{task.model}/{task.effort}")

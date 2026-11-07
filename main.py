@@ -365,6 +365,8 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
             stake = f" 赌注{state.cube_stake}" + ("（对手已 Snap）" if state.opp_snapped else "")
             if state.turn_seconds_left is not None:
                 stake += f" 计时{state.turn_seconds_left:.0f}/{state.turn_seconds_total:.0f}s"
+            if d.moves:
+                acts = "移动 " + ", ".join(f"{m.card}:{m.from_location}→{m.to_location}" for m in d.moves) + "；" + acts
             if d.activate:
                 acts = "激活 " + ", ".join(f"{a.card}@地点{a.location}" for a in d.activate) + "；" + acts
             print(f"T{state.turn} 能量{state.energy}{stake} [{d.source} {dec_s:.1f}s] {acts}" + ("  + SNAP" if d.snap else ""))
@@ -419,6 +421,17 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                     except ActionFailed as e:
                         executed.append({"activate": a.card, "location": a.location, "ok": False, "error": str(e)})
                         print(f"  ⚠ 激活失败：{e}")
+                for mv in d.moves:   # 激活 → 移动 → 出牌
+                    try:
+                        ex.move(mv.card, mv.from_location, mv.to_location)
+                        executed.append({"move": mv.card, "from": mv.from_location, "to": mv.to_location, "ok": True})
+                        print(f"  ⇄ 移动 {mv.card}：地点{mv.from_location} → 地点{mv.to_location}")
+                        time.sleep(0.4)
+                    except GameOver:
+                        raise
+                    except ActionFailed as e:
+                        executed.append({"move": mv.card, "ok": False, "error": str(e)})
+                        print(f"  ⚠ 移动失败：{e}")
                 for a in d.actions:
                     ex.play(a.card, a.location)
                     executed.append({"card": a.card, "location": a.location, "ok": True})

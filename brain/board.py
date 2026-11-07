@@ -30,20 +30,26 @@ class BoardTracker:
         self.game_id: str | None = None
         self.first_turn: int | None = None
         self.played: dict[tuple, int | None] = {}
+        self.opp_spent: dict[int, int] = {}
 
     def update(self, game_id: str, state: GameState) -> GameState:
         db = self.db or knowledge.default_db()
         if game_id != self.game_id:
-            self.game_id, self.first_turn, self.played = game_id, state.turn, {}
+            self.game_id, self.first_turn, self.played, self.opp_spent = game_id, state.turn, {}, {}
         for loc in state.locations:
             for side, cards in (("mine", loc.my_cards), ("opp", loc.opp_cards)):
                 for n, c in enumerate(cards):
                     key = (side, c.entity) if c.entity is not None else (side, loc.idx, c.id, n)
+                    if key not in self.played and side == "opp":
+                        t = c.turn_played or max(0, state.turn - 1)
+                        if t >= 1:   # 对手每张牌第一次出现时按打出回合累计费用（之后被摧毁也算在内）
+                            self.opp_spent[t] = self.opp_spent.get(t, 0) + c.cost
                     if key not in self.played:
                         # 中途接管时，首个局面里已在场上的牌回合未知
                         self.played[key] = None if state.turn == self.first_turn and state.turn > 1 else max(0, state.turn - 1)
                     if c.turn_played is None:   # 内存读到的揭示回合（TurnRevealed）优先
                         c.turn_played = self.played[key]
+        state.opp_energy_by_turn = dict(self.opp_spent)
         state.board_notes = build_notes(state, db)
         return state
 
@@ -124,5 +130,39 @@ def build_notes(state: GameState, db: knowledge.GameDB) -> list[str]:
                 left = min(t for t in turns if t >= state.turn) - state.turn
                 when = "本回合" if left == 0 else f"{left} 回合后"
                 loc_events.append(f"【场地事件·{when}】{where}：{eff}")
-    notes = pending + ongoing + opp_new + loc_events
+    actionable = _actionable_notes(state, db)
+    tempo = _opp_tempo_note(state)
+    notes = actionable + pending + ongoing + opp_new + tempo + loc_events
     return notes[:MAX_NOTES]
+
+
+def _opp_tempo_note(state: GameState) -> list[str]:
+    """对手节奏：近 3 回合能量利用（已揭示牌费用 / 回合能量）与摧毁 combo 次数，用来判断对手起手好坏、估计胜率。"""
+    turns = [t for t in range(max(1, state.turn - 3), state.turn)]
+    if not turns:
+        return []
+    used = ", ".join(f"T{t} {state.opp_energy_by_turn.get(t, 0)}/{t}" for t in turns)
+    combo = f"；摧毁 combo {state.opp_destroyed} 次" if state.opp_destroyed else ""
+    return [f"【对手节奏】能量利用 {used}（只计已揭示的牌）{combo}"]
+
+
+def _actionable_notes(state: GameState, db: knowledge.GameDB) -> list[str]:
+    """本回合可以主动做的事（不花能量，不做就浪费）：可激活的场上牌、场地允许的移动。"""
+    from .location_rules import move_targets
+    from .validator import activatable
+
+    final = state.turn >= state.max_turn
+    out = []
+    for loc in state.locations:
+        where = _where(loc.idx, loc.name)
+        for c in activatable(state, loc):
+            out.append(f"【可激活{'·最后机会' if final else ''}】{where} 我方 {c.id}：{db.ability(c.id)}"
+                       + ("（不激活就浪费）" if final else ""))
+    moves: dict[int, list[str]] = {}
+    for loc in state.locations:
+        for c in loc.my_cards:
+            for to in move_targets(state, c, loc.idx):
+                moves.setdefault(to, []).append(f"{c.id}@地点{loc.idx}")
+    for to, cards in moves.items():
+        out.append(f"【可移动·本回合】可把我方牌移到 {_where(to, state.locations[to].name)}：{', '.join(cards)}（写进 moves）")
+    return out

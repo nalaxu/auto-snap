@@ -103,3 +103,23 @@ def blocked_reason(state: GameState, card: Card, loc_idx: int) -> str | None:
 
 def can_play(state: GameState, card: Card, loc_idx: int) -> bool:
     return blocked_reason(state, card, loc_idx) is None
+
+
+def move_targets(state: GameState, card: Card, from_idx: int) -> list[int]:
+    """我方场上牌本回合可以移到哪些地点：卡牌自带 Moveable，或目标场地本回合允许移入（如 New York 第 6 回合）。
+    本回合刚打出的牌（还没揭示）不能移动；目标要有空位。"""
+    if card.turn_played is None or card.turn_played >= state.turn:
+        return []
+    db = knowledge.default_db()
+    self_moveable = "moveable" in (db.ability(card.id) or "").lower()
+    out = []
+    for loc in state.locations:
+        if loc.idx == from_idx or loc.my_slots_free <= 0:
+            continue
+        ok = self_moveable
+        if not ok and loc.revealed and loc.name:
+            allowed, turn = knowledge.parse_move_to(db.location_effect(loc.name))
+            ok = allowed and (turn is None or turn == state.turn)
+        if ok:
+            out.append(loc.idx)
+    return out

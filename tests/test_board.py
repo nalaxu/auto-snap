@@ -82,3 +82,31 @@ def test_shuri_next_card_note_and_reorder():
     d = TurnDecision(actions=[PlayAction(card="Quinjet", location=0), PlayAction(card="WeaponH", location=2)])
     assert reorder_for_next_card(st, d)
     assert [a.card for a in d.actions] == ["WeaponH", "Quinjet"]
+
+
+def test_location_move_activation_and_tempo_notes():
+    """用户复盘（88c25f44）：Kvch 给的 Fan Fei 没激活、New York 第 6 回合可移动没用上；要点栈要列出可做的事。"""
+    from brain.board import build_notes
+    from brain.knowledge import default_db
+    from brain.location_rules import move_targets
+    from brain.models import Card, GameState, Location, MoveAction, TurnDecision
+    from brain.validator import validate
+
+    fanfei = Card(id="FanFei", cost=1, power=1, entity=3, turn_played=2, activated=False, slot=0)
+    kah = Card(id="Kahhori", cost=4, power=7, entity=4, turn_played=4, activated=False, slot=1)
+    spidey = Card(id="SpiderMan", cost=2, power=4, entity=5, turn_played=3, activated=False, slot=0)
+
+    def st(turn):
+        return GameState(turn=turn, energy=turn, hand=[], opp_destroyed=3, opp_energy_by_turn={4: 4, 5: 3},
+                         locations=[Location(idx=0, name="TinkerersWorkshop"),
+                                    Location(idx=1, name="Kvch", my_cards=[fanfei, kah]),
+                                    Location(idx=2, name="NewYork", my_cards=[spidey])])
+
+    s6 = st(6)
+    notes = build_notes(s6, default_db())
+    assert any("可激活·最后机会" in n and "FanFei" in n for n in notes)
+    assert any("可移动·本回合" in n and "NewYork" in n and "Kahhori" in n for n in notes)
+    assert any("对手节奏" in n and "T5 3/5" in n and "摧毁 combo 3 次" in n for n in notes)
+    assert move_targets(s6, kah, 1) == [2] and move_targets(st(5), kah, 1) == []      # 只有第 6 回合能移到 New York
+    assert not validate(s6, TurnDecision(moves=[MoveAction(card="Kahhori", from_location=1, to_location=2)]))
+    assert validate(st(5), TurnDecision(moves=[MoveAction(card="Kahhori", from_location=1, to_location=2)]))
