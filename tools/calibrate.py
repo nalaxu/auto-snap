@@ -29,10 +29,17 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--hand", type=int, default=0, help="手牌张数（默认从内存读取）")
     ap.add_argument("--no-memory", action="store_true")
+    ap.add_argument("--client", help="cn_steam / cn_official / global / auto（默认 config [game].client）")
     args = ap.parse_args()
 
+    import tomllib
+
+    import clients
+    settings = tomllib.loads((Path(__file__).resolve().parent.parent / "config" / "settings.toml").read_text("utf-8"))
+    client = clients.resolve(settings, args.client)
+    print(f"客户端：{client.describe()}")
     mouse.enable_dpi_awareness()
-    hwnd = find_window()
+    hwnd = find_window(client)
     r = client_rect(hwnd)
     print(f"客户区: {r}")
     hand_ids: list[str] = []
@@ -40,7 +47,7 @@ def main() -> None:
         try:
             from perception.memory_source import MemoryStateSource
 
-            src = MemoryStateSource()
+            src = MemoryStateSource(client)
             s = src.snapshot()
             src.close()
             if s:

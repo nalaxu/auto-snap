@@ -25,8 +25,11 @@ log = logging.getLogger(__name__)
 
 
 class MemoryStateSource:
-    def __init__(self, process_name: str = "SnapCN.exe", reattach_cooldown_s: float = 15.0):
-        self.process_name = process_name
+    def __init__(self, client="SnapCN.exe", reattach_cooldown_s: float = 15.0):
+        """client：clients.ClientProfile（推荐）或进程名。"""
+        self.client = client
+        self.process_name = getattr(client, "process_name", client)
+        self.states_dir = getattr(client, "states_dir", None)
         self.reattach_cooldown_s = reattach_cooldown_s
         self.reader: SnapMemoryReader | None = None
         self._next_attach = 0.0
@@ -48,7 +51,7 @@ class MemoryStateSource:
             return None
         self._next_attach = time.time() + self.reattach_cooldown_s
         try:
-            self.reader = SnapMemoryReader(self.process_name)
+            self.reader = SnapMemoryReader(self.client)
             self.reader.resolve_classes()
             log.info("已附加 %s pid=%s（只读）", self.process_name, self.reader.p.pid)
         except (ProcessNotFound, OSError, RuntimeError) as e:
@@ -77,7 +80,7 @@ class MemoryStateSource:
             return None
         if snap["game_id"] != self._deck_game_id:  # 新对局：重新读取当前卡组
             self._deck_game_id = snap["game_id"]
-            self.deck_name, self.deck = load_current_deck()
+            self.deck_name, self.deck = load_current_deck(self.states_dir) if self.states_dir else load_current_deck()
             log.info("新对局 %s，卡组「%s」%d 张", snap["game_id"][:8], self.deck_name, len(self.deck))
         self.last_snapshot = snap
         return snap
@@ -97,6 +100,10 @@ class MemoryStateSource:
         if not snap or not self.gate.ready(snap):
             return None
         return to_game_state(snap, self.deck)
+
+
+def known_card(card_id) -> bool:
+    return bool(card_id) and card_id != "None"
 
 
 def is_my_turn(snap: dict) -> bool:
@@ -139,6 +146,9 @@ class TurnGate:
         if tk != self._turn_key:  # 第一次看到这个回合：记下回合开始时的牌库张数
             self._turn_key, self._deck_at_start, self._energy_ready_at = tk, me.get("deck_count"), None
         if (me.get("max_energy") or 0) < turn:
+            return False
+        # 开局时手牌对象已在，但 CardDefId 还是占位 "None"（官网版实测 T1 出现）：等真实卡牌到位
+        if any(not known_card(c.get("id")) for c in me.get("hand", [])):
             return False
         if self._energy_ready_at is None:
             self._energy_ready_at = now

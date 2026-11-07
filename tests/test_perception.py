@@ -107,3 +107,19 @@ def test_turn_gate_draw_timeout_fallback():
     assert not g.ready(s)
     clk.t = 5.1
     assert g.ready(s)
+
+
+def test_turn_gate_waits_for_real_hand_ids():
+    """官网版 T1：手牌对象已在但 CardDefId 仍是占位 "None"，不能决策。"""
+    clk = Clock()
+    g = TurnGate(draw_timeout_s=5, settle_s=0.3, clock=clk)
+    placeholder = snap(turn=1, me={**snap()["me"], "energy": 1, "max_energy": 1, "ended_turn": 0,
+                                   "hand": [card("None", 0, 0, entity=i) for i in range(4)]})
+    assert not g.ready(placeholder)
+    clk.t = 10
+    assert not g.ready(placeholder)              # 即使超过抽牌兜底时间也不放行
+    real = snap(turn=1, me={**snap()["me"], "energy": 1, "max_energy": 1, "ended_turn": 0,
+                            "hand": [card(c, 1, 1, entity=i) for i, c in enumerate(DECK[:4])]})
+    g.ready(real)
+    clk.t = 10.5
+    assert g.ready(real)

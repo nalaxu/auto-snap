@@ -50,10 +50,17 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--watch", type=int, default=0, metavar="SECONDS")
     ap.add_argument("--interval", type=float, default=0.5)
+    ap.add_argument("--client", help="cn_steam / cn_official / global / auto（默认 config [game].client）")
     args = ap.parse_args()
 
+    import tomllib
+
+    import clients
+    settings = tomllib.loads((ROOT / "config" / "settings.toml").read_text("utf-8"))
+    client = clients.resolve(settings, args.client)
+    print(f"客户端：{client.describe()}")
     t0 = time.time()
-    r = SnapMemoryReader()
+    r = SnapMemoryReader(client)
     print(f"已附加 pid={r.p.pid}（只读）")
     strings = r.il.metadata_strings()
     print(f"metadata 字符串表 @0x{strings[0]:x} size={strings[1]}")

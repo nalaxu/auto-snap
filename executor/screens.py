@@ -48,14 +48,26 @@ class Match:
 
 
 _templates: dict[str, np.ndarray] = {}
+_template_dirs: list[Path] = [TEMPLATE_DIR]
+
+
+def set_template_dirs(dirs: list[Path]) -> None:
+    """按客户端切换界面模板：依次查找，前面的目录优先（客户端专用 → 共享）。"""
+    global _template_dirs
+    _template_dirs = [Path(d) for d in dirs] or [TEMPLATE_DIR]
+    _templates.clear()
 
 
 def _load() -> dict[str, np.ndarray]:
     if not _templates:
         for name in ROIS:
-            t = cv2.imread(str(TEMPLATE_DIR / f"{name}.png"))
-            if t is not None:
-                _templates[name] = t
+            for d in _template_dirs:
+                path = d / f"{name}.png"
+                # cv2.imread 不支持中文路径：用 imdecode
+                t = cv2.imdecode(np.fromfile(str(path), np.uint8), cv2.IMREAD_COLOR) if path.exists() else None
+                if t is not None:
+                    _templates[name] = t
+                    break
     return _templates
 
 

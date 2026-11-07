@@ -1,9 +1,40 @@
 [game]
-steam_app_id = 2955370
+# 当前客户端：cn_steam | cn_official | global | auto（auto = 第一个正在运行的）
+# 也可用命令行 --client 或环境变量 SNAP_CLIENT 临时切换；python main.py clients 查看各客户端状态
+client = "cn_official"
+default_client = "cn_official"   # auto 且都没运行时用这个
+
+# 两个国服版进程都叫 SnapCN.exe：用安装目录里的标志文件区分（Steam 渠道带 NtUniSdkSteam.dll）。
+# 也可以填 install_dir 精确指定安装目录。templates_dir 放该客户端专用的界面模板，缺的按钮回落到 data/templates/ui。
+[game.clients.cn_steam]
+label = "国服 · Steam 渠道"
 process_name = "SnapCN.exe"
-window_title = ""            # P1 标定后填写
-# 国服 Unity persistentDataPath（由 SnapCN_Data/app.info 推出：NetEase / SnapCN）
+steam_app_id = 2955370
+require_files = ["NtUniSdkSteam.dll"]
+# Unity persistentDataPath（由 SnapCN_Data/app.info 推出：NetEase / SnapCN）
 data_dir = "%USERPROFILE%/AppData/LocalLow/NetEase/SnapCN"
+region = "cn"
+verified = true               # 10 局实战验证（2026-11-07）
+
+[game.clients.cn_official]
+label = "国服 · 官网（网易账号）"
+process_name = "SnapCN.exe"   # 待官网版安装后用 tools/detect_client.py 确认
+exclude_files = ["NtUniSdkSteam.dll"]
+install_dir = ""              # 可选：官网版安装目录
+data_dir = "%USERPROFILE%/AppData/LocalLow/NetEase/SnapCN"
+templates_dir = "data/templates/ui_cn_official"
+region = "cn"
+verified = true               # 2026-11-07 实战验证（共享界面模板可用）
+
+[game.clients.global]
+label = "国际服 · Steam"
+process_name = "SNAP.exe"
+steam_app_id = 1997040
+data_dir = "%USERPROFILE%/AppData/LocalLow/Second Dinner/SNAP"
+states_subdir = "Standalone/States/nvprod"
+templates_dir = "data/templates/ui_global"
+region = "global"
+verified = false
 
 [display]
 resolution = [1920, 1080]     # 建议固定窗口化分辨率

@@ -1,6 +1,6 @@
 # Auto-Snap
 
-《漫威终极逆转》（国服 Marvel Snap，Steam appid 2955370）竞技场模式全自动对局：
+《漫威终极逆转》（国服 Marvel Snap：Steam 渠道 appid 2955370 / 官网网易账号版）竞技场模式全自动对局：
 只读读取游戏内存感知局面 → 大模型逐回合决策（规则 AI 兜底）→ 模拟鼠标出牌 → 自动结算、开下一局。
 
 > ⚠️ 自动化对局可能违反游戏用户协议，存在封号风险，请使用小号。
@@ -37,6 +37,29 @@ python main.py auto --live --decider rule_based --max-games 1   # 只用规则 A
 每局记录写入 `logs/games/<时间>_<对局id>.jsonl`（局面、场上要点、决策、模型原始输出、执行结果），
 控制台输出建议重定向到 `logs/run_*.txt` 便于复盘。
 
+## 客户端切换
+
+支持多个客户端，配置在 `config/settings.toml` 的 `[game]` / `[game.clients.*]`（`clients/__init__.py`）：
+
+| key | 客户端 | 进程 / 区分方式 | 状态 |
+|---|---|---|---|
+| `cn_official` | 国服官网版（网易账号，网易发烧游戏启动器，如 `E:\FeverApps\MarvelSnap`） | `SnapCN.exe`，目录里**没有** `NtUniSdkSteam.dll` | **当前默认**；2026-11-07 实战 2 胜（内存读取、共享界面模板、出牌、结算全流程） |
+| `cn_steam` | 国服 Steam 渠道（Steam 账号登录） | `SnapCN.exe`，目录里有 `NtUniSdkSteam.dll` | 10 局实战验证 |
+| `global` | 国际服 Steam | `SNAP.exe`，数据目录 `Second Dinner/SNAP` | 预留，未实测 |
+
+- 两个国服版进程同名、共用数据目录 `LocalLow/NetEase/SnapCN`、IL2CPP 类与字段一致（按名字解析，不受构建差异影响）
+- 选择优先级：`--client` > 环境变量 `SNAP_CLIENT` > `[game].client`；`auto` = 第一个正在运行的
+- 每个客户端可配 `templates_dir`（专用界面模板，缺的按钮回落到 `data/templates/ui`）、`install_dir`（精确指定安装目录）
+- 对局记录 `game_start` 带 `client` 字段
+- 我方玩家按「手牌 CardDefId 已知张数多的一方」识别（对手手牌读出来是 `"None"`）；`ClientGameInfo` 投票只作兜底——堆里残留的旧对局会把投票带偏（EntityId 每局复用）
+
+```bash
+python main.py clients                          # 各客户端是否运行、卡组目录是否存在
+python tools/detect_client.py                   # 新装客户端后：查看进程路径、标志文件、匹配的配置档
+python main.py observe --client cn_official -v
+python tools/mem_explore.py --client cn_steam   # 工具同样支持 --client（mem_explore / calibrate）
+```
+
 ## 一局的流程
 
 ```
@@ -55,6 +78,7 @@ python main.py auto --live --decider rule_based --max-games 1   # 只用规则 A
 | 路径 | 内容 |
 |---|---|
 | `main.py` | 入口：`observe` / `auto`（对局循环、界面流程、提示处理、对局记录） |
+| `clients/` | 客户端配置档：进程匹配（同名进程按安装目录标志文件区分）、数据目录、界面模板目录、区域 |
 | `perception/memory/` | IL2CPP 运行时按名字解析类/字段（不硬编码偏移）+ 只读内存读取（`snap.py`） |
 | `perception/memory_source.py` | 状态来源：可出牌时返回 `GameState`；`TurnGate` 等能量补满、抽牌完成、状态稳定 |
 | `perception/deck.py` | 读取当前卡组（推算剩余牌库） |
@@ -144,6 +168,7 @@ python main.py auto --live --decider rule_based --max-games 1   # 只用规则 A
 | `python tools/llm_check.py` | 大模型连通性与结构化输出测试 |
 | `python tools/llm_trial.py` | 离线试验场地分析 / 逐回合对比 |
 | `python tools/mem_explore.py --watch 600` | 内存读取探测（对局中实时打印状态变化） |
+| `python tools/detect_client.py [--dir 安装目录]` | 检测本机客户端与配置档匹配 |
 | `python tools/calibrate.py` | 截游戏窗口并画出所有坐标，核对布局标定 |
 | `python tools/probe_state_files.py`、`watch_live.py` | P0 状态文件调研 |
 

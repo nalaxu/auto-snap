@@ -55,11 +55,17 @@ class ProcessNotFound(RuntimeError):
 
 
 class Process:
-    def __init__(self, name: str = "SnapCN.exe"):
-        procs = [p for p in psutil.process_iter(["name"]) if (p.info["name"] or "").lower() == name.lower()]
-        if not procs:
-            raise ProcessNotFound(f"{name} 未运行")
-        self.pid = procs[0].pid
+    def __init__(self, name="SnapCN.exe"):
+        """name：进程名，或 clients.ClientProfile（按进程名 + 安装目录标志文件区分同名的不同渠道客户端）。"""
+        if hasattr(name, "find_pids"):
+            pids = name.find_pids()
+            label = name.describe()
+        else:
+            pids = [p.pid for p in psutil.process_iter(["name"]) if (p.info["name"] or "").lower() == name.lower()]
+            label = name
+        if not pids:
+            raise ProcessNotFound(f"{label} 未运行")
+        self.pid = pids[0]
         self.handle = _k32.OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, False, self.pid)
         if not self.handle:
             raise C.WinError(C.get_last_error())

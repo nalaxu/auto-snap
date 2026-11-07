@@ -7,6 +7,7 @@
 """
 from __future__ import annotations
 
+import logging
 import time
 
 from brain.models import Card, GameState, Location
@@ -27,18 +28,23 @@ CLASSES = [
 ]
 
 
+log = logging.getLogger(__name__)
+
+
 class NotInGame(RuntimeError):
     pass
 
 
 class SnapMemoryReader:
-    def __init__(self, process_name: str = "SnapCN.exe", rescan_interval: float = 5.0):
+    def __init__(self, process_name="SnapCN.exe", rescan_interval: float = 5.0):
+        """process_name：进程名或 clients.ClientProfile。"""
         self.p = Process(process_name)
         self.il = Il2Cpp(self.p)
         self.classes: dict = {}
         self.game = 0
         self.game_id: str | None = None
         self.local_id: int | None = None
+        self._local_confirmed = False   # 已用手牌证据确认我方（否则每次快照重试）
         self.rescan_interval = rescan_interval
         self._last_scan = 0.0
         self._stale_ids: set[str] | None = None
@@ -131,9 +137,30 @@ class SnapMemoryReader:
         )
         best = fresh[0]
         self.game, self.game_id = best["addr"], best["id"]
-        ids = {self.il.get_int(p, "EntityId") for p in self.il.list_ptrs(self.il.get_ptr(self.game, "_players"))}
-        self.local_id = self._local_player_id(ids)
+        self._resolve_local()
         return True
+
+    def _known_hand(self, pl: int) -> int:
+        """该玩家手牌中 CardDefId 已知的张数。客户端只知道我方手牌，对手手牌读出来是 "None"。"""
+        il = self.il
+        cards = il.list_ptrs(il.get_ptr(il.get_ptr(pl, "Hand"), "_cards"), limit=16)
+        return sum(1 for c in cards if (il.get_str(c, "CardDefId") or "None") != "None")
+
+    def _resolve_local(self, vote: bool = True) -> None:
+        """确定我方 EntityId：优先用手牌证据（已知牌更多的一方）；没有证据时退回 ClientGameInfo 投票。
+
+        投票会被堆里残留的旧对局 ClientGameInfo 带偏（EntityId 在每局之间复用），官网版实测出现过把对手当成我方。
+        """
+        players = self.il.list_ptrs(self.il.get_ptr(self.game, "_players"))
+        ids = [self.il.get_int(p, "EntityId") for p in players]
+        known = [self._known_hand(p) for p in players]
+        if len(players) == 2 and known[0] != known[1] and max(known) > 0:
+            lid = ids[known.index(max(known))]
+            if lid != self.local_id and self.local_id is not None:
+                log.warning("我方玩家修正：EntityId %s -> %s（手牌已知张数 %s）", self.local_id, lid, dict(zip(ids, known)))
+            self.local_id, self._local_confirmed = lid, True
+        elif vote:  # 扫描整个堆，开销大：只在选定对局时做一次
+            self.local_id, self._local_confirmed = self._local_player_id(set(ids)), False
 
     # ------------------------------------------------------------ 新手指引
     def _is_tutorial_mgr(self, m: int) -> bool:
@@ -197,6 +224,8 @@ class SnapMemoryReader:
     def snapshot(self) -> dict:
         if not self.select_game():
             raise NotInGame("当前不在对局中")
+        if not self._local_confirmed:
+            self._resolve_local(vote=False)
         il, g = self.il, self.game
         players = il.list_ptrs(il.get_ptr(g, "_players"))
         pid = [il.get_int(p, "EntityId") for p in players]

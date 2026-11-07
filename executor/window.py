@@ -16,7 +16,7 @@ class WindowNotFound(RuntimeError):
     pass
 
 
-_cache: dict[str, int] = {}
+_cache: dict = {}
 
 
 def _proc_name(pid: int) -> str:
@@ -26,9 +26,14 @@ def _proc_name(pid: int) -> str:
         return ""
 
 
-def find_window(process_name: str = "SnapCN.exe") -> int:
-    """定位游戏主窗口。缓存句柄，仅在失效时重新查找（遍历全部进程在本机需 ~7s，不能每次都做）。"""
-    h = _cache.get(process_name)
+def find_window(process_name="SnapCN.exe") -> int:
+    """定位游戏主窗口。process_name：进程名或 clients.ClientProfile。
+    缓存句柄，仅在失效时重新查找（遍历全部进程在本机需 ~7s，不能每次都做）。"""
+    client = process_name if hasattr(process_name, "matches_pid") else None
+    if client:
+        process_name = client.process_name
+    cache_key = client.key if client else process_name
+    h = _cache.get(cache_key)
     if h and win32gui.IsWindow(h) and win32gui.IsWindowVisible(h):
         return h
     found: list[tuple[int, int]] = []
@@ -38,6 +43,8 @@ def find_window(process_name: str = "SnapCN.exe") -> int:
             return True
         pid = win32process.GetWindowThreadProcessId(h)[1]
         if _proc_name(pid).lower() != process_name.lower():
+            return True
+        if client and not client.matches_pid(pid):   # 同名进程的其他渠道客户端
             return True
         if win32gui.IsIconic(h):   # 最小化时客户区为 0，仍算找到（需要操作时 bring_to_front 会还原）
             found.append((1, h))
@@ -49,10 +56,11 @@ def find_window(process_name: str = "SnapCN.exe") -> int:
 
     win32gui.EnumWindows(cb, None)
     if not found:
-        _cache.pop(process_name, None)
-        raise WindowNotFound(f"{process_name} 没有可见的游戏窗口（未运行或已关闭）")
-    _cache[process_name] = max(found)[1]
-    return _cache[process_name]
+        _cache.pop(cache_key, None)
+        label = client.describe() if client else process_name
+        raise WindowNotFound(f"{label} 没有可见的游戏窗口（未运行或已关闭）")
+    _cache[cache_key] = max(found)[1]
+    return _cache[cache_key]
 
 
 def client_rect(hwnd: int) -> Rect:

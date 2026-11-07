@@ -3,6 +3,8 @@
     python main.py observe                      # 观察模式：感知 -> 决策，只打印建议，不操作鼠标
     python main.py auto -v                      # 自动模式演练：打印每个鼠标动作，不动鼠标
     python main.py auto --live --max-turns 1 -v # 实操：只自动打 1 个回合（按住 F8 中止）
+    python main.py clients                      # 列出可用客户端及运行状态
+    python main.py auto --client cn_official -v # 指定客户端（默认取 config 的 [game].client，可设 SNAP_CLIENT）
 """
 from __future__ import annotations
 
@@ -21,6 +23,33 @@ def load_settings() -> dict:
         return tomllib.load(f)
 
 
+def select_client(settings: dict, override: str | None = None):
+    """解析当前客户端，并把客户端相关的全局设置（界面模板）切过去。"""
+    import clients
+    from executor import screens
+
+    client = clients.resolve(settings, override)
+    screens.set_template_dirs(client.template_dirs)
+    running = "运行中" if client.running() else "未运行"
+    print(f"客户端：{client.describe()}，{running}")
+    if not client.verified:
+        print("  ⚠ 该客户端尚未实测，内存读取 / 界面识别可能需要适配（先用 observe 模式核对）")
+    return client
+
+
+def list_clients(settings: dict) -> None:
+    import clients
+
+    current = clients.selected_key(settings)
+    print(f"当前选择：{current}（命令行 --client / 环境变量 SNAP_CLIENT / config [game].client）")
+    for key, c in clients.profiles(settings).items():
+        pids = c.find_pids()
+        mark = "*" if key == current else " "
+        state = f"运行中 pid={pids}" if pids else "未运行"
+        print(f" {mark} {key:12s} {c.label}  进程 {c.process_name}  {state}"
+              f"  {'已实测' if c.verified else '未实测'}  卡组目录 {'✓' if c.states_dir.exists() else '✗'} {c.states_dir}")
+
+
 def make_decider(settings: dict):
     """-> (decide 函数, 决策器对象或 None)。decider = "llm" 时用大模型（含场地分析），未配置密钥则退回规则 AI。"""
     from brain import llm, rule_based
@@ -33,11 +62,11 @@ def make_decider(settings: dict):
     return rule_based.decide, None
 
 
-def observe(settings: dict, interval: float = 0.5) -> None:
+def observe(settings: dict, interval: float = 0.5, client=None) -> None:
     from brain.validator import validate
     from perception import make_state_source
 
-    source = make_state_source(settings)
+    source = make_state_source(settings, client)
     decide, _ = make_decider(settings)
     last_key = None
     print("观察模式：轮到我方出牌时打印局面与建议（Ctrl+C 退出）")
@@ -74,7 +103,8 @@ def observe(settings: dict, interval: float = 0.5) -> None:
             source.close()
 
 
-def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = False, max_games: int = 0) -> None:
+def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = False, max_games: int = 0,
+         client=None) -> None:
     """自动对局：感知 -> 决策 -> 执行 -> 结束回合；对局外按界面识别处理 结算(Collect Rewards) -> 奖励(Next) -> 主界面(Play)。"""
     from brain import rule_based
     from brain.validator import validate
@@ -87,13 +117,15 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
     from brain.locations import LocationAdvisor, phase
     from gamelog.recorder import GameRecorder
 
-    source = make_state_source(settings)
+    if client is None:
+        client = select_client(settings)
+    source = make_state_source(settings, client)
     advisor = LocationAdvisor()            # 知识库（场地分析已并入大模型逐回合决策）
     strategy.set_default_advisor(advisor)
-    rec = GameRecorder()
+    rec = GameRecorder(client=client.key)
     board = BoardTracker()                 # 场上要点（消息栈）：每回合重建
     decide, decider = make_decider(settings)
-    ex = Executor(source.snapshot, settings.get("game", {}).get("process_name", "SnapCN.exe"), dry_run=not live)
+    ex = Executor(source.snapshot, client, dry_run=not live)
     done: set[tuple] = set()
     failures: dict[tuple, int] = {}
     forbidden: dict[tuple, list[tuple[str, int]]] = {}   # (game, turn) -> 被拒的 (card, 地点)
@@ -162,14 +194,19 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
             time.sleep(2.5)
         elif m.name == "play" and press_play:
             wait_tutorial()
-            ex.click_rel(m.center, "PLAY")
-            end = time.time() + 10
-            while time.time() < end:  # 确认已离开主界面（进入匹配）
-                time.sleep(1)
-                m2 = ex.screen()
-                if not m2 or m2.name != "play":
-                    print("  ▶ 已点击 PLAY，匹配中…")
-                    break
+            # 匹配界面（Searching For Opponent）没有 PLAY 按钮，所以只要 PLAY 还在就说明点击没生效，可以立即重点；
+            # 不要在这里读内存（对局结束后的重扫会阻塞 10s 以上，拖慢重试）
+            for attempt in range(1, 4):
+                ex.click_rel(m.center, "PLAY" if attempt == 1 else f"PLAY（第 {attempt} 次）")
+                end = time.time() + 4
+                while time.time() < end:
+                    time.sleep(0.5)
+                    m2 = ex.screen()
+                    if not m2 or m2.name != "play":
+                        print("  ▶ 已点击 PLAY，匹配中…")
+                        return m.name
+                m = m2
+            print("  ⚠ 连点 3 次 PLAY 仍停在主界面")
         return m.name
 
     def back_to_menu(timeout_s: float = 90) -> None:
@@ -331,7 +368,8 @@ def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8", line_buffering=True)
     sys.stderr.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("mode", choices=["observe", "auto"], nargs="?", default="observe")
+    ap.add_argument("mode", choices=["observe", "auto", "clients"], nargs="?", default="observe")
+    ap.add_argument("--client", help="客户端：cn_steam / cn_official / global / auto（覆盖 config [game].client）")
     ap.add_argument("--live", action="store_true", help="auto 模式下真正操作鼠标（默认演练）")
     ap.add_argument("--max-turns", type=int, default=0, help="auto 模式执行 N 个回合后停止（0 = 不限）")
     ap.add_argument("--max-games", type=int, default=0, help="auto 模式打完 N 局后停止（0 = 不限）")
@@ -343,10 +381,15 @@ def main() -> None:
     settings = load_settings()
     if args.decider:
         settings.setdefault("brain", {})["decider"] = args.decider
+    if args.mode == "clients":
+        list_clients(settings)
+        return
+    client = select_client(settings, args.client)
     if args.mode == "auto":
-        auto(settings, live=args.live, max_turns=args.max_turns, skip_current=args.skip_current, max_games=args.max_games)
+        auto(settings, live=args.live, max_turns=args.max_turns, skip_current=args.skip_current, max_games=args.max_games,
+             client=client)
     else:
-        observe(settings)
+        observe(settings, client=client)
 
 
 if __name__ == "__main__":

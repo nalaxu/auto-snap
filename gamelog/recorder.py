@@ -42,8 +42,9 @@ def judge(final_locations: list[dict]) -> tuple[str, int, int]:
 
 
 class GameRecorder:
-    def __init__(self, root: Path = GAMES_DIR):
+    def __init__(self, root: Path = GAMES_DIR, client: str = ""):
         self.root = root
+        self.client = client
         self.root.mkdir(parents=True, exist_ok=True)
         self.files: dict[str, Path] = {}
         self.started: dict[str, str] = {}
@@ -67,7 +68,7 @@ class GameRecorder:
     def start(self, game_id: str, deck_name: str = "", deck: list[str] | None = None) -> None:
         if game_id in self.files:
             return
-        self._write(game_id, {"type": "game_start", "deck_name": deck_name, "deck": deck or []})
+        self._write(game_id, {"type": "game_start", "client": self.client, "deck_name": deck_name, "deck": deck or []})
 
     def turn(self, game_id: str, state: Any, decision: Any, locations: list[dict], executed: list[dict], outcome: str,
              llm: dict | None = None, decide_s: float | None = None) -> None:

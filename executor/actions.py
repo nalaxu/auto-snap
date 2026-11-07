@@ -36,7 +36,7 @@ class PlayRejected(ActionFailed):
 
 
 class Executor:
-    def __init__(self, snapshot: Callable[[], dict | None], process_name: str = "SnapCN.exe",
+    def __init__(self, snapshot: Callable[[], dict | None], process_name="SnapCN.exe",
                  dry_run: bool = False, verify_timeout_s: float = 2.5):
         mouse.enable_dpi_awareness()
         self.snapshot = snapshot
@@ -134,9 +134,11 @@ class Executor:
         log.info("点击 %s %s", what, pos)
         if self.dry_run:
             return
+        was_fg = is_foreground(self.hwnd)
         if not wait_foreground(self.hwnd):
             raise ActionFailed("游戏窗口未能切到前台")
-        time.sleep(0.1)
+        # 刚切到前台时 Unity 可能吞掉第一次点击：多等一会
+        time.sleep(0.1 if was_fg else 0.6)
         mouse.click(pos)
 
     # ------------------------------------------------------------ 动作
