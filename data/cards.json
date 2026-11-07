@@ -1,0 +1,15 @@
+{
+  "_schema": "CardDefId -> {type: vanilla(无能力)|on_reveal|ongoing|special, cost, power（基础值，实战观测）, ability, tags}。当前覆盖「入门卡组」12 张，可扩展。",
+  "Quicksilver": {"type": "special", "cost": 1, "power": 2, "ability": "Starts in your opening hand.", "tags": []},
+  "Hawkeye": {"type": "on_reveal", "cost": 1, "power": 1, "ability": "On Reveal: If you play a card here next turn, +3 Power.", "tags": ["wants_followup_here"]},
+  "Medusa": {"type": "on_reveal", "cost": 2, "power": 2, "ability": "On Reveal: If this is at the middle location, +3 Power.", "tags": ["prefers_middle"]},
+  "MistyKnight": {"type": "vanilla", "cost": 1, "power": 3, "ability": "", "tags": []},
+  "Cyclops": {"type": "vanilla", "cost": 3, "power": 5, "ability": "", "tags": []},
+  "Starlord": {"type": "on_reveal", "cost": 2, "power": 2, "ability": "On Reveal: If your opponent played a card here this turn, +3 Power.", "tags": ["wants_opp_play_here"]},
+  "Sentinel": {"type": "on_reveal", "cost": 2, "power": 3, "ability": "On Reveal: Add another Sentinel to your hand.", "tags": []},
+  "Punisher": {"type": "ongoing", "cost": 3, "power": 3, "ability": "Ongoing: +1 Power for each opposing card at this location.", "tags": ["ongoing"]},
+  "TheThing": {"type": "vanilla", "cost": 4, "power": 7, "ability": "", "tags": []},
+  "Gamora": {"type": "on_reveal", "cost": 5, "power": 8, "ability": "On Reveal: If your opponent played a card here this turn, +5 Power.", "tags": ["wants_opp_play_here"]},
+  "IronMan": {"type": "ongoing", "cost": 5, "power": 0, "ability": "Ongoing: Your total Power is doubled at this location.", "tags": ["ongoing", "doubles_location"]},
+  "Hulk": {"type": "vanilla", "cost": 6, "power": 14, "ability": "", "tags": []}
+}

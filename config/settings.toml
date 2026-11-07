@@ -1,0 +1,58 @@
+[game]
+steam_app_id = 2955370
+process_name = "SnapCN.exe"
+window_title = ""            # P1 标定后填写
+# 国服 Unity persistentDataPath（由 SnapCN_Data/app.info 推出：NetEase / SnapCN）
+data_dir = "%USERPROFILE%/AppData/LocalLow/NetEase/SnapCN"
+
+[display]
+resolution = [1920, 1080]     # 建议固定窗口化分辨率
+
+[brain]
+decider = "llm"               # llm（大模型逐回合决策，含场地分析；失败/超时由规则 AI 兜底）| rule_based
+
+# ---------------------------------------------------------------- 大模型（多厂商）
+# 密钥与地址放在项目根目录 .env（已 gitignore），参考 .env.example
+[llm]
+provider = "openai"           # openai（含所有兼容 OpenAI 协议的中转/厂商）| anthropic
+api = "auto"                  # openai 专用：responses | chat | auto（先试 Responses，不支持则回退 Chat Completions）
+api_key_env = "OPENAI_API_KEY"
+base_url_env = "OPENAI_BASE_URL"
+timeout_s = 60
+
+# 中转（sup2ai）2026-11-07 起 GPT-6 全系可用。场地分析已并入逐回合决策（场地只是决策因素之一，
+# 与比分、双方手牌/牌库、后续规划一起分析，减少信息传递与 token 消耗）。
+# 场地分析基准（7 个截图确认场地）：gpt-6.1-sol 6/7、gpt-6-astra 6/7、gpt-6-luna 5/7、gpt-5.6-terra 4/7
+[llm.tasks.decision]          # 逐回合决策（含场地分析）
+model = "gpt-6.1-sol"
+effort = "medium"             # 无回合计时的对局（新手局等）
+effort_timed = "low"          # 有回合计时的对局：实测 sol low 中位 10.7s（medium 17s，来不及）
+verbosity = "low"             # 实测（tools/bench_decision.py，18 回合）：中位 7.9→6.6s、p90 14.6→11.6s，决策质量不变
+deadline_s = 40               # 无计时：最多等 40s
+deadline_timed_s = 16         # 有计时 T1-T4：实测（2026-11-07，18 回合串行重放）中位 8.0s、p90 14.4s；实战偶有 12.5s 迟到
+deadline_late_s = 25          # 有计时 T5 起：实战 15-20s 常见，另留一次不合法重试的余量；官方回合约 1 分钟
+late_from_turn = 5
+max_output_tokens = 8000
+timeout_s = 45
+max_retries = 0
+
+# 一键切换：profile = "deepseek"（或环境变量 LLM_PROFILE）。2026-11-07 对比结论：不思考 1.9-3.6s 但不合法率高（费用算错），
+# 思考模式中位 28-45s 赶不上回合计时，暂不推荐用于逐回合决策。详见 logs/reports/bench_decision_*.json
+[llm.profiles.deepseek]
+api = "chat"
+api_key_env = "DEEPSEEK_API_KEY"
+base_url_env = "DEEPSEEK_API_URL"
+json_mode = "object"                      # DeepSeek 只支持 json_object
+extra_body = { thinking = { type = "disabled" } }
+[llm.profiles.deepseek.tasks.decision]
+model = "deepseek-v4-pro"
+effort = "off"
+verbosity = ""
+
+[llm.tasks.review]            # 赛后复盘 / 离线维护场地知识库
+model = "gpt-6.1-sol"
+effort = "high"
+timeout_s = 300
+
+[perception]
+source = "memory"             # memory（只读内存，已验证）| screen（截图 CV/OCR，未实现）

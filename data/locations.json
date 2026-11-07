@@ -1,0 +1,240 @@
+{
+  "_schema": "LocationDefId -> {effect, source, bias:{early(T1-3), mid(T4-5), final(最后回合)} 取值 -3..+3（正=利好往这里放牌）, tags, notes}",
+  "MuirIsland": {
+    "effect": "End of Turn: Give cards here +1 Power.",
+    "source": "screenshot",
+    "bias": {
+      "early": 2,
+      "mid": 1,
+      "final": 0
+    },
+    "tags": [
+      "buff_per_turn"
+    ],
+    "notes": "越早放收益越多（每回合结束 +1）。玩家经验：利好场地，尽量多放。"
+  },
+  "OnslaughtsCitadel": {
+    "effect": "Ongoing effects here are doubled.",
+    "source": "screenshot",
+    "bias": {
+      "early": 0,
+      "mid": 0,
+      "final": 0
+    },
+    "tags": [
+      "ongoing_double"
+    ],
+    "notes": "对持续(Ongoing)卡大幅利好（IronMan、Punisher），普通卡中性。"
+  },
+  "AvengersCompound": {
+    "effect": "On turn 5, all cards must be played here.",
+    "source": "screenshot",
+    "bias": {
+      "early": 0,
+      "mid": 0,
+      "final": 0
+    },
+    "tags": [
+      "restriction"
+    ],
+    "notes": "第 5 回合强制，由 location_rules 处理。"
+  },
+  "HellfireClub": {
+    "effect": "Cards that cost 1 can't be played here.",
+    "source": "screenshot",
+    "bias": {
+      "early": 0,
+      "mid": 0,
+      "final": 0
+    },
+    "tags": [
+      "restriction"
+    ],
+    "notes": "1 费牌禁止，由 location_rules 处理。"
+  },
+  "StrangeAcademy": {
+    "effect": "After turn 3, move all cards here to other random locations.",
+    "source": "screenshot",
+    "bias": {
+      "early": -2,
+      "mid": 0,
+      "final": 0
+    },
+    "tags": [
+      "move_random"
+    ],
+    "notes": "前 3 回合放这里的牌会被随机挪走，失去布局控制（实机：T1-T3 三张牌被移走）。"
+  },
+  "LosDiablos": {
+    "effect": "After turn 3, ruin a random location.",
+    "source": "screenshot",
+    "bias": {
+      "early": 0,
+      "mid": 0,
+      "final": 0
+    },
+    "tags": [
+      "ruin_random"
+    ],
+    "notes": "第 3 回合后随机一个场地变成废墟（实机：Westview -> Ruins）。"
+  },
+  "SewerSystem": {
+    "effect": "Cards here have -1 Power.",
+    "source": "screenshot",
+    "bias": {
+      "early": -1,
+      "mid": -1,
+      "final": -1
+    },
+    "tags": [
+      "debuff"
+    ],
+    "notes": "每张牌 -1 战力，放得越多亏越多。"
+  },
+  "Ruins": {
+    "effect": "(no ability)",
+    "source": "screenshot",
+    "bias": {
+      "early": 0,
+      "mid": 0,
+      "final": 0
+    },
+    "tags": [],
+    "notes": ""
+  },
+  "TheIceBox": {
+    "effect": "On Reveal: Increase the cost of a random card in each player's hand by 1.",
+    "source": "llm:openai/gpt-6.1-sol+observed",
+    "bias": {
+      "early": 0,
+      "mid": 0,
+      "final": 0
+    },
+    "tags": [
+      "hand_cost_increase",
+      "on_reveal"
+    ],
+    "notes": "实战印证（3101d209）：揭示后手牌 Cyclops 3→4 费。一次性效果，与往这里放牌无关。"
+  },
+  "WashingtonDC": {
+    "effect": "Cards with no abilities here get +3 Power.",
+    "source": "llm:openai/gpt-6.1-sol+observed",
+    "bias": {
+      "early": 0,
+      "mid": 0,
+      "final": 0
+    },
+    "tags": [
+      "no_ability_buff"
+    ],
+    "notes": "实战印证（3101d209）：敌方 MistyKnight(3)+Nightcrawler(2) 场地战力 8 =(3+3)+2。白板牌放这里 +3，由卡牌配合规则加权。"
+  },
+  "Machineworld": {
+    "effect": "When you play a card here, your opponent gets a copy of it in hand.",
+    "source": "llm:openai/gpt-6.1-sol+player",
+    "bias": {
+      "early": -3,
+      "mid": -2,
+      "final": 0
+    },
+    "tags": [
+      "copy_to_opponent_hand",
+      "prefer_final_turn"
+    ],
+    "notes": "玩家技巧：前五回合避免在此放牌（对手会拿到复制品），最后一回合再放把负面影响降到最低。两个模型结论一致。"
+  },
+  "StarkTower": {
+    "effect": "After turn 5, give all cards here +2 Power.",
+    "source": "llm:openai/gpt-6.1-sol",
+    "bias": {
+      "early": 2,
+      "mid": 2,
+      "final": 0
+    },
+    "tags": [
+      "power_buff",
+      "turn_5_bonus"
+    ],
+    "notes": "第 5 回合结束前放入可吃到一次性 +2；最后一回合放已错过。"
+  },
+  "Kyln": {
+    "effect": "You can't play cards here after turn 4.",
+    "source": "llm:openai/gpt-6.1-sol",
+    "bias": {
+      "early": 0,
+      "mid": 0,
+      "final": 0
+    },
+    "tags": [
+      "restriction"
+    ],
+    "notes": "第 5 回合起禁止出牌（brain/location_rules.py 已处理），要争夺需在前 4 回合布局。"
+  },
+  "Vault": {
+    "effect": "On turn 6, cards can't be played here.",
+    "source": "llm:openai/gpt-6.1-sol",
+    "bias": {
+      "early": 0,
+      "mid": 0,
+      "final": 0
+    },
+    "tags": [
+      "restriction"
+    ],
+    "notes": "第 6 回合禁止出牌（location_rules 已处理），需在第 5 回合前完成布局。"
+  },
+  "Wakanda": {
+    "effect": "Cards here can't be destroyed.",
+    "source": "llm:openai/gpt-6.1-sol",
+    "bias": {
+      "early": 0,
+      "mid": 0,
+      "final": 0
+    },
+    "tags": [
+      "destroy_protection"
+    ],
+    "notes": "两个模型一致。中性；可保护关键牌。"
+  },
+  "Westview": {
+    "effect": "On turn 4, this changes into a random location.",
+    "source": "llm:openai/gpt-6.1-sol",
+    "bias": {
+      "early": 0,
+      "mid": 0,
+      "final": 0
+    },
+    "tags": [
+      "location_transform"
+    ],
+    "notes": "第 4 回合后按变换后的新场地重新评估。"
+  },
+  "FiskTower": {
+    "effect": "Penalizes cards that MOVE here (models disagree: -4 Power vs destroyed).",
+    "source": "llm:openai/gpt-6.1-sol",
+    "bias": {
+      "early": 0,
+      "mid": 0,
+      "final": 0
+    },
+    "tags": [
+      "move_penalty",
+      "unverified"
+    ],
+    "notes": "只影响移动到此的牌，直接打出不受影响 -> 中性。具体效果待截图确认。"
+  },
+  "SanctumSanctorum": {
+    "effect": "Cards can't be played here (international); UNVERIFIED in CN.",
+    "source": "llm:openai/gpt-6.1-sol+conflict",
+    "bias": {
+      "early": 0,
+      "mid": 0,
+      "final": 0
+    },
+    "tags": [
+      "restriction",
+      "unverified"
+    ],
+    "notes": "模型与国际服均为不可出牌；但国服新手教程局（剧本）中我方在此有 4 张牌，疑为剧本特例。不设硬禁止，若实战被拒由运行时 forbidden 机制学习。"
+  }
+}

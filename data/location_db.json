@@ -1,0 +1,1336 @@
+{
+ "_meta": {
+  "source": "https://marvelsnapzone.com/getinfo/?searchtype=locations&searchcardstype=true",
+  "fetched_at": "2026-11-07T12:50:32",
+  "count": 221,
+  "released": 182
+ },
+ "items": {
+  "AltarOfDeath": {
+   "name": "Altar of Death",
+   "effect": "After you play a card here, destroy it to get +2 Energy next turn.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "Asgard": {
+   "name": "Asgard",
+   "effect": "After turn 4, whoever is winning here draws 2 cards.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "AsgardBesieged": {
+   "name": "Asgard Besieged",
+   "effect": "After turn 3, add The Destroyer to the winning side.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "AsteroidM": {
+   "name": "Asteroid M",
+   "effect": "After you play a 3 or 4-Cost card, move it here.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "AstralPlane": {
+   "name": "Astral Plane",
+   "effect": "After this turn, add a 0-Power copy of a card from hand here.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "Atlantis": {
+   "name": "Atlantis",
+   "effect": "If you only have one card here, it has +5 Power.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "Attilan": {
+   "name": "Attilan",
+   "effect": "After turn 3, shuffle your hand into your deck. Draw 3 cards.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "AuntMayhem": {
+   "name": "Aunt Mayhem",
+   "effect": "Your next play here gains +2 Power for each of your Snaps.",
+   "status": "unreleased",
+   "rarity": "uncommon"
+  },
+  "AuntMays": {
+   "name": "Aunt May's",
+   "effect": "The next card you play here gains +3 Power and moves.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "AvengersCompound": {
+   "name": "Avengers Compound",
+   "effect": "On turn 5, all cards must be played here.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "BarSinister": {
+   "name": "Bar Sinister",
+   "effect": "After you play a card here, fill this location with copies of it.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "BarWithNoName": {
+   "name": "Bar With No Name",
+   "effect": "Whoever has the least Power here wins.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "BaxterBuilding": {
+   "name": "Baxter Building",
+   "effect": "Whoever is winning this location gets +4 Power at the others.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "Bifrost": {
+   "name": "The Bifrost",
+   "effect": "After turn 4, move all cards one location to the right.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "BlackVortex": {
+   "name": "Black Vortex",
+   "effect": "The next card you play here becomes a random 6-Cost card.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "Boardwalk": {
+   "name": "Boardwalk",
+   "effect": "End of Turn: Give the lowest-Power card(s) here +1 Power.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "BrooklynBridge": {
+   "name": "Brooklyn Bridge",
+   "effect": "You can't play cards here 2 turns in a row.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "Camelot": {
+   "name": "Camelot",
+   "effect": "After turn 5, set all cards here to 5 Power.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "CampLehigh": {
+   "name": "Camp Lehigh",
+   "effect": "Add a random 3-Cost card to each player's hand.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "Cancun": {
+   "name": "Cancun",
+   "effect": "Power here doesn't count toward winning the game.",
+   "status": "released",
+   "rarity": "ultra rare"
+  },
+  "CassandrasNovaRoma": {
+   "name": "Cassandra's Nova Roma",
+   "effect": "Draw a card. It steals 1 Power from cards in the enemy deck.",
+   "status": "unreleased",
+   "rarity": "common"
+  },
+  "CastleBlackstone": {
+   "name": "Castle Blackstone",
+   "effect": "The player winning here gets +1 Energy each turn.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "CastleZemo": {
+   "name": "Castle Zemo",
+   "effect": "The next card you play here switches sides.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "CaveOfTheDragon": {
+   "name": "Cave of The Dragon",
+   "effect": "After turn 4, add a random 5-Cost+ card to each side.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "CelestialBurialGround": {
+   "name": "Celestial Burial Ground",
+   "effect": "Discard a card. Replace it with one of the same Cost.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "CelestialCircuit": {
+   "name": "Celestial Circuit",
+   "effect": "After turn 4, give your hand -1 Cost if 12+ Power here.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "CentralPark": {
+   "name": "Central Park",
+   "effect": "Add a Squirrel to each location.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "ChronosphereSphinx": {
+   "name": "Chronosphere Sphinx",
+   "effect": "Copy the highest-Cost card in your deck into your hand.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "CloningVats": {
+   "name": "Cloning Vats",
+   "effect": "After you play a card here, add a copy to your hand.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "ClownCity": {
+   "name": "Clown City",
+   "effect": "Whoever is losing here has +4 Power at adjacent locations.",
+   "status": "unreleased",
+   "rarity": "rare"
+  },
+  "Clubhouse": {
+   "name": "Clubhouse",
+   "effect": "Fill this to give your cards at other locations +1 Power.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "CollapsedMine": {
+   "name": "Collapsed Mine",
+   "effect": "Fill this location with Rocks. Skip a turn to destroy your Rocks.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "CounterEarth": {
+   "name": "Counter-Earth",
+   "effect": "After you play a card here, create a copy at this location.",
+   "status": "unreleased",
+   "rarity": "common"
+  },
+  "CrimsonCitadel": {
+   "name": "Crimson Citadel",
+   "effect": "Your next play here steals 2 Power from a random enemy.",
+   "status": "unreleased",
+   "rarity": "rare"
+  },
+  "CrimsonCosmos": {
+   "name": "Crimson Cosmos",
+   "effect": "Cards that cost 3 or less can't be played here.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "CrownCity": {
+   "name": "Crown City",
+   "effect": "Whoever is winning here gets +4 Power at adjacent locations.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "CrystalTowers": {
+   "name": "Crystal Towers",
+   "effect": "Shuffle your hand into your deck. Draw 3 cards.",
+   "status": "unreleased",
+   "rarity": "common"
+  },
+  "DailyBugle": {
+   "name": "Daily Bugle",
+   "effect": "Get a copy of a card in your opponent's hand.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "DangerRoom": {
+   "name": "Danger Room",
+   "effect": "Cards played here have a 25% chance to be destroyed.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "DarkDimension": {
+   "name": "Dark Dimension",
+   "effect": "Cards here are not revealed until the game ends.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "DeathsDomain": {
+   "name": "Death's Domain",
+   "effect": "After you play a card here, destroy it.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "DeepSpace": {
+   "name": "Deep Space",
+   "effect": "Card text is disabled here.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "DestroyedMansion": {
+   "name": "Destroyed Mansion",
+   "effect": "Add a Rock here and a Vibranium to your hand.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "DistrictX": {
+   "name": "District X",
+   "effect": "Replace both decks with 10 random cards.",
+   "status": "unreleased",
+   "rarity": "rare"
+  },
+  "DreamDimension": {
+   "name": "Dream Dimension",
+   "effect": "On turn 5, cards cost 1 more.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "Ebonshire": {
+   "name": "Ebonshire",
+   "effect": "Draw the bottom card of your deck.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "Ego": {
+   "name": "Ego",
+   "effect": "Ego takes over and plays your cards for you.",
+   "status": "released",
+   "rarity": "ultra rare"
+  },
+  "Elysium": {
+   "name": "Elysium",
+   "effect": "Cards cost 1 less.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "EmpireStateUniversity": {
+   "name": "Empire State University",
+   "effect": "On turn 6, get +2 Energy.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "EssexsLab": {
+   "name": "EssexsLab",
+   "effect": "After turn 4, destroy a card. Your others here split its Power.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "EternityRange": {
+   "name": "Eternity Range",
+   "effect": "After turn 3, add a Rock to the losing player's side.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "Feast": {
+   "name": "F.E.A.S.T.",
+   "effect": "After you play a card here, ALL players get +1 Energy next turn.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "FiskTower": {
+   "name": "Fisk Tower",
+   "effect": "When a card moves here, afflict it with -4 Power.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "Flooded": {
+   "name": "Flooded",
+   "effect": "Cards can't be played here.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "Flooding": {
+   "name": "Flooding",
+   "effect": "This is the last turn cards can be played here.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "FogwellsGym": {
+   "name": "Fogwell's Gym",
+   "effect": "Both players get double Boosters this game.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "FracturedFrontier": {
+   "name": "Fractured Frontier",
+   "effect": "Your rightmost card has -2 Cost this turn.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "FrontierOutpost": {
+   "name": "Frontier Outpost",
+   "effect": "Draw a 3-Cost card from your deck.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "GammaLab": {
+   "name": "Gamma Lab",
+   "effect": "After turn 3, transform all cards here into the Hulk.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "Genosha": {
+   "name": "Genosha",
+   "effect": "After turn 5, all but your highest-Cost here are destroyed.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "GrandCentral": {
+   "name": "Grand Central",
+   "effect": "After turn 5, put a card from each player's hand here.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "GreatPortal": {
+   "name": "Great Portal",
+   "effect": "Add a random card with 10 or more Power to your hand.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "GreatWeb": {
+   "name": "Great Web",
+   "effect": "End of Turn: Move one card to the Web for a random player.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "Hala": {
+   "name": "Hala",
+   "effect": "After turn 4, destroy all cards on the losing side here.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "HellfireClub": {
+   "name": "Hellfire Club",
+   "effect": "Cards that cost 1 can't be played here.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "HellsKitchen": {
+   "name": "Hell's Kitchen",
+   "effect": "Draw a 1-Cost card from your deck.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "Hospice": {
+   "name": "Hospice",
+   "effect": "Changes to card Power are doubled here.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "HotelInferno": {
+   "name": "Hotel Inferno",
+   "effect": "After you play a card here this turn, banish the top card of your opponent's deck.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "IslandPrison": {
+   "name": "Island Prison",
+   "effect": "Cards here can't move.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "IsleOfShhhhh": {
+   "name": "Isle of Shhhhh",
+   "effect": "After each Snap, move a card away from here.",
+   "status": "unreleased",
+   "rarity": "rare"
+  },
+  "IsleOfSilence": {
+   "name": "Isle of Silence",
+   "effect": "Ongoing effects are disabled here.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "JeanGreySchool": {
+   "name": "Jean Grey School",
+   "effect": "On turn 5, cards here are Moveable.",
+   "status": "unreleased",
+   "rarity": "uncommon"
+  },
+  "JosiesBar": {
+   "name": "Josie's Bar",
+   "effect": "Playing 2 cards here in a turn reveals them with +2 Power.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "Jotunheim": {
+   "name": "Jotunheim",
+   "effect": "End of Turn: Cards here lose 1 Power.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "KamarTaj": {
+   "name": "Kamar-Taj",
+   "effect": "On Reveal effects at this location repeat.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "Klyntar": {
+   "name": "Klyntar",
+   "effect": "After turn 4, merge your cards here into a Symbiote.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "Knowhere": {
+   "name": "Knowhere",
+   "effect": "On Reveal effects do not happen at this location.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "Krakoa": {
+   "name": "Krakoa",
+   "effect": "Your next play here adds its Power to the top of your deck.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "KunLun": {
+   "name": "K'un-Lun",
+   "effect": "When a card moves here, give it +2 Power.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "Kvch": {
+   "name": "Kvch",
+   "effect": "Add a random Activate card here for each player.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "Kyln": {
+   "name": "Kyln",
+   "effect": "You can't play cards here after turn 4.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "LakeHellas": {
+   "name": "Lake Hellas",
+   "effect": "1-Cost cards here have +2 Power.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "Lamentis1": {
+   "name": "Lamentis-1",
+   "effect": "Draw 3 cards. Banish both decks.",
+   "status": "unreleased",
+   "rarity": "ultra rare"
+  },
+  "Lechuguilla": {
+   "name": "Lechuguilla",
+   "effect": "After you play a card here, shuffle 3 rocks into your deck.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "Lemuria": {
+   "name": "Lemuria",
+   "effect": "No cards are revealed this turn.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "Limbo": {
+   "name": "Limbo",
+   "effect": "There is a turn 7 this game.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "LosDiablos": {
+   "name": "Los Diablos Base",
+   "effect": "After turn 3, ruin a random location.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "LosDiablosSauce": {
+   "name": "Los Diablos Sauce",
+   "effect": "After turn 3, another location becomes Taco Truck.",
+   "status": "unreleased",
+   "rarity": "uncommon"
+  },
+  "LukesBar": {
+   "name": "Luke's Bar",
+   "effect": "After you play a card here, return it to your hand.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "Machineworld": {
+   "name": "Machineworld",
+   "effect": "After you play a card here, add a copy to the opponent's hand.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "Madripoor": {
+   "name": "Madripoor",
+   "effect": "End of Turn: Give each highest-Cost card here +2 Power.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "Mercworld": {
+   "name": "Mercworld",
+   "effect": "After turn 3, return cards here to hand. Double their Power.",
+   "status": "unreleased",
+   "rarity": "common"
+  },
+  "Milano": {
+   "name": "Milano",
+   "effect": "Add a member of the Guardians crew to your hand.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "Mindscape": {
+   "name": "Mindscape",
+   "effect": "At the start of turn 6, swap hands.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "MiniaturizedLab": {
+   "name": "Miniaturized Lab",
+   "effect": "On turns 3, 4, and 5, no cards can be added here.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "MirrorDimension": {
+   "name": "Mirror Dimension",
+   "effect": "On turn 4, transform into one of the other locations.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "Mojoworld": {
+   "name": "Mojoworld",
+   "effect": "Whoever has more cards here gets +100 Power.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "MonsterIsland": {
+   "name": "Monster Island",
+   "effect": "Add a 10-Power Monster here for each player.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "MonsterMetropolis": {
+   "name": "Monster Metropolis",
+   "effect": "The card(s) with the highest Power here get +3 Power.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "Morag": {
+   "name": "Morag",
+   "effect": "You can't play your first card here each turn.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "MoshPit": {
+   "name": "Mosh Pit",
+   "effect": "End of Turn: Give front-row cards here +1 Power.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "MountVespewvius": {
+   "name": "Mount VeSPEWvius",
+   "effect": "Players can't Snap after turn 5.",
+   "status": "unreleased",
+   "rarity": "common"
+  },
+  "MountVesuvius": {
+   "name": "Mount Vesuvius",
+   "effect": "Players can't retreat after turn 5.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "MountWundagore": {
+   "name": "Mt. Wundagore",
+   "effect": "After you play a card here, discard a card.",
+   "status": "unreleased",
+   "rarity": "common"
+  },
+  "MuirIsland": {
+   "name": "Muir Island",
+   "effect": "End of Turn: Give cards here +1 Power.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "Munchineworld": {
+   "name": "Munchineworld",
+   "effect": "After you play a card here, your opponent gets a Chimichanga.",
+   "status": "unreleased",
+   "rarity": "common"
+  },
+  "Murderworld": {
+   "name": "Murderworld",
+   "effect": "After turn 3, destroy all cards here.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "Necrosha": {
+   "name": "Necrosha",
+   "effect": "Cards here have -2 Power.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "NegativeZone": {
+   "name": "Negative Zone",
+   "effect": "Cards here have -3 Power.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "NewYork": {
+   "name": "New York",
+   "effect": "On turn 6, cards are Moveable to here.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "NiamhsLake": {
+   "name": "Niamh's Lake",
+   "effect": "Draw a 4-Cost card from your deck.",
+   "status": "unreleased",
+   "rarity": "rare"
+  },
+  "Nidavellir": {
+   "name": "Nidavellir",
+   "effect": "Cards here have +5 Power.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "NoobDimension": {
+   "name": "Noob Dimension",
+   "effect": "Add a Series 1 card to your hand. It costs 0.",
+   "status": "unreleased",
+   "rarity": "uncommon"
+  },
+  "NoorDimension": {
+   "name": "Noor Dimension",
+   "effect": "After you play a card here, add a Djinn to your hand.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "NovaRoma": {
+   "name": "Nova Roma",
+   "effect": "Draw a card.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "Olympia": {
+   "name": "Olympia",
+   "effect": "Draw 2 cards.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "OnslaughtsCitadel": {
+   "name": "Onslaught's Citadel",
+   "effect": "Ongoing effects here apply an additional time.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "OrchisForge": {
+   "name": "Orchis Forge",
+   "effect": "After you play a card here, add a Sentinel to your hand.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "OscorpTower": {
+   "name": "Oscorp Tower",
+   "effect": "After turn 3, all cards here switch sides.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "OttosLab": {
+   "name": "Otto's Lab",
+   "effect": "The next card you play here pulls a card to the enemy side from their hand.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "OurLadyOfSaints": {
+   "name": "Our Lady of Saints",
+   "effect": "When your revealed cards fill this, merge them into a Symbiote.",
+   "status": "unreleased",
+   "rarity": "rare"
+  },
+  "Panoptichron": {
+   "name": "Panoptichron",
+   "effect": "Created cards here have +2 Power.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "ParkerIndustries": {
+   "name": "Parker Industries",
+   "effect": "+2 Energy this turn, but you can only play 1 card.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "PetAvengersMansion": {
+   "name": "Pet Mansion",
+   "effect": "This turn, all cards must be played here.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "PitOfExile": {
+   "name": "Pit of Exile",
+   "effect": "Cards with 10 or more Power can't be played here.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "PizzaPlace": {
+   "name": "Pizza Place",
+   "effect": "Add 2 Pizza Slices to your hand.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "PleasantHill": {
+   "name": "Pleasant Hill",
+   "effect": "After you play a card here, draw a card.",
+   "status": "unreleased",
+   "rarity": "uncommon"
+  },
+  "PlunderCastle": {
+   "name": "Plunder Castle",
+   "effect": "Only cards that cost 6 can be played here.",
+   "status": "unreleased",
+   "rarity": "rare"
+  },
+  "PoolsSchool": {
+   "name": "Pool's School",
+   "effect": "After your next Snap, your highest-Power card(s) move to here.",
+   "status": "unreleased",
+   "rarity": "common"
+  },
+  "PositivityZone": {
+   "name": "Positivity Zone",
+   "effect": "Cards here have +1 Power for EACH Snap this game.",
+   "status": "unreleased",
+   "rarity": "common"
+  },
+  "ProjectPegasus": {
+   "name": "Project Pegasus",
+   "effect": "+5 Energy this turn.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "ProjectUnicorn": {
+   "name": "Project Unicorn",
+   "effect": "Add Gwenpool to both sides.",
+   "status": "unreleased",
+   "rarity": "common"
+  },
+  "Proscenium": {
+   "name": "Proscenium",
+   "effect": "Cards reveal here with +2 Power.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "PyramidOfRamaTut": {
+   "name": "Pyramid of Rama-Tut",
+   "effect": "End of Turn: Add a 3-Power Rock to hand if you have none there.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "QuantumRealm": {
+   "name": "Quantum Realm",
+   "effect": "After you play a card here, set its base Power to 2.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "QuantumTunnel": {
+   "name": "Quantum Tunnel",
+   "effect": "After you play a card here, swap it with a card in your deck.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "Raft": {
+   "name": "The Raft",
+   "effect": "First to fill this breaks out a 6-Cost card. It costs 0.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "ReedsLab": {
+   "name": "Reed's Lab",
+   "effect": "+1 Energy each turn if your side here is full.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "RicketyBridge": {
+   "name": "Rickety Bridge",
+   "effect": "End of Turn: If there is more than one card here, destroy them.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "RocketPad": {
+   "name": "Rocket Pad",
+   "effect": "After turn 4, give cards on the winning side here +1 Power.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "RoundTable": {
+   "name": "Round Table",
+   "effect": "4-Cost or more cards cost 1 less.",
+   "status": "unreleased",
+   "rarity": "rare"
+  },
+  "Ruins": {
+   "name": "Ruins",
+   "effect": "",
+   "status": "released",
+   "rarity": "common"
+  },
+  "SacredTimeline": {
+   "name": "The Sacred Timeline",
+   "effect": "First to fill this gets a copy of their opening hand.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "Sakaar": {
+   "name": "Sakaar",
+   "effect": "After this turn, put a card from each player's hand here.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "SakaarGrandPrix": {
+   "name": "Sakaar Grand Prix",
+   "effect": "After turn 4, the winner here gets +1 Max Energy.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "SanctuaryII": {
+   "name": "Sanctuary II",
+   "effect": "Add a random Infinity Stone to your hand.",
+   "status": "unreleased",
+   "rarity": "rare"
+  },
+  "SanctumInfinitum": {
+   "name": "Sanctum Infinitum",
+   "effect": "Discard a card. Fill this to return it with +5 Power.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "SanctumSanctorum": {
+   "name": "Sanctum Sanctorum",
+   "effect": "Cards can't be played here.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "SanctumSnaptorem": {
+   "name": "Sanctum Snaptorem",
+   "effect": "You can't play cards here unless you Snapped last turn.",
+   "status": "unreleased",
+   "rarity": "common"
+  },
+  "Sandcastle": {
+   "name": "Sandcastle",
+   "effect": "After turn 5, end the game.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "SavageLand": {
+   "name": "Savage Land",
+   "effect": "Add two Raptors on each side of this location.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "SeventhCosmos": {
+   "name": "The Seventh Cosmos",
+   "effect": "Replace ALL locations.",
+   "status": "unreleased",
+   "rarity": "rare"
+  },
+  "SewerSystem": {
+   "name": "Sewer System",
+   "effect": "Cards here have -1 Power.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "Shadowland": {
+   "name": "Shadowland",
+   "effect": "Add a Ninja to each side with -2 Power.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "ShurisLab": {
+   "name": "Shuri's Lab",
+   "effect": "After you play a card here, double its Power.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "SinisterLondon": {
+   "name": "Sinister London",
+   "effect": "After you play a card here, add a copy to another location.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "SmithsonianMuseum": {
+   "name": "Smithsonian Museum",
+   "effect": "Your cards here have +1 Power for each Ongoing among them.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "Sokovia": {
+   "name": "Sokovia",
+   "effect": "Discard a card from each player's hand.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "Souperflow": {
+   "name": "The Souperflow",
+   "effect": "You get +1 Energy each turn if you Snapped this game.",
+   "status": "unreleased",
+   "rarity": "uncommon"
+  },
+  "SpaceThrone": {
+   "name": "The Space Throne",
+   "effect": "Only one card can be here for each player.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "SpiderIsland": {
+   "name": "Spider Island",
+   "effect": "After you play a card here, move it.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "StarBrandCrater": {
+   "name": "Star Brand Crater",
+   "effect": "If you have 10 or more Power here, +1 Energy each turn.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "StarkIndustries": {
+   "name": "Stark Industries",
+   "effect": "After turn 4, split +8 Power among ALL cards here.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "StarkIsland": {
+   "name": "Stark Island",
+   "effect": "End of Turn: Give a card in each hand -1 Cost.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "StarkTower": {
+   "name": "Stark Tower",
+   "effect": "After turn 5, give all cards here +2 Power.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "StarlightCitadel": {
+   "name": "Starlight Citadel",
+   "effect": "After turn 4, swap the position of each location.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "StrangeAcademy": {
+   "name": "Strange Academy",
+   "effect": "After turn 5, move all cards here to other random locations.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "Subterranea": {
+   "name": "Subterranea",
+   "effect": "Shuffle 4 rocks into each deck.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "Superflow": {
+   "name": "The Superflow",
+   "effect": "If you have no cards here, +1 energy each turn.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "SurvivorsCamp": {
+   "name": "Survivor's Camp",
+   "effect": "After turn 4, draw if you're winning here. If not, Horde +2.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "TaLo": {
+   "name": "Ta Lo",
+   "effect": "End of Turn: +1 Power to a character in each hand.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "TacoTruck": {
+   "name": "Taco Truck",
+   "effect": "Add a Chimichanga to your hand.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "Tahiti": {
+   "name": "T.A.H.I.T.I.",
+   "effect": "When a card is discarded or destroyed, add a copy here.",
+   "status": "unreleased",
+   "rarity": "common"
+  },
+  "Tarnax": {
+   "name": "Tarnax IV",
+   "effect": "After you play a character here, transform it into another one of the same Cost.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "TheAbbey": {
+   "name": "The Abbey",
+   "effect": "First to put exactly 2 cards here draws a card.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "TheBigHouse": {
+   "name": "The Big House",
+   "effect": "Cards that cost 4 or more can't be played here.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "TheDeadlands": {
+   "name": "The Deadlands",
+   "effect": "End of Turn: Horde +1.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "TheGrub": {
+   "name": "The Grub",
+   "effect": "Add a random Food Fight variant to each player's hand.",
+   "status": "unreleased",
+   "rarity": "uncommon"
+  },
+  "TheHub": {
+   "name": "The Hub",
+   "effect": "Add a random card to each player's hand.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "TheIceBox": {
+   "name": "The Ice Box",
+   "effect": "Give a card in each player’s hand +1 Cost.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "TheNexus": {
+   "name": "The Nexus",
+   "effect": "Your Power here is granted to other locations as well.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "ThePeak": {
+   "name": "The Peak",
+   "effect": "Steal the leftmost card from your opponent's hand.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "ThePeek": {
+   "name": "The Peek",
+   "effect": "After your next Snap, copy the top card of the opponent's deck.",
+   "status": "unreleased",
+   "rarity": "uncommon"
+  },
+  "TheSandbar": {
+   "name": "The Sandbar",
+   "effect": "Created cards cost 1 more. (max 6)",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "ThroneOfDoom": {
+   "name": "Throne of Doom",
+   "effect": "",
+   "status": "unreleased",
+   "rarity": "common"
+  },
+  "ThunderboltsTower": {
+   "name": "Thunderbolts Tower",
+   "effect": "After turn 5, give all cards here -2 Power.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "TimeTheater": {
+   "name": "Time Theater",
+   "effect": "Instead of your next draw, copy the last card you drew.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "TinkerersWorkshop": {
+   "name": "Tinkerer's Workshop",
+   "effect": "+1 Energy this turn.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "Titan": {
+   "name": "Titan",
+   "effect": "6-Cost cards cost 1 less.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "Tokyo2099": {
+   "name": "Tokyo 2099",
+   "effect": "Cards can't be discarded.",
+   "status": "unreleased",
+   "rarity": "rare"
+  },
+  "Transia": {
+   "name": "Transia",
+   "effect": "Swap the positions of each location.",
+   "status": "unreleased",
+   "rarity": "uncommon"
+  },
+  "Triskelion": {
+   "name": "The Triskelion",
+   "effect": "Fill each player's hand with random cards.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "Tva": {
+   "name": "TVA",
+   "effect": "After turn 4, end the game.",
+   "status": "released",
+   "rarity": "ultra rare"
+  },
+  "UndeadMetropolis": {
+   "name": "Undead Metropolis",
+   "effect": "After you play a card here, Horde +1.",
+   "status": "unreleased",
+   "rarity": "rare"
+  },
+  "UtnapishtimsArk": {
+   "name": "Eternals' Ark",
+   "effect": "After turn 5, flood the other locations.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "Utopia": {
+   "name": "Utopia",
+   "effect": "3 and 4-Cost cards cost 1 less.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "Valhalla": {
+   "name": "Valhalla",
+   "effect": "After turn 4, cards here repeat their On Reveal abilities.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "ValleyOfTheBabyHand": {
+   "name": "Valley of the Baby Hand",
+   "effect": "Destroy your next play here. Snap to revive a card here.",
+   "status": "unreleased",
+   "rarity": "common"
+  },
+  "ValleyOfTheHand": {
+   "name": "Valley Of The Hand",
+   "effect": "After turn 5, your destroyed cards revive here.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "Vault": {
+   "name": "The Vault",
+   "effect": "On turn 6, cards can't be played here.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "VibraniumMines": {
+   "name": "Vibranium Mines",
+   "effect": "After you play here, shuffle 3 Vibranium into your deck.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "Vormir": {
+   "name": "Vormir",
+   "effect": "The next card you play here is destroyed.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "Wakanda": {
+   "name": "Wakanda",
+   "effect": "Cards here can't be destroyed.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "WakandanEmbassy": {
+   "name": "Wakandan Embassy",
+   "effect": "Give +2 Power to cards in players' hands.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "WakandanThroneRoom": {
+   "name": "Throne Room",
+   "effect": "The highest-Power card(s) here have their Power doubled.",
+   "status": "released",
+   "rarity": "uncommon"
+  },
+  "WarriorFalls": {
+   "name": "Warrior Falls",
+   "effect": "End of Turn: Cards here FIGHT! Destroy the weakest one(s).",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "WashingtonDC": {
+   "name": "Washington D.C.",
+   "effect": "Cards here with no abilities have +3 Power.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "WeaponXFacility": {
+   "name": "Weapon X Facility",
+   "effect": "Discard a card to draw a card.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "WeaponXIFacility": {
+   "name": "Weapon XI Facility",
+   "effect": "Snap to destroy your lowest-Cost card. It's replaced at +1 Cost.",
+   "status": "unreleased",
+   "rarity": "common"
+  },
+  "Weirdworld": {
+   "name": "Weirdworld",
+   "effect": "Draw 2 cards from your opponent's deck.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "Westview": {
+   "name": "Westview",
+   "effect": "Turns into a new location on turn 4.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "WhiteHotRoom": {
+   "name": "White Hot Room",
+   "effect": "First to fill this gets +3 Max Energy.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "WhitePalace": {
+   "name": "White Palace",
+   "effect": "Copy the highest-Cost card in your opponent's hand.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "WorldForge": {
+   "name": "World Forge",
+   "effect": "Replace one of the other locations each turn.",
+   "status": "released",
+   "rarity": "ultra rare"
+  },
+  "Worldship": {
+   "name": "Worldship",
+   "effect": "Destroy the other locations.",
+   "status": "released",
+   "rarity": "ultra rare"
+  },
+  "XMansion": {
+   "name": "X-Mansion",
+   "effect": "After turn 3, add a random card here for each player.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "XMansionRuins": {
+   "name": "X-Mansion Ruins",
+   "effect": "",
+   "status": "unreleased",
+   "rarity": "common"
+  },
+  "Xandar": {
+   "name": "Xandar",
+   "effect": "Cards here have +1 Power.",
+   "status": "released",
+   "rarity": "common"
+  },
+  "YashidaBase": {
+   "name": "Yashida Base",
+   "effect": "At the end of the game, destroy the last card to get here.",
+   "status": "unreleased",
+   "rarity": "common"
+  },
+  "Yggdrasil": {
+   "name": "Yggdrasil",
+   "effect": "End of Turn: Give ALL cards at another location +1 Power.",
+   "status": "released",
+   "rarity": "rare"
+  },
+  "ZennLa": {
+   "name": "Zenn-La",
+   "effect": "Add a 3-Cost card from your deck here.",
+   "status": "released",
+   "rarity": "uncommon"
+  }
+ }
+}

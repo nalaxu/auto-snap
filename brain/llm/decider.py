@@ -1,0 +1,234 @@
+"""大模型逐回合决策（场地分析与出牌合并为一次调用）。
+
+一次请求完成：逐个场地评估本回合放牌利弊 -> 综合比分、双方手牌/牌库、后续能量做规划 -> 本回合出牌。
+- 知识库（data/locations.json）作为「已核实参考」随局面提供；未收录的场地由模型依自身了解判断，
+  其评估写入对局日志，赛后复盘再沉淀回知识库
+- 结构化输出；结果必须通过 validator，否则在时间预算内带错误反馈重试一次
+- 超时 / 出错 / 仍不合法 -> 规则 AI 兜底（不阻塞回合）
+- 回合计时：有计时的对局用 effort_timed（默认 low）+ 硬截止 deadline_timed_s（默认 12s）；大模型在后台线程思考，
+  到点未返回立即用规则 AI 方案出牌（实测 gpt-6.1-sol：medium 中位 17s，low 中位 10.7s）
+"""
+from __future__ import annotations
+
+import json
+import logging
+import time
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FutureTimeout
+from dataclasses import replace
+from typing import Any
+
+from .. import rule_based, strategy
+from ..locations import phase
+from ..models import GameState, PlayAction, TurnDecision
+from ..validator import validate
+from .base import LLMClient, LLMError, TaskConfig
+
+log = logging.getLogger(__name__)
+
+SYSTEM = """你是《漫威终极逆转》（Marvel Snap 国服）的顶尖玩家，为我方决定本回合出牌。
+
+规则：
+- 3 个场地，每方每个场地最多 4 张牌；通常 6 回合，第 N 回合有 N 点能量（效果可能改变）。
+- 本回合打出的牌总费用 ≤ energy；只能打出 hand 中的牌，每张一次；双方同时出牌，回合结束时揭示。
+- 终局赢下 3 个场地中至少 2 个者胜；场地数相同比总战力。actions 的顺序即出牌（揭示）顺序。
+
+请按以下步骤综合思考：
+0. 先读 board_notes（场上最新要点，每回合重建）：【本回合有效】的跟牌触发（如 Hawkeye）、【持续】效果与限制、
+   【对手上回合】新打出的牌、【场地事件】即将发生的回合效果。这些是本回合最需要考虑的信息。
+1. 场地评估：逐个分析已揭开的场地，判断「本回合往这里放牌」对我方利好还是不利（结合剩余回合数）。
+   - 随时间累积收益的场地（如每回合 +1 战力）：越早放越好，尽量多放。
+   - 负面效果的场地（如把我方打出的牌复制给对手、削弱战力、随时间惩罚）：前期避免，最后一回合再放以降低影响。
+   - 出牌限制（某回合禁止/强制出牌、某费用禁止）必须遵守。
+   - locations[].kb 是已核实的知识库条目（effect/bias/notes），可信度高；kb 为空时依据你对该场地的了解判断，没把握就当中性。
+   - 未揭示的场地（revealed=false）效果未知。
+   - card_info 是场上双方的牌、我方牌库/弃牌的资料（费用、战力、能力）；注意对手已揭示牌的 Ongoing 限制（如禁止在该场地出高费牌）。
+2. 局势：各场地比分、可用空位；决定争夺哪 2 个场地（target_locations）。对手手牌数 opp_hand_count 与对手已揭示的牌
+   提示其后续威胁；我方剩余牌库 deck_remaining 与 energy_by_turn 用于规划后续回合（保留关键大牌、凑能量曲线）。
+3. 本回合出牌：尽量用满能量（除非刻意留给后续规划），考虑卡牌能力（On Reveal 条件、Ongoing、Medusa 放中间、
+   Hawkeye 需要下回合在同一场地跟牌等），已大幅领先的场地不要浪费战力。
+
+只输出 JSON。card 用 hand 中的 id，location 用场地 idx（0/1/2）。不出牌时 actions 为空数组。
+文字字段用中文且尽量简短：每个 effect / why ≤ 20 字，plan 与 reason 各 ≤ 40 字（回合有计时，越快越好）。"""
+
+_LOC = {"type": "integer", "enum": [0, 1, 2]}
+SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "location_assessment": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "location": _LOC,
+                    "effect": {"type": "string"},
+                    "favorable_now": {"type": "integer", "enum": [-3, -2, -1, 0, 1, 2, 3]},
+                    "why": {"type": "string"},
+                },
+                "required": ["location", "effect", "favorable_now", "why"],
+                "additionalProperties": False,
+            },
+        },
+        "target_locations": {"type": "array", "items": _LOC},
+        "plan": {"type": "string"},
+        "actions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {"card": {"type": "string"}, "location": _LOC},
+                "required": ["card", "location"],
+                "additionalProperties": False,
+            },
+        },
+        "reason": {"type": "string"},
+    },
+    "required": ["location_assessment", "target_locations", "plan", "actions", "reason"],
+    "additionalProperties": False,
+}
+
+
+def build_prompt(state: GameState, advisor=None, cards_db: dict | None = None) -> str:
+    """局面 + 资料库关联：手牌带当前费用/战力与能力；场上双方的牌、牌库、弃牌只给 id，
+    其能力统一放在 card_info（同一张牌只出现一次，控制提示长度）；场地附带资料库效果。"""
+    advisor = advisor or strategy.default_advisor()
+    cards_db = cards_db if cards_db is not None else strategy.cards_db()
+    card_info: dict[str, str] = {}
+
+    def note(cid: str) -> str:
+        if cid not in card_info:
+            meta = cards_db.get(cid, {})
+            stats = f"{meta.get('cost', '?')}费{meta.get('power', '?')}力"
+            card_info[cid] = f"{stats}；{meta.get('ability') or '无能力'}" if meta else "资料库无此卡"
+        return cid
+
+    def hand_card(c):
+        meta = cards_db.get(c.id, {})
+        return {"id": c.id, "cost": c.cost, "power": c.power, "ability": meta.get("ability", "") if meta else "资料库无此卡"}
+
+    locs = []
+    for l in state.locations:
+        info = advisor.info(l.name) if l.revealed and l.name else None
+        kb = None
+        if info and info.known:
+            kb = {"effect": info.effect, "bias_now": info.bias_at(state.turn, state.max_turn), "notes": info.notes,
+                  "verified": info.source != "db" and "unverified" not in info.tags}
+            if info.source == "db":   # 只有资料库效果文字，利弊由模型判断
+                kb = {"effect": info.effect, "source": "资料库（未评估利弊）"}
+        locs.append({
+            "idx": l.idx, "name": l.name or None, "revealed": l.revealed, "kb": kb,
+            "my_power": l.my_power, "opp_power": l.opp_power, "my_slots_free": l.my_slots_free,
+            "my_cards": [note(c.id) for c in l.my_cards], "opp_cards_revealed": [note(c.id) for c in l.opp_cards],
+            "opp_card_count": l.opp_card_count,
+        })
+    turns_left = max(0, state.max_turn - state.turn)
+    data = {
+        "board_notes": state.board_notes,
+        "turn": state.turn, "max_turn": state.max_turn, "phase": phase(state.turn, state.max_turn), "turns_left_after_this": turns_left,
+        "energy": state.energy, "energy_by_turn": {t: t for t in range(state.turn + 1, state.max_turn + 1)},
+        "cube_stake": state.cube_stake,
+        "hand": [hand_card(c) for c in state.hand],
+        "deck_remaining": [note(c) for c in state.deck_remaining],
+        "my_deck_count": state.my_deck_count,
+        "my_graveyard": [note(c) for c in state.my_graveyard],
+        "opp_hand_count": state.opp_hand_count,
+        "opp_deck_count": state.opp_deck_count,
+        "locations": locs,
+        "card_info": card_info,
+        "forbidden": [{"card": c, "location": i} for c, i in state.forbidden],
+    }
+    return "当前局面：\n" + json.dumps(data, ensure_ascii=False)
+
+
+class LLMDecider:
+    """返回 TurnDecision；模型的场地评估 / 规划保存在 last_raw，供对局日志记录。"""
+
+    def __init__(self, client: LLMClient, task: TaskConfig, max_attempts: int = 2,
+                 effort_timed: str | None = "low", deadline_s: float = 40.0, deadline_timed_s: float = 12.0,
+                 deadline_late_s: float | None = None, late_from_turn: int = 5):
+        self.client = client
+        self.task = task
+        self.max_attempts = max_attempts
+        self.effort_timed = effort_timed
+        self.deadline_s = deadline_s
+        self.deadline_timed_s = deadline_timed_s
+        self.deadline_late_s = deadline_late_s if deadline_late_s is not None else deadline_timed_s
+        self.late_from_turn = late_from_turn
+        self.last_raw: dict | None = None
+        self.last_latency: float | None = None
+        self.last_note = ""
+        self._pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="llm")
+        self._warm_future = None
+        self._warm_checked = 0.0
+
+    def warmup(self) -> None:
+        """后台预热/保持到模型服务的连接（等待匹配、对手回合、揭示动画期间调用；内部限频，不阻塞）。"""
+        if not hasattr(self.client, "warmup") or time.time() - self._warm_checked < 5:
+            return
+        self._warm_checked = time.time()
+        if self._warm_future is None or self._warm_future.done():
+            self._warm_future = self._pool.submit(self.client.warmup)
+
+    def _task_for(self, state: GameState) -> tuple[TaskConfig, float]:
+        if state.turn_timer:
+            # 后期回合场上牌多、局面复杂，模型更慢；官方回合约 1 分钟（后期略长），可放宽截止
+            deadline = self.deadline_late_s if state.turn >= self.late_from_turn else self.deadline_timed_s
+            task = replace(self.task, effort=self.effort_timed or self.task.effort,
+                           timeout_s=min(self.task.timeout_s, deadline + 5))
+            return task, deadline
+        return self.task, self.deadline_s
+
+    def decide(self, state: GameState) -> TurnDecision:
+        self.last_raw, self.last_latency, self.last_note = None, None, ""
+        task, deadline = self._task_for(state)
+        start = time.time()
+        future = self._pool.submit(self._ask, state, task, start + deadline)
+        try:
+            decision, raw = future.result(timeout=deadline)
+        except FutureTimeout:
+            decision, raw = None, None
+            self.last_note = f"大模型 {deadline:.0f}s 内未返回"
+            turn = state.turn
+
+            def _late(f, start=start, turn=turn):   # 迟到结果只记日志，供调整截止时间
+                try:
+                    d, _ = f.result()
+                    acts = ", ".join(f"{a.card}→{a.location}" for a in d.actions) if d else "无效"
+                    log.info("大模型迟到返回 T%d %.1fs：%s", turn, time.time() - start, acts)
+                except Exception as e:  # noqa: BLE001
+                    log.info("大模型迟到失败 T%d %.1fs：%r", turn, time.time() - start, e)
+            future.add_done_callback(_late)
+        except Exception as e:  # noqa: BLE001
+            decision, raw = None, None
+            self.last_note = f"大模型异常：{e!r}"
+        self.last_latency = time.time() - start
+        self.last_raw = raw
+        if decision is not None:
+            return decision
+        fallback = rule_based.decide(state)
+        fallback.reason = f"[{self.last_note or '大模型失败'}，规则AI兜底] " + fallback.reason
+        return fallback
+
+    def _ask(self, state: GameState, task: TaskConfig, deadline_ts: float) -> tuple[TurnDecision | None, dict | None]:
+        user = build_prompt(state)
+        raw = None
+        for attempt in range(self.max_attempts):
+            if attempt and time.time() > deadline_ts - 5:
+                break   # 剩余时间不够再问一次
+            try:
+                d = self.client.complete_json(task, SYSTEM, user, SCHEMA, "turn_decision")
+            except LLMError as e:
+                log.warning("大模型决策失败：%s", e)
+                break
+            raw = d
+            try:
+                decision = TurnDecision(actions=[PlayAction(**a) for a in d["actions"]], reason=d["reason"],
+                                        source=f"llm:{task.model}/{task.effort}")
+            except Exception as e:  # noqa: BLE001
+                log.warning("大模型输出无法解析：%r", e)
+                break
+            errors = validate(state, decision)
+            if not errors:
+                return decision, raw
+            log.info("大模型决策不合法：%s", errors)
+            user += "\n\n上一次输出不合法：\n- " + "\n- ".join(errors) + "\n请修正后重新输出。"
+        return None, raw
