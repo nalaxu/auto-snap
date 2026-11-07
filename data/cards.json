@@ -98,11 +98,11 @@
     "tags": []
   },
   "SpiderMan": {
-    "type": "special",
+    "type": "on_reveal",
     "cost": 2,
     "power": 4,
-    "ability": "Activate: Move to another location and pull an enemy card from here to there.",
+    "ability": "On Reveal: Move to another location and pull an enemy card from here to there. Activate: Repeat the On Reveal ability.",
     "tags": [],
-    "notes": "国服为激活牌（用户 2026-11-07）；国际服资料库是 On Reveal"
+    "notes": "国服文本（用户截图 2026-11-07）：揭示与激活都会把自己移到另外两路之一并拉一张敌牌过去，结果随机"
   }
 }

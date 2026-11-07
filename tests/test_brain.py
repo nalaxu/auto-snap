@@ -118,3 +118,17 @@ def test_board_slot_positions():
 
     assert board_slot_pos(1, 0)[0] < 0.5 < board_slot_pos(1, 1)[0]
     assert board_slot_pos(2, 2)[1] > board_slot_pos(2, 0)[1]
+
+
+def test_screen_activatable_overrides_database():
+    """资料库没写激活（Iron Lad），但画面显示可激活：列入可激活；已激活过的不再列。"""
+    from brain.models import Card
+    from brain.validator import activatable
+
+    lad = Card(id="IronLad", cost=4, power=7, entity=9, turn_played=4, activated=False, slot=3)
+    st = _board_state(6, [], my_cards=[(1, lad)])
+    assert activatable(st, st.locations[1]) == []
+    lad.screen_activatable = True
+    assert [c.id for c in activatable(st, st.locations[1])] == ["IronLad"]
+    lad.activated = True
+    assert activatable(st, st.locations[1]) == []

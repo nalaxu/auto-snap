@@ -38,6 +38,20 @@ def board_slot_pos(location: int, slot: int) -> tuple[float, float]:
     return (x, SLOT_Y[min(slot // 2, 1)])
 
 
+HINT_DY = -0.088   # 激活提示（Press & Hold to Activate/Deactivate）在牌中心上方的偏移（实测 2 张截图）
+
+
+def hint_to_slot(hint: tuple[float, float], cards: list[tuple[int, int]], tol: float = 0.05) -> tuple[int, int] | None:
+    """提示中心 -> 最近的我方场上牌 (location, slot)；cards 为候选 [(location, slot)]。"""
+    best, dist = None, tol
+    for loc, slot in cards:
+        x, y = board_slot_pos(loc, slot)
+        d = max(abs(hint[0] - x), abs(hint[1] - (y + HINT_DY)))
+        if d < dist:
+            best, dist = (loc, slot), d
+    return best
+
+
 HAND_CENTER_X = 0.4963
 HAND_SPACING = 0.0731
 HAND_Y = 0.876

@@ -128,6 +128,20 @@
           "Jubilee",
           "SwordMaster"
         ]
+      },
+      {
+        "game_id": "7c965b5e",
+        "date": "2026-11-07",
+        "result": "loss",
+        "cards": [
+          "Death",
+          "Hela",
+          "Hellcow",
+          "Hulk",
+          "Infinaut",
+          "LadySif",
+          "Ninja"
+        ]
       }
     ],
     "seen_cards": {
@@ -140,7 +154,14 @@
       "Morbius": 1,
       "Sunspot": 1,
       "Swarm": 1,
-      "SwordMaster": 1
+      "SwordMaster": 1,
+      "Death": 1,
+      "Hela": 1,
+      "Hellcow": 1,
+      "Hulk": 1,
+      "Infinaut": 1,
+      "LadySif": 1,
+      "Ninja": 1
     }
   }
 }

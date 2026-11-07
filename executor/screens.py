@@ -95,6 +95,61 @@ def detect(img) -> dict[str, Match]:
     return out
 
 
+def _template(name: str):
+    for d in _template_dirs:
+        path = d / f"{name}.png"
+        if path.exists():
+            return cv2.imdecode(np.fromfile(str(path), np.uint8), cv2.IMREAD_COLOR)
+    return None
+
+
+def _board(img):
+    arr = np.array(img.convert("RGB"))[:, :, ::-1] if hasattr(img, "convert") else img
+    h, w = arr.shape[:2]
+    return cv2.resize(arr, (REF_WIDTH, round(h * REF_WIDTH / w)), interpolation=cv2.INTER_AREA)
+
+
+def activate_hints(img, threshold: float = THRESHOLD) -> list[tuple[float, float]]:
+    """画面上所有「Press & Hold to Activate」提示的中心（相对坐标）。提示出现在可激活的我方场上牌上方，
+    包括资料库里没写激活的牌（如 Iron Lad 复制到了激活能力）。"""
+    t = _template("activate_hint")
+    if t is None:
+        return []
+    arr = _board(img)
+    H, W = arr.shape[:2]
+    x0, y0 = int(0.25 * W), int(0.35 * H)
+    roi = arr[y0:int(0.80 * H), x0:int(0.75 * W)]
+    r = cv2.matchTemplate(roi, t, cv2.TM_CCOEFF_NORMED)
+    out: list[tuple[float, float]] = []
+    th, tw = t.shape[:2]
+    for y, x in sorted(zip(*np.where(r >= threshold)), key=lambda p: -r[p]):
+        cx, cy = (x0 + x + tw / 2) / W, (y0 + y + th / 2) / H
+        if all(abs(cx - a) > 0.03 or abs(cy - b) > 0.03 for a, b in out):   # 非极大值抑制
+            out.append((cx, cy))
+    return out
+
+
+def activation_staged(img) -> float:
+    """场上牌已激活（待揭示）时，牌上方会出现「Press & Hold to Deactivate」提示。返回最佳匹配得分（≥ THRESHOLD 视为已激活）。
+
+    激活要到揭示时才结算，内存里的激活计数在本回合内不变，只能看画面确认；确认前不能重复长按（会取消激活）。
+    """
+    t = None
+    for d in _template_dirs:
+        path = d / "deactivate_hint.png"
+        if path.exists():
+            t = cv2.imdecode(np.fromfile(str(path), np.uint8), cv2.IMREAD_COLOR)
+            break
+    if t is None:
+        return 0.0
+    arr = np.array(img.convert("RGB"))[:, :, ::-1] if hasattr(img, "convert") else img
+    h, w = arr.shape[:2]
+    arr = cv2.resize(arr, (REF_WIDTH, round(h * REF_WIDTH / w)), interpolation=cv2.INTER_AREA)
+    H, W = arr.shape[:2]
+    roi = arr[int(0.35 * H):int(0.80 * H), int(0.25 * W):int(0.75 * W)]   # 三个地点的我方区域
+    return float(cv2.minMaxLoc(cv2.matchTemplate(roi, t, cv2.TM_CCOEFF_NORMED))[1])
+
+
 BLUR_THRESHOLD = 50.0  # 实测：指引遮罩时棋盘区清晰度 ≈ 2，正常画面 ≥ 867
 
 

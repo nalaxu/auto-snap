@@ -20,6 +20,7 @@ class Card(BaseModel):
     turn_played: int | None = None  # 场上牌：打出（揭示）的回合；由 brain/board.py 跟踪填写
     activated: bool | None = None   # 我方场上牌：激活（Activate）能力是否已用；非场上牌为 None
     slot: int | None = None         # 我方场上牌在该地点的格子（0 左上、1 右上、2 左下、3 右下）
+    screen_activatable: bool = False  # 画面上这张牌有「Press & Hold to Activate」提示（资料库没写激活也算，如复制来的能力）
 
 
 class Location(BaseModel):

@@ -71,6 +71,7 @@ def activatable(state: GameState, loc) -> list:
     db = default_db()
     out = []
     for c in loc.my_cards:
-        if c.activated is False and c.turn_played is not None and 0 < c.turn_played < state.turn                 and "Activate:" in (db.ability(c.id) or ""):
+        if c.activated is False and (c.screen_activatable or (
+                c.turn_played is not None and 0 < c.turn_played < state.turn and "Activate:" in (db.ability(c.id) or ""))):
             out.append(c)
     return out

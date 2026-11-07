@@ -242,7 +242,9 @@ def build_prompt(state: GameState, advisor=None, cards_db: dict | None = None) -
         "cube_stake": state.cube_stake, "cube_next": state.cube_next,
         "can_snap": state.can_snap, "opp_snapped": state.opp_snapped,
         "stakes_hint": stakes_hint(state),
-        "activatable": [{"card": c.id, "location": l.idx, "ability": (cards_db.get(c.id) or {}).get("ability", "")}
+        "activatable": [{"card": c.id, "location": l.idx, "ability": (cards_db.get(c.id) or {}).get("ability", "")
+                         + ("" if "Activate:" in ((cards_db.get(c.id) or {}).get("ability") or "")
+                            else "（画面显示可激活：能力是复制 / 场地给来的，具体效果看场上要点或按牌面推断）")}
                         for l in state.locations for c in activatable(state, l)],
         "played_last_turn": state.played_last_turn,
         "hand": [hand_card(c) for c in state.hand],

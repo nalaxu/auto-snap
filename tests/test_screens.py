@@ -51,3 +51,25 @@ def test_snap_click_matches_layout():
     from executor.layout import SNAP_BUTTON
 
     assert screens.OVERLAY_CLICKS["tap_to_snap"] == SNAP_BUTTON
+
+
+def test_activation_staged_hint():
+    """激活后牌上方出现「Press & Hold to Deactivate」（实测 820618e1 T6 Spider-Man）；其他界面不误判。"""
+    from PIL import Image
+
+    assert screens.activation_staged(Image.open(FIX / "activate_staged.png")) >= screens.THRESHOLD
+    for name in ("ingame_t4.jpg", "main_menu.jpg", "match_end.jpg"):
+        assert screens.activation_staged(Image.open(FIX / name)) < 0.5
+
+
+def test_activate_hint_maps_to_iron_lad_slot():
+    """7c965b5e T6：中路右下格的 Iron Lad 复制到激活能力，画面出现「Press & Hold to Activate」。"""
+    from PIL import Image
+
+    from executor.layout import hint_to_slot
+
+    hints = screens.activate_hints(Image.open(FIX / "activate_hint_ironlad.png"))
+    assert len(hints) == 1
+    assert hint_to_slot(hints[0], [(0, 0), (0, 1), (1, 0), (1, 1), (1, 2), (1, 3), (2, 0)]) == (1, 3)
+    for name in ("ingame_t4.jpg", "activate_staged.png", "main_menu.jpg"):
+        assert screens.activate_hints(Image.open(FIX / name)) == []

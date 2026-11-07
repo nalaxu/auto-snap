@@ -339,6 +339,19 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
             for l in state.locations:   # 本程序激活过的牌（内存里没有可靠的「已激活」标志）
                 for c in l.my_cards:
                     c.activated = (snap["game_id"], c.entity) in activated_cards
+            if live:   # 画面上的「可激活」提示：认出资料库里没写激活的牌（如 Iron Lad 复制到激活能力）
+                try:
+                    from executor import screens as _scr
+                    from executor.layout import hint_to_slot
+                    img = ex.capture()
+                    cands = [(l.idx, c.slot) for l in state.locations for c in l.my_cards if c.slot is not None]
+                    for h in (_scr.activate_hints(img) if img is not None else []):
+                        if (hit := hint_to_slot(h, cands)):
+                            for c in state.locations[hit[0]].my_cards:
+                                if c.slot == hit[1]:
+                                    c.screen_activatable = True
+                except Exception as e:  # noqa: BLE001
+                    log_event("activate_hint_error", error=repr(e))
             board.update(snap["game_id"], state)
             if state.board_notes:
                 print("  场上要点：\n    " + "\n    ".join(state.board_notes))

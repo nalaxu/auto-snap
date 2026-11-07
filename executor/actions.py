@@ -224,15 +224,28 @@ class Executor:
         log.info("激活 %s（地点%d 第%d格）长按 %s，已激活次数 %s", card_id, location, slot, pos, before)
         if self.dry_run:
             return
-        for hold in (1.2, 2.0):
+        from . import screens
+
+        def staged() -> bool:
+            """画面出现「Press & Hold to Deactivate」= 已激活（待揭示）；内存计数要到揭示才变，作补充判断。"""
+            end = time.time() + 1.5
+            while time.time() < end:
+                img = self.capture()
+                if img is not None and screens.activation_staged(img) >= screens.THRESHOLD:
+                    return True
+                s2 = self.snapshot()
+                if s2 and (s2["me"].get("activations") or 0) > before:
+                    return True
+                time.sleep(0.2)
+            return False
+
+        for hold in (1.5, 2.2):   # 只有确认「未激活」才再按：已激活时再长按会取消激活
             self._guard()
             mouse.press(pos, hold_s=hold)
-            if self._wait(lambda s2: (s2["me"].get("activations") or 0) > before):
+            if staged():
                 return
         self.save_evidence(f"activate_failed_T{s.get('turn')}_{card_id}")
-        mouse.key("esc")   # 长按没激活可能打开了卡牌详情
-        time.sleep(0.4)
-        raise ActionFailed(f"长按 {card_id} 后未激活")
+        raise ActionFailed(f"长按 {card_id} 后画面没有出现激活状态")
 
     def move(self, card_id: str, from_loc: int, to_loc: int) -> None:
         """把我方场上牌从一个地点拖到另一个地点（场地允许移入 / 卡牌 Moveable），用内存确认它出现在目标地点。"""
