@@ -14,7 +14,7 @@ from datetime import datetime
 from pathlib import Path
 
 from . import mouse
-from .layout import END_TURN_BUTTON, LOCATION_DROP, SNAP_BUTTON, Rect, hand_card_pos
+from .layout import END_TURN_BUTTON, LOCATION_DROP, RETREAT_BUTTON, SNAP_BUTTON, Rect, hand_card_pos
 from .window import WindowNotFound, client_rect, find_window, is_foreground, wait_foreground
 
 log = logging.getLogger(__name__)
@@ -209,6 +209,30 @@ class Executor:
             time.sleep(0.3)
         self.save_evidence(f"snap_failed_T{s.get('turn')}")
         raise ActionFailed("点击魔方后赌注没有变化")
+
+    def retreat(self) -> None:
+        """点左下 RETREAT，用内存确认（我方 Conceded 或对局结束）。
+
+        确认弹窗的样子尚未实测：不猜点击位置。未确认时保存截图、按 Esc 关闭可能的弹窗，抛 ActionFailed（上层照常出牌）。
+        """
+        s = _live(self.snapshot())
+        assert self.rect is not None
+        pos = self.rect.to_px(*RETREAT_BUTTON)
+        log.info("撤退 T%s 赌注 %s  点击 %s", s.get("turn"), s.get("cube_value"), pos)
+        if self.dry_run:
+            return
+        self._guard()
+        mouse.click(pos)
+        end = time.time() + 3
+        while time.time() < end:
+            s2 = self.snapshot()
+            if s2 and (s2.get("finished") or s2["me"].get("conceded")):
+                return
+            time.sleep(0.1)
+        self.save_evidence(f"retreat_dialog_T{s.get('turn')}")
+        mouse.key("esc")
+        time.sleep(0.5)
+        raise ActionFailed("点击 RETREAT 后未确认撤退（截图已保存，待补确认弹窗模板）")
 
     def end_turn(self) -> None:
         s = _live(self.snapshot())

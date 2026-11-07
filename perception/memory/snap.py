@@ -495,6 +495,7 @@ def to_game_state(snap: dict, deck: list[str] | None = None) -> GameState:
         **_timer_fields(snap),
         can_snap=bool(snap["me"].get("can_raise_stakes")) and not snap["me"].get("snap_turns"),
         opp_snapped=bool((snap.get("opp") or {}).get("snap_turns")),
+        opp_snap_turn=max((snap.get("opp") or {}).get("snap_turns") or [0]) or None,
         turn_timer=not snap.get("no_turn_timer", False),
         hand=hand,
         deck_remaining=remaining_deck(deck, snap) if deck else [],

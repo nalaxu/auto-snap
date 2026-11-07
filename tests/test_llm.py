@@ -299,3 +299,22 @@ def test_decider_respects_turn_timer_budget():
     assert 22 < dec.time_budget(st) <= 23                     # 30 − 7
     st.turn_seconds_left = None
     assert dec.time_budget(st) is None                         # 读不到计时：按配置截止
+
+
+def test_retreat_check_expected_cubes():
+    """只在「对手刚 Snap」和「最后一回合」考虑撤退；按期望方块：p < (1 − S/F)/2。"""
+    from brain.llm.decider import retreat_check
+    from brain.models import GameState, Location
+
+    def st(turn, stake, nxt, opp_snap_turn=None):
+        return GameState(turn=turn, energy=turn, hand=[], cube_stake=stake, cube_next=nxt, opp_snapped=bool(opp_snap_turn),
+                         opp_snap_turn=opp_snap_turn, locations=[Location(idx=i, name="X") for i in range(3)])
+
+    # b5c577ce T6：对手 Snap，赌注 4，终局 8；胜率 5% -> 撤退（阈值 25%）
+    go, why = retreat_check(st(6, 4, 8, opp_snap_turn=5), 0.05)
+    assert go and "25%" in why
+    assert not retreat_check(st(6, 4, 8, opp_snap_turn=5), 0.40)[0]       # 40%：打下去期望 −1.6 好于撤退 −4
+    assert not retreat_check(st(4, 1, 1), 0.05)[0]                         # 中期且对手没 Snap：不考虑撤退
+    assert retreat_check(st(4, 2, 2, opp_snap_turn=4), 0.10)[0]            # 对手刚 Snap（第 4 回合）：F=4，阈值 25%
+    assert retreat_check(st(6, 4, 8), 0.40, threshold=0.5)[0]              # 固定阈值 50%
+    assert retreat_check(st(6, 4, 8), None) == (False, "")                 # 规则 AI 兜底没有胜率：不撤退

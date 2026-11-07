@@ -119,3 +119,17 @@ def click(pos: tuple[int, int], hold_s: float = 0.06) -> None:
         time.sleep(hold_s)
     finally:
         _send(MOUSEEVENTF_LEFTUP)
+
+
+_VK = {"esc": 0x1B, "enter": 0x0D, "space": 0x20}
+
+
+def key(name: str, hold_s: float = 0.05) -> None:
+    """按一次键（esc / enter / space）。"""
+    import win32api
+    import win32con
+
+    vk = _VK[name]
+    win32api.keybd_event(vk, 0, 0, 0)
+    time.sleep(hold_s)
+    win32api.keybd_event(vk, 0, win32con.KEYEVENTF_KEYUP, 0)

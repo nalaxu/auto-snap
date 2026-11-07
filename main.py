@@ -127,6 +127,9 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
     decide, decider = make_decider(settings)
     ex = Executor(source.snapshot, client, dry_run=not live)
     snap_enabled = bool(settings.get("brain", {}).get("snap", True))
+    retreat_enabled = bool(settings.get("brain", {}).get("retreat", True))
+    retreat_threshold = settings.get("brain", {}).get("retreat_win_prob")   # None = 按期望方块计算
+    from brain.llm.decider import retreat_check
     done: set[tuple] = set()
     failures: dict[tuple, int] = {}
     forbidden: dict[tuple, list[tuple[str, int]]] = {}   # (game, turn) -> 被拒的 (card, 地点)
@@ -334,6 +337,10 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                 d.snap = False
                 d.reason += "（Snap 已在 config [brain].snap 关闭）"
             dec_s = time.time() - t_dec
+            want_retreat, retreat_why = retreat_check(state, d.win_probability, retreat_threshold)
+            if retreat_why:
+                print(f"  撤退判断：{retreat_why} → {'撤退' if want_retreat else '继续'}")
+            d.retreat = want_retreat and retreat_enabled
             acts = ", ".join(f"{a.card}→地点{a.location}" for a in d.actions) or "不出牌"
             stake = f" 赌注{state.cube_stake}" + ("（对手已 Snap）" if state.opp_snapped else "")
             if state.turn_seconds_left is not None:
@@ -353,6 +360,20 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
 
             try:
                 ex.prepare()
+                if d.retreat:
+                    try:
+                        ex.retreat()
+                        executed.append({"retreat": True, "ok": True})
+                        record("retreat")
+                        done.add(key)
+                        played_games.add(snap["game_id"])
+                        print(f"  ⤺ 撤退：只输当前赌注 {state.cube_stake}")
+                        continue
+                    except GameOver:
+                        raise
+                    except ActionFailed as e:
+                        executed.append({"retreat": True, "ok": False, "error": str(e)})
+                        print(f"  ⚠ 撤退失败：{e}；照常出牌")
                 if d.snap:   # 先 Snap 再出牌：失败不影响本回合出牌
                     try:
                         ex.snap()

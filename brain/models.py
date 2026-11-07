@@ -45,6 +45,7 @@ class GameState(BaseModel):
     turn_timer: bool = True          # 本局是否有回合计时（Game.NoTurnTimer 取反）
     can_snap: bool = True            # 我方本局还没 Snap（每局一次）
     opp_snapped: bool = False        # 对手已 Snap
+    opp_snap_turn: int | None = None # 对手 Snap 的回合（撤退判断：对手刚 Snap 的那一回合）
     cube_next: int | None = None     # 下回合生效的赌注（Snap 后翻倍）
     turn_seconds_left: float | None = None   # 本回合倒计时剩余秒数（内存 TurnTimer；读不到为 None）
     turn_seconds_total: float | None = None
@@ -75,5 +76,6 @@ class TurnDecision(BaseModel):
     actions: list[PlayAction] = Field(default_factory=list)  # 按执行顺序（影响揭示顺序）
     snap: bool = False
     retreat: bool = False
+    win_probability: float | None = None   # 大模型估计的最终胜率（0–1），用于撤退期望计算
     reason: str = ""
     source: str = "unknown"      # claude / rule_based，便于复盘

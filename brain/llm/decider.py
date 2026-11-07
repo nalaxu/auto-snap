@@ -47,6 +47,9 @@ SYSTEM = """你是《漫威终极逆转》（Marvel Snap 国服）的顶尖玩�
    提示其后续威胁；我方剩余牌库 deck_remaining 与 energy_by_turn 用于规划后续回合（保留关键大牌、凑能量曲线）。
 3. 本回合出牌：尽量用满能量（除非刻意留给后续规划），考虑卡牌能力（On Reveal 条件、Ongoing、Medusa 放中间、
    Hawkeye 需要下回合在同一场地跟牌等），已大幅领先的场地不要浪费战力。
+   - 能量利用率：浪费能量是重大失误（用户复盘 b5c577ce T5：5 点能量只打 3 费 White Queen）。除非刻意为下回合
+     关键 combo 保留，否则必须用满；能量用不满时，优先选「能量利用更高、且带来翻盘机会」的牌
+     （如 Loki 把牌库换成对手起始卡组并降费，后续能抽到对手的强牌；落后时尤其重要）。reason 里写明剩余能量及原因。
    - 纸面战力不是唯一标准：有条件的减费/成长牌（如 Firelord 在条件满足时降费）留到条件成熟再打，
      本回合先打能铺垫后续（补手牌、触发 combo）的牌。增益场地（如给低费牌加成的场地）优先放能吃到加成的牌。
    - 最后一回合（turns_left_after_this=0）分路原则：已稳定领先两路时，把本回合资源投向第三路争取三路全优——
@@ -73,6 +76,8 @@ SYSTEM = """你是《漫威终极逆转》（Marvel Snap 国服）的顶尖玩�
      · 不要 Snap：只领先 1 路、分差都很小、关键场地未揭示、对手手牌多且能量高、或我方后续没有关键牌。
    - 对手已 Snap（opp_snapped=true）说明对手有信心：我方没有明显优势时不跟。
 
+5. win_probability：按本回合出牌后的局面，估计我方最终赢下本局的概率（0–100 整数）。要现实：对手已揭示牌的威胁、
+   对手剩余手牌数与能量、各路分差与空位、我方剩余回合能补的战力都要考虑。程序据此计算是否撤退（不要自己判断撤退）。
 只输出 JSON。card 用 hand 中的 id，location 用场地 idx（0/1/2）。不出牌时 actions 为空数组。
 文字字段用中文且尽量简短：每个 effect / why ≤ 20 字，plan 与 reason 各 ≤ 40 字（回合有计时，越快越好）。"""
 
@@ -107,10 +112,32 @@ SCHEMA: dict[str, Any] = {
         },
         "reason": {"type": "string"},
         "snap": {"type": "boolean"},
+        "win_probability": {"type": "integer", "minimum": 0, "maximum": 100},
     },
-    "required": ["location_assessment", "target_locations", "plan", "actions", "reason", "snap"],
+    "required": ["location_assessment", "target_locations", "plan", "actions", "reason", "snap", "win_probability"],
     "additionalProperties": False,
 }
+
+
+def retreat_check(state: GameState, win_prob: float | None, threshold: float | None = None) -> tuple[bool, str]:
+    """是否撤退（期望方块最大）。只在两个时点考虑（用户经验）：对手刚 Snap 的回合、最后一回合；其余回合尽量打下去。
+
+    撤退：输掉当前赌注 S。打下去：赢/输终局赌注 F（最后一回合 F = 下回合赌注，已含终局翻倍；更早 F = 下回合赌注 × 2）。
+    期望 (2p − 1)·F < −S 时撤退，即 p < (1 − S/F) / 2（F = 2S 时 p < 25%）。threshold 给定则改用固定胜率阈值。
+    """
+    if win_prob is None:
+        return False, ""
+    final_turn = state.turn >= state.max_turn
+    opp_snap_now = state.opp_snap_turn is not None and state.opp_snap_turn >= state.turn - 1
+    if not (final_turn or opp_snap_now):
+        return False, ""
+    s = max(1, state.cube_stake)
+    nxt = state.cube_next or s
+    f = nxt if final_turn else nxt * 2
+    cut = threshold if threshold is not None else (1 - s / f) / 2
+    why = (f"{'最后一回合' if final_turn else '对手刚 Snap'}：胜率 {win_prob:.0%}，撤退输 {s}，"
+           f"打下去 赢/输 {f}（期望 {(2 * win_prob - 1) * f:+.1f}），撤退阈值 {cut:.0%}")
+    return win_prob < cut, why
 
 
 def stakes_hint(state: GameState) -> dict:
@@ -283,8 +310,10 @@ class LLMDecider:
                 break
             raw = d
             try:
+                p = d.get("win_probability")
                 decision = TurnDecision(actions=[PlayAction(**a) for a in d["actions"]], reason=d["reason"],
                                         snap=bool(d.get("snap")) and state.can_snap,
+                                        win_probability=p / 100 if isinstance(p, (int, float)) else None,
                                         source=f"llm:{task.model}/{task.effort}")
             except Exception as e:  # noqa: BLE001
                 log.warning("大模型输出无法解析：%r", e)
