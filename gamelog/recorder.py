@@ -97,7 +97,12 @@ class GameRecorder:
                   "my_cards": [c.get("id") for c in l["my_cards"]], "opp_cards": [c.get("id") for c in l["opp_cards"]]}
                  for l in snap["locations"]]
         result, mine, theirs = judge(final)
-        summary = {"result": result, "my_locations_won": mine, "opp_locations_won": theirs,
+        retreat = None   # 撤退（含挂机被判认输）：胜负由撤退方决定，不看场地比分
+        if (snap.get("opp") or {}).get("conceded"):
+            result, retreat = "win", "opp"
+        elif (snap.get("me") or {}).get("conceded"):
+            result, retreat = "loss", "me"
+        summary = {"result": result, "retreat": retreat, "my_locations_won": mine, "opp_locations_won": theirs,
                    "cube_value": snap.get("cube_value"), "turns_recorded": self.turns.get(gid, 0)}
         self._write(gid, {"type": "game_end", **summary, "final": final})
         try:

@@ -31,3 +31,14 @@ def test_recorder_writes_turns_end_and_index(tmp_path):
     assert lines[1]["decision"]["actions"][0]["card"] == "Quicksilver"
     idx = [json.loads(x) for x in (tmp_path / "index.jsonl").read_text("utf-8").splitlines()]
     assert idx[0]["result"] == "win" and idx[0]["cube_value"] == 2
+
+
+def test_retreat_overrides_location_judgement(tmp_path):
+    from gamelog.recorder import GameRecorder
+
+    rec = GameRecorder(tmp_path)
+    locs = [{"idx": i, "id": "X", "my_power": 0, "opp_power": 0, "my_cards": [], "opp_cards": []} for i in range(3)]
+    base = {"cube_value": 1, "locations": locs}
+    assert rec.end({**base, "game_id": "a" * 36, "me": {}, "opp": {"conceded": True}})["result"] == "win"
+    s = rec.end({**base, "game_id": "b" * 36, "me": {"conceded": True}, "opp": {}})
+    assert s["result"] == "loss" and s["retreat"] == "me"

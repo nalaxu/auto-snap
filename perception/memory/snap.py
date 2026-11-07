@@ -268,6 +268,9 @@ class SnapMemoryReader:
             "turn": turn,
             "total_turns": il.get_int(g, "TotalTurns"),
             "cube_value": il.get_int(g, "CubeValue"),
+            # 赌注：Snap 后 CubeValueNextTurn 翻倍（下回合生效）；每名玩家一局只能 Snap 一次，Snap 后 CanRaiseStakes=False
+            "cube_value_next": il.get_int(g, "CubeValueNextTurn"),
+            "stakes_raised": il.get_int(g, "StakesRaisedCount"),
             "no_turn_timer": il.get_bool(g, "NoTurnTimer"),
             "finished": self._finished(g),
             "me": {
@@ -275,6 +278,8 @@ class SnapMemoryReader:
                 "energy": il.get_int(me, "CurrentEnergy"),
                 "max_energy": il.get_int(me, "MaxEnergy"),
                 "ended_turn": il.get_int(me, "EndedTurn"),
+                "can_raise_stakes": il.get_bool(me, "CanRaiseStakes"),
+                "conceded": bool(il.get_int(me, "Conceded")),
                 "hand": hand,
                 "deck_count": deck_count,
                 "graveyard": seen_ids("Graveyard"),
@@ -283,6 +288,8 @@ class SnapMemoryReader:
             "opp": {
                 "entity": pid[1 - me_idx],
                 "hand_count": len(zone_cards(opp, "Hand")),
+                "can_raise_stakes": il.get_bool(opp, "CanRaiseStakes"),
+                "conceded": bool(il.get_int(opp, "Conceded")),
                 "deck_count": len(zone_cards(opp, "Deck")),
             },
             "locations": locs,
@@ -327,6 +334,10 @@ def to_game_state(snap: dict, deck: list[str] | None = None) -> GameState:
         max_turn=snap["total_turns"] or 6,
         energy=snap["me"]["energy"] or 0,
         cube_stake=snap["cube_value"] or 1,
+        cube_next=snap.get("cube_value_next") or snap["cube_value"] or 1,
+        can_snap=bool(snap["me"].get("can_raise_stakes")),
+        # 对手 CanRaiseStakes=False 且本局有过加注 -> 对手已 Snap
+        opp_snapped=bool(snap.get("stakes_raised")) and (snap.get("opp") or {}).get("can_raise_stakes") is False,
         turn_timer=not snap.get("no_turn_timer", False),
         hand=hand,
         deck_remaining=remaining_deck(deck, snap) if deck else [],

@@ -14,7 +14,7 @@ from datetime import datetime
 from pathlib import Path
 
 from . import mouse
-from .layout import END_TURN_BUTTON, LOCATION_DROP, Rect, hand_card_pos
+from .layout import END_TURN_BUTTON, LOCATION_DROP, SNAP_BUTTON, Rect, hand_card_pos
 from .window import WindowNotFound, client_rect, find_window, is_foreground, wait_foreground
 
 log = logging.getLogger(__name__)
@@ -25,6 +25,18 @@ DROP_Y_FALLBACK = 0.66   # 首次落点没生效时的备用落点（更靠下�
 
 class ActionFailed(RuntimeError):
     pass
+
+
+class GameOver(ActionFailed):
+    """操作前发现对局已结束（如对手撤退）：本回合不再操作。"""
+
+
+def _live(s: dict | None) -> dict:
+    if not s:
+        raise ActionFailed("读取不到对局状态")
+    if s.get("finished"):
+        raise GameOver("对局已结束" + ("（对手撤退）" if (s.get("opp") or {}).get("conceded") else ""))
+    return s
 
 
 class PlayRejected(ActionFailed):
@@ -143,9 +155,7 @@ class Executor:
 
     # ------------------------------------------------------------ 动作
     def play(self, card_id: str, location: int) -> None:
-        s = self.snapshot()
-        if not s:
-            raise ActionFailed("读取不到对局状态")
+        s = _live(self.snapshot())
         hand = s["me"]["hand"]
         idx = next((i for i, c in enumerate(hand) if c.get("id") == card_id), None)
         if idx is None:
@@ -172,15 +182,34 @@ class Executor:
                 raise ActionFailed(f"{card_id} 落到了地点{wrong[0]}，而不是地点{location}")
             time.sleep(0.3)
         s3 = self.snapshot() or {}
+        _live(s3 or None)   # 拖拽期间对局结束（对手撤退）：不算地点限制
         if any(c.get("entity") == entity for c in s3.get("me", {}).get("hand", [])):
             self.save_evidence(f"rejected_T{s3.get('turn')}_{card_id}_loc{location}")
             raise PlayRejected(card_id, location)
         raise ActionFailed(f"{card_id} 拖到地点{location} 未生效")
 
+    def snap(self) -> None:
+        """点击右侧魔方加注，用内存确认（我方 CanRaiseStakes 变 False 或下回合赌注翻倍）。"""
+        s = _live(self.snapshot())
+        if s["me"].get("can_raise_stakes") is False:
+            raise ActionFailed("本局已经 Snap 过")
+        before = s.get("cube_value_next") or s.get("cube_value") or 1
+        assert self.rect is not None
+        pos = self.rect.to_px(*SNAP_BUTTON)
+        log.info("Snap T%s 赌注 %s  点击 %s", s.get("turn"), before, pos)
+        if self.dry_run:
+            return
+        for _ in range(2):
+            self._guard()
+            mouse.click(pos)
+            if self._wait(lambda s2: s2["me"].get("can_raise_stakes") is False or (s2.get("cube_value_next") or 0) > before):
+                return
+            time.sleep(0.3)
+        self.save_evidence(f"snap_failed_T{s.get('turn')}")
+        raise ActionFailed("点击魔方后赌注没有变化")
+
     def end_turn(self) -> None:
-        s = self.snapshot()
-        if not s:
-            raise ActionFailed("读取不到对局状态")
+        s = _live(self.snapshot())
         turn = s["turn"]
         assert self.rect is not None
         pos = self.rect.to_px(*END_TURN_BUTTON)

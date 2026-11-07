@@ -123,3 +123,16 @@ def test_turn_gate_waits_for_real_hand_ids():
     g.ready(real)
     clk.t = 10.5
     assert g.ready(real)
+
+
+def test_stakes_fields_map_to_game_state():
+    s = snap(cube_value=1, cube_value_next=2, stakes_raised=1)
+    s["me"]["can_raise_stakes"] = False          # 我方刚 Snap
+    s["opp"]["can_raise_stakes"] = True
+    gs = to_game_state(s, DECK)
+    assert gs.can_snap is False and gs.opp_snapped is False and gs.cube_next == 2
+    s["me"]["can_raise_stakes"], s["opp"]["can_raise_stakes"] = True, False   # 对手 Snap
+    gs = to_game_state(s, DECK)
+    assert gs.can_snap is True and gs.opp_snapped is True
+    s.pop("stakes_raised"); s["me"].pop("can_raise_stakes")                    # 字段缺失（如国际服未适配）：保守不 Snap
+    assert to_game_state(s, DECK).can_snap is False

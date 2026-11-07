@@ -43,7 +43,9 @@ class GameState(BaseModel):
     energy: int
     cube_stake: int = 1
     turn_timer: bool = True          # 本局是否有回合计时（Game.NoTurnTimer 取反）
-    can_snap: bool = True
+    can_snap: bool = True            # 我方本局还没 Snap（每局一次）
+    opp_snapped: bool = False        # 对手已 Snap
+    cube_next: int | None = None     # 下回合生效的赌注（Snap 后翻倍）
     hand: list[Card]
     deck_remaining: list[str] = Field(default_factory=list)   # 我方剩余牌库（卡组 − 已见牌，无序）
     my_deck_count: int | None = None

@@ -47,6 +47,25 @@ SYSTEM = """你是《漫威终极逆转》（Marvel Snap 国服）的顶尖玩�
    提示其后续威胁；我方剩余牌库 deck_remaining 与 energy_by_turn 用于规划后续回合（保留关键大牌、凑能量曲线）。
 3. 本回合出牌：尽量用满能量（除非刻意留给后续规划），考虑卡牌能力（On Reveal 条件、Ongoing、Medusa 放中间、
    Hawkeye 需要下回合在同一场地跟牌等），已大幅领先的场地不要浪费战力。
+   - 纸面战力不是唯一标准：有条件的减费/成长牌（如 Firelord 在条件满足时降费）留到条件成熟再打，
+     本回合先打能铺垫后续（补手牌、触发 combo）的牌。增益场地（如给低费牌加成的场地）优先放能吃到加成的牌。
+   - 最后一回合（turns_left_after_this=0）分路原则：已稳定领先两路时，把本回合资源投向第三路争取三路全优——
+     对手必须同时翻两路才能赢，胜率与容错都更高；不要继续往已大幅领先的路堆战力。
+     若只领先一路，则优先保住领先最少、最可能被翻的那一路和最有希望拿下的第二路。
+
+4. 是否 Snap（snap 字段，加注）——每回合都必须认真判断，并在 reason 里写明 Snap 或不 Snap 的一句理由。
+   方块决定段位：不 Snap 赢一局只得 2 方块，Snap 后赢一局得 4；输了同样翻倍，所以只在优势局 Snap。
+   - Snap 后下回合赌注翻倍，终局再自动翻倍；每局只能 Snap 一次，can_snap=false 时必须填 false。
+   - stakes_hint 给出本回合出牌前的领先情况（每路分差、领先路数、剩余回合）。按本回合出牌后的局面判断：
+     · 我方 combo 打出并实际生效之后就是好的 Snap 点（如减费/生成牌引擎已落地并开始兑现收益、持续成长场地已拉开分差），
+       这一条不要求已经领先两路：引擎生效意味着后续每回合都比对手多拿资源，第 3 回合就可以 Snap。
+       例：T2 Iron Patriot / Quinjet 等生成或减费牌落地、T3 已兑现（手牌增加、费用降低、场地领先），T3 即 Snap。
+       越早 Snap，对手越难判断，也越早锁定翻倍。
+     · 应当 Snap：预计领先 2 路且每路领先 ≥ 5（或一路大幅领先 ≥ 10、另一路稳定领先），
+       对手已揭示牌里没有明显的翻盘威胁；我方后续手牌/能量曲线更强时也应 Snap。
+     · 第 1–2 回合信息太少，一般不 Snap。
+     · 不要 Snap：只领先 1 路、分差都很小、关键场地未揭示、对手手牌多且能量高、或我方后续没有关键牌。
+   - 对手已 Snap（opp_snapped=true）说明对手有信心：我方没有明显优势时不跟。
 
 只输出 JSON。card 用 hand 中的 id，location 用场地 idx（0/1/2）。不出牌时 actions 为空数组。
 文字字段用中文且尽量简短：每个 effect / why ≤ 20 字，plan 与 reason 各 ≤ 40 字（回合有计时，越快越好）。"""
@@ -81,10 +100,23 @@ SCHEMA: dict[str, Any] = {
             },
         },
         "reason": {"type": "string"},
+        "snap": {"type": "boolean"},
     },
-    "required": ["location_assessment", "target_locations", "plan", "actions", "reason"],
+    "required": ["location_assessment", "target_locations", "plan", "actions", "reason", "snap"],
     "additionalProperties": False,
 }
+
+
+def stakes_hint(state: GameState) -> dict:
+    """本回合出牌前的领先情况（供 Snap 判断）：每路分差（我方 − 对手）、领先/落后路数、剩余回合。"""
+    diffs = [l.my_power - l.opp_power for l in state.locations]
+    return {
+        "diff_by_location": diffs,
+        "leading": sum(1 for d in diffs if d > 0),
+        "trailing": sum(1 for d in diffs if d < 0),
+        "turns_left_after_this": max(0, state.max_turn - state.turn),
+        "unrevealed_locations": sum(1 for l in state.locations if not l.revealed),
+    }
 
 
 def build_prompt(state: GameState, advisor=None, cards_db: dict | None = None) -> str:
@@ -125,7 +157,9 @@ def build_prompt(state: GameState, advisor=None, cards_db: dict | None = None) -
         "board_notes": state.board_notes,
         "turn": state.turn, "max_turn": state.max_turn, "phase": phase(state.turn, state.max_turn), "turns_left_after_this": turns_left,
         "energy": state.energy, "energy_by_turn": {t: t for t in range(state.turn + 1, state.max_turn + 1)},
-        "cube_stake": state.cube_stake,
+        "cube_stake": state.cube_stake, "cube_next": state.cube_next,
+        "can_snap": state.can_snap, "opp_snapped": state.opp_snapped,
+        "stakes_hint": stakes_hint(state),
         "hand": [hand_card(c) for c in state.hand],
         "deck_remaining": [note(c) for c in state.deck_remaining],
         "my_deck_count": state.my_deck_count,
@@ -222,6 +256,7 @@ class LLMDecider:
             raw = d
             try:
                 decision = TurnDecision(actions=[PlayAction(**a) for a in d["actions"]], reason=d["reason"],
+                                        snap=bool(d.get("snap")) and state.can_snap,
                                         source=f"llm:{task.model}/{task.effort}")
             except Exception as e:  # noqa: BLE001
                 log.warning("大模型输出无法解析：%r", e)

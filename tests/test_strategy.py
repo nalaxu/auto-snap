@@ -75,3 +75,16 @@ def test_real_kb_machineworld_follows_player_tip(tmp_path):
     assert early.actions[0].location != 0
     final = rule_based.decide(state(6, names, [Card(id="Hulk", cost=6, power=12)], [(0, 3), (0, 0), (0, 0)]), adv)
     assert final.actions[0].location == 0
+
+
+def test_final_turn_prefers_third_lane_when_two_are_safe():
+    """用户复盘（3814308c T6）：左中已稳，最后一回合应去争第三路，而不是继续堆中路。"""
+    from brain import rule_based
+    from brain.models import Card, GameState, Location
+
+    st = GameState(turn=6, energy=4, hand=[Card(id="Valentina", cost=2, power=3), Card(id="Squirrel", cost=1, power=1)],
+                   locations=[Location(idx=0, name="", revealed=False, my_power=28, opp_power=14),
+                              Location(idx=1, name="", revealed=False, my_power=15, opp_power=3),
+                              Location(idx=2, name="", revealed=False, my_power=5, opp_power=13)])
+    d = rule_based.decide(st)
+    assert d.actions and all(a.location == 2 for a in d.actions)

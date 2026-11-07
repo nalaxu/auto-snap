@@ -108,7 +108,7 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
     """自动对局：感知 -> 决策 -> 执行 -> 结束回合；对局外按界面识别处理 结算(Collect Rewards) -> 奖励(Next) -> 主界面(Play)。"""
     from brain import rule_based
     from brain.validator import validate
-    from executor.actions import ActionFailed, Executor, PlayRejected
+    from executor.actions import ActionFailed, Executor, GameOver, PlayRejected
     from executor.mouse import Aborted
     from perception import make_state_source
 
@@ -126,6 +126,7 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
     board = BoardTracker()                 # 场上要点（消息栈）：每回合重建
     decide, decider = make_decider(settings)
     ex = Executor(source.snapshot, client, dry_run=not live)
+    snap_enabled = bool(settings.get("brain", {}).get("snap", True))
     done: set[tuple] = set()
     failures: dict[tuple, int] = {}
     forbidden: dict[tuple, list[tuple[str, int]]] = {}   # (game, turn) -> 被拒的 (card, 地点)
@@ -297,9 +298,13 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
             d = decide(state)
             if validate(state, d):
                 d = rule_based.decide(state)
+            if d.snap and not snap_enabled:
+                d.snap = False
+                d.reason += "（Snap 已在 config [brain].snap 关闭）"
             dec_s = time.time() - t_dec
             acts = ", ".join(f"{a.card}→地点{a.location}" for a in d.actions) or "不出牌"
-            print(f"T{state.turn} 能量{state.energy} [{d.source} {dec_s:.1f}s] {acts}")
+            stake = f" 赌注{state.cube_stake}" + ("（对手已 Snap）" if state.opp_snapped else "")
+            print(f"T{state.turn} 能量{state.energy}{stake} [{d.source} {dec_s:.1f}s] {acts}" + ("  + SNAP" if d.snap else ""))
             if d.reason:
                 print(f"    理由：{d.reason}")
             llm_raw = getattr(decider, "last_raw", None) if decider is not None else None
@@ -314,6 +319,16 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
 
             try:
                 ex.prepare()
+                if d.snap:   # 先 Snap 再出牌：失败不影响本回合出牌
+                    try:
+                        ex.snap()
+                        executed.append({"snap": True, "ok": True})
+                        print(f"  ⚡ SNAP：赌注 {state.cube_stake} → 下回合 {state.cube_stake * 2}")
+                    except GameOver:
+                        raise
+                    except ActionFailed as e:
+                        executed.append({"snap": True, "ok": False, "error": str(e)})
+                        print(f"  ⚠ Snap 失败：{e}")
                 for a in d.actions:
                     ex.play(a.card, a.location)
                     executed.append({"card": a.card, "location": a.location, "ok": True})
@@ -323,6 +338,12 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                 done.add(key)
                 played_games.add(snap["game_id"])
                 turns += 1
+            except GameOver as e:
+                record("game_over")
+                done.add(key)
+                played_games.add(snap["game_id"])
+                print(f"  ■ {e}，停止本回合操作")
+                continue
             except PlayRejected as e:
                 executed.append({"card": e.card_id, "location": e.location, "ok": False, "error": "rejected"})
                 if live and (handle_overlay() or guide_active()):

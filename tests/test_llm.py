@@ -256,3 +256,22 @@ def test_warmup_is_throttled_and_non_blocking():
     assert _t.time() - t0 < 0.1          # 不阻塞主循环
     _t.sleep(0.3)
     assert len(calls) == 1               # 5s 内只提交一次
+
+
+def test_decider_snap_flag_respects_can_snap():
+    """Snap 进入结构化输出与提示；本局已 Snap（can_snap=False）时即使模型说要 Snap 也不执行。"""
+    from brain.llm.decider import SCHEMA as DSCHEMA, LLMDecider, build_prompt
+    from brain.models import Card, GameState, Location
+
+    def state(can_snap):
+        return GameState(turn=4, energy=4, hand=[Card(id="Medusa", cost=2, power=2)], can_snap=can_snap,
+                         opp_snapped=True, cube_stake=2, cube_next=2,
+                         locations=[Location(idx=i, name="Ruins") for i in range(3)])
+
+    assert "snap" in DSCHEMA["required"]
+    data = json.loads(build_prompt(state(True)).split("\n", 1)[1])
+    assert data["can_snap"] is True and data["opp_snapped"] is True and data["cube_next"] == 2
+    out = {"location_assessment": [], "target_locations": [0, 1], "plan": "p", "reason": "r", "snap": True,
+           "actions": [{"card": "Medusa", "location": 1}]}
+    assert LLMDecider(OpenAIClient("k", client=FakeOpenAI(out)), llm.TaskConfig("m")).decide(state(True)).snap is True
+    assert LLMDecider(OpenAIClient("k", client=FakeOpenAI(out)), llm.TaskConfig("m")).decide(state(False)).snap is False

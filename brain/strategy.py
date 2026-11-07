@@ -33,6 +33,11 @@ class ContestRule:
 
     def score(self, ctx, card, loc):
         d = ctx.diff[loc]
+        st = ctx.state
+        others = [ctx.diff[i] for i in ctx.diff if i != loc]
+        # 最后一回合：其余两路已稳定领先 -> 争第三路做成三路全优（对手需要翻两路才能赢）
+        if st.turn >= st.max_turn and d <= 0 and len(others) == 2 and min(others) >= 6:
+            return 3.5, f"终局已稳两路，争第三路（落后{-d}）"
         if d < 0 and d + card.power >= 0:
             return 3.0, f"落后{-d}可追平"
         if 0 <= d < 5:
