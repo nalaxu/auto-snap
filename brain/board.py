@@ -31,11 +31,22 @@ class BoardTracker:
         self.first_turn: int | None = None
         self.played: dict[tuple, int | None] = {}
         self.opp_spent: dict[int, int] = {}
+        self.revealed_at: dict[int, int] = {}
+        self.my_plays: list[tuple[int, int]] = []   # 我方实际打出的 (回合, 地点)，由主循环在出牌成功后登记
+
+    def record_play(self, turn: int, location: int) -> None:
+        self.my_plays.append((turn, location))
 
     def update(self, game_id: str, state: GameState) -> GameState:
         db = self.db or knowledge.default_db()
         if game_id != self.game_id:
             self.game_id, self.first_turn, self.played, self.opp_spent = game_id, state.turn, {}, {}
+            self.revealed_at, self.my_plays = {}, []
+        for loc in state.locations:   # 场地第一次看到揭示的回合（场地放牌顺序信号从这时起生效）
+            if loc.revealed and loc.idx not in self.revealed_at:
+                self.revealed_at[loc.idx] = state.turn
+        state.played_here_since_reveal = {
+            i: sum(1 for t, l in self.my_plays if l == i and t >= r) for i, r in self.revealed_at.items()}
         for loc in state.locations:
             for side, cards in (("mine", loc.my_cards), ("opp", loc.opp_cards)):
                 for n, c in enumerate(cards):
@@ -66,38 +77,15 @@ def next_effect_note(where: str, card_id: str, ability: str, loc_name: str) -> s
     if not ability or ability.startswith("Ongoing") or not _NEXT_ANY.search(ability):
         return None
     if _NEXT_CARD.search(ability):
-        here = re.search(r"at this location|here", ability, re.I)
-        order = f"actions 第一张必须打在 {where}" if here else "actions 第一张就是受影响的牌"
-        return f"【本回合有效·出牌顺序】{where} 我方 {card_id}：{ability} → {order}"
+        return None   # 「下一张牌」类由 brain/signals.py 的放牌顺序信号处理
     return f"【本回合有效】{where} 我方 {card_id}：{ability}"
 
 
 def reorder_for_next_card(state: GameState, decision, db: knowledge.GameDB | None = None) -> str | None:
-    """「下一张牌打在这里才生效」（如 Shuri 加倍）：本回合计划里有打到该地点的牌，就把其中战力最高的一张挪到第一张。
+    """按放牌顺序信号调整出牌顺序（通用逻辑见 brain/signals.py）。"""
+    from . import signals
 
-    返回调整说明；无需调整返回 None。只处理指定地点的增益类（here / at this location），其余交给模型按要点排序。
-    """
-    db = db or knowledge.default_db()
-    last = state.turn - 1
-    if last < 1 or not decision.actions:
-        return None
-    for loc in state.locations:
-        for c in loc.my_cards:
-            ab = db.ability(c.id) or ""
-            if c.turn_played != last or not _NEXT_CARD.search(ab) or not re.search(r"at this location|here", ab, re.I):
-                continue
-            here = [i for i, a in enumerate(decision.actions) if a.location == loc.idx]
-            if not here:
-                return None
-            power = {h.id: h.power for h in state.hand}
-            best = max(here, key=lambda i: power.get(decision.actions[i].card, 0))
-            if best == 0:
-                return None
-            a = decision.actions.pop(best)
-            decision.actions.insert(0, a)
-            return f"{c.id} 的「下一张牌」效果：{a.card} 调到第一张出（地点{loc.idx}）"
-    return None
-
+    return signals.reorder(state, decision, db or knowledge.default_db())
 
 def _turn_numbers(text: str) -> list[int]:
     return [int(x) for x in re.findall(r"turn (\d+)", text or "", flags=re.I)]
@@ -130,7 +118,9 @@ def build_notes(state: GameState, db: knowledge.GameDB) -> list[str]:
                 left = min(t for t in turns if t >= state.turn) - state.turn
                 when = "本回合" if left == 0 else f"{left} 回合后"
                 loc_events.append(f"【场地事件·{when}】{where}：{eff}")
-    actionable = _actionable_notes(state, db)
+    from . import signals
+
+    actionable = _actionable_notes(state, db) + signals.notes(state, db, _where)
     tempo = _opp_tempo_note(state)
     notes = actionable + pending + ongoing + opp_new + tempo + loc_events
     return notes[:MAX_NOTES]

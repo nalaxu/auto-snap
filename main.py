@@ -295,6 +295,8 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
             if snap and snap.get("finished") and snap["game_id"] in played_games and snap["game_id"] not in finished_games:
                 finished_games.add(snap["game_id"])
                 summary = rec.end(snap) or {}
+                from brain.calibration import default_calibrator
+                default_calibrator().refresh()   # 新对局结果进入胜率校准样本
                 final_opp = [c.get("id") for l in snap["locations"] for c in l["opp_cards"] if c.get("id")]
                 arche = decks.default_kb().record_game(snap["game_id"], opp_seen.get(snap["game_id"], []) + final_opp,
                                                        summary.get("result"))
@@ -370,6 +372,12 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                 d.snap = False
                 d.reason += "（Snap 已在 config [brain].snap 关闭）"
             dec_s = time.time() - t_dec
+            if d.win_probability is not None:   # 历史校准：模型终局预估明显偏高（实测 73–80% 只赢 2/6）
+                from brain.calibration import default_calibrator
+                d.win_probability_raw = d.win_probability
+                d.win_probability = default_calibrator().calibrate(d.win_probability, state.turn >= state.max_turn)
+                if abs(d.win_probability - d.win_probability_raw) >= 0.03:
+                    print(f"  胜率校准：模型 {d.win_probability_raw:.0%} → 历史校准 {d.win_probability:.0%}")
             want_retreat, retreat_why = retreat_check(state, d.win_probability, retreat_threshold)
             if retreat_why:
                 print(f"  撤退判断：{retreat_why} → {'撤退' if want_retreat else '继续'}")
@@ -447,6 +455,7 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                         print(f"  ⚠ 移动失败：{e}")
                 for a in d.actions:
                     ex.play(a.card, a.location)
+                    board.record_play(state.turn, a.location)
                     executed.append({"card": a.card, "location": a.location, "ok": True})
                     time.sleep(0.3)
                 ex.end_turn()

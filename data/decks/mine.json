@@ -1,7 +1,7 @@
 {
   "loki": {
     "name": "Loki 生成牌（减费 + 复制）",
-    "plan": "前期铺生成牌引擎（Quinjet 减费、Agent13/Valentina/Iron Patriot/Coulson/White Queen 补手牌），中期 Kahhori 按手牌数加成、引擎兑现即 Snap（T3–T5，Key 牌亮出前），终局 Leader 复制对手大牌、补弱路；落后时 Loki 换对手牌库找翻盘资源。",
+    "plan": "前期铺生成牌引擎（Quinjet 减费、Agent13/Valentina/Iron Patriot/Coulson 补手牌），中期 Kahhori 按手牌数加成，终局 Leader 复制对手大牌、补弱路；落后时 Loki 换对手牌库找翻盘资源。Snap 点：Quinjet / Iron Patriot 落地、引擎开始兑现（手牌变多、生成牌降费、该路领先）的 T3 就可以 Snap，不必等领先两路。",
     "cards": {
       "Quinjet": "T1 优先：生成牌 -1 费，越早越值；放在不怕被摧毁的路。",
       "Agent13": "1 费补牌，能量有余时填空。",

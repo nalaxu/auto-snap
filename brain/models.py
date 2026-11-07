@@ -50,6 +50,7 @@ class GameState(BaseModel):
     opp_snapped: bool = False        # 对手已 Snap
     deck_name: str = ""                     # 我方当前卡组名（卡组知识库索引）
     opp_seen: list[str] = Field(default_factory=list)   # 本局对手揭示过的牌（含已离场），用于识别对手卡组原型
+    played_here_since_reveal: dict[int, int] = Field(default_factory=dict)   # 地点 -> 揭示后我方往那里打过几张（场地信号是否已触发）
     played_last_turn: bool | None = None   # 我方上回合是否出过牌（Infinaut 类限制）；读不到为 None
     opp_destroyed: int | None = None        # 对手本局摧毁过的牌数（摧毁 combo 触发次数）
     opp_discarded: int | None = None        # 对手本局弃过的牌数（弃牌 combo 触发次数）
@@ -98,6 +99,7 @@ class TurnDecision(BaseModel):
     moves: list[MoveAction] = Field(default_factory=list)          # 本回合移动的场上牌（激活后、出牌前执行）  # 本回合要激活的场上牌（先于出牌执行）
     snap: bool = False
     retreat: bool = False
-    win_probability: float | None = None   # 大模型估计的最终胜率（0–1），用于撤退期望计算
+    win_probability: float | None = None   # 校准后的最终胜率（0–1），用于撤退期望计算
+    win_probability_raw: float | None = None   # 大模型原始预估（校准样本用）
     reason: str = ""
     source: str = "unknown"      # claude / rule_based，便于复盘

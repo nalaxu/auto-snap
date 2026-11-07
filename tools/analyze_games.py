@@ -77,13 +77,13 @@ def report(games: list[dict]) -> str:
         for e in g["events"]:
             if e["type"] == "turn":
                 spent = sum(next((c["cost"] for c in e["state"]["hand"] if c["id"] == x["card"]), 0)
-                            for x in e["executed"] if x.get("ok"))
+                            for x in e["executed"] if x.get("ok") and "card" in x)
                 left = e["state"]["energy"] - spent
                 if e["outcome"] == "done" and left > 0 and e["state"]["hand"]:
                     waste.append(f"{g['game_id'][:8]} T{e['turn']}：剩 {left} 能量，手牌 "
                                  f"{[c['id'] + '(' + str(c['cost']) + ')' for c in e['state']['hand']]}")
                 rejected += [f"{g['game_id'][:8]} T{e['turn']}：{x['card']}→地点{x['location']}"
-                             for x in e["executed"] if not x.get("ok")]
+                             for x in e["executed"] if not x.get("ok") and "card" in x]   # 只统计出牌（不含 Snap/激活/移动/撤退）
             elif e["type"] == "event":
                 events[e["kind"] + (f":{e['name']}" if e.get("name") else "")] += 1
     out += ["## 决策问题",

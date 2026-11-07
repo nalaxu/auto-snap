@@ -1,0 +1,25 @@
+{
+  "_doc": "放牌顺序信号（brain/signals.py）。scope: here=下一张打到这一路的牌 / global_here=我方下一张牌打到这一路 / global=我方下一张牌；polarity: good/bad。复盘发现的新信号加在这里，未收录的会在对局中自动识别写入（source=auto）。",
+  "locations": {
+    "CastleZemo": {
+      "scope": "here",
+      "polarity": "bad",
+      "note": "下一张打到这里的牌换到对手一侧",
+      "source": "复盘 773d5c5d T6"
+    },
+    "OttosLab": {
+      "scope": "here",
+      "polarity": "bad",
+      "note": "下一张打到这里的牌会从对手手牌拉一张牌到对手一侧",
+      "source": "auto（复核：对对手有利，改为 bad）"
+    }
+  },
+  "cards": {
+    "Shuri": {
+      "scope": "global_here",
+      "polarity": "good",
+      "note": "下一张牌打到这一路则战力加倍",
+      "source": "复盘 ee4fc27a T5"
+    }
+  }
+}

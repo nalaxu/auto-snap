@@ -78,7 +78,7 @@ def test_shuri_next_card_note_and_reorder():
     st = GameState(turn=5, energy=5, locations=locs,
                    hand=[Card(id="Quinjet", cost=1, power=1), Card(id="WeaponH", cost=4, power=14)])
     notes = build_notes(st, default_db())
-    assert any("出牌顺序" in n and "Shuri" in n for n in notes)
+    assert any("放牌顺序" in n and "Shuri" in n for n in notes)
     d = TurnDecision(actions=[PlayAction(card="Quinjet", location=0), PlayAction(card="WeaponH", location=2)])
     assert reorder_for_next_card(st, d)
     assert [a.card for a in d.actions] == ["WeaponH", "Quinjet"]
@@ -110,3 +110,47 @@ def test_location_move_activation_and_tempo_notes():
     assert move_targets(s6, kah, 1) == [2] and move_targets(st(5), kah, 1) == []      # 只有第 6 回合能移到 New York
     assert not validate(s6, TurnDecision(moves=[MoveAction(card="Kahhori", from_location=1, to_location=2)]))
     assert validate(st(5), TurnDecision(moves=[MoveAction(card="Kahhori", from_location=1, to_location=2)]))
+
+
+def test_castle_zemo_order_signal():
+    """用户复盘（773d5c5d T6）：Castle Zemo 下一张打到这里的牌换到对手一侧 -> 先放最弱的（Agent 13 而不是 Coulson）。"""
+    from brain.board import BoardTracker, reorder_for_next_card
+    from brain.models import Card, GameState, Location, PlayAction, TurnDecision
+
+    st = GameState(turn=6, energy=6, locations=[Location(idx=0, name="Superflow"), Location(idx=1, name="CastleZemo"),
+                                                Location(idx=2, name="Vault")],
+                   hand=[Card(id="AgentCoulson", cost=3, power=4), Card(id="IronPatriot", cost=2, power=3),
+                         Card(id="Agent13", cost=1, power=2)])
+    tracker = BoardTracker()
+    tracker.update("g", st)
+    assert any("放牌顺序" in n and "CastleZemo" in n and "最弱" in n for n in st.board_notes)
+    d = TurnDecision(actions=[PlayAction(card="AgentCoulson", location=1), PlayAction(card="IronPatriot", location=1),
+                              PlayAction(card="Agent13", location=1)])
+    assert reorder_for_next_card(st, d)
+    assert d.actions[0].card == "Agent13"
+    tracker.record_play(6, 1)                     # 揭示后往那里打过牌：信号已触发，下回合不再提示
+    st.turn = 7
+    tracker.update("g", st)
+    assert not any("CastleZemo" in n and "放牌顺序" in n for n in st.board_notes)
+
+
+def test_signal_classification_from_text(tmp_path):
+    """未收录的牌 / 场地：按文字自动识别并写入知识库。"""
+    import json
+
+    from brain.signals import SignalKB, classify
+
+    assert classify("The next card you play here switches sides.") == {"scope": "here", "polarity": "bad"}
+    assert classify("On Reveal: If you play your next card at this location, double its Power.")["scope"] == "global_here"
+    assert classify("On Reveal: Give the next card you play +2 Power.") == {"scope": "global", "polarity": "good"}
+    assert classify("On Reveal: Remove the abilities on the next card you play.")["polarity"] == "bad"
+    assert classify("Cards here have -1 Power.") is None
+    kb = SignalKB(tmp_path / "signals.json")
+    assert kb.get("cards", "Forge", "On Reveal: Give the next card you play +2 Power.")["source"] == "auto"
+    assert "Forge" in json.loads((tmp_path / "signals.json").read_text("utf-8"))["cards"]
+
+
+def test_signal_enemy_side_is_bad():
+    from brain.signals import classify
+
+    assert classify("The next card you play here pulls a card to the enemy side from their hand.")["polarity"] == "bad"
