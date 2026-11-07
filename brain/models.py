@@ -51,6 +51,7 @@ class GameState(BaseModel):
     opp_seen: list[str] = Field(default_factory=list)   # 本局对手揭示过的牌（含已离场），用于识别对手卡组原型
     played_last_turn: bool | None = None   # 我方上回合是否出过牌（Infinaut 类限制）；读不到为 None
     opp_destroyed: int | None = None        # 对手本局摧毁过的牌数（摧毁 combo 触发次数）
+    opp_discarded: int | None = None        # 对手本局弃过的牌数（弃牌 combo 触发次数）
     opp_energy_by_turn: dict[int, int] = Field(default_factory=dict)   # 对手每回合打出的已揭示牌总费用（brain/board.py 统计）
     opp_snap_turn: int | None = None # 对手 Snap 的回合（撤退判断：对手刚 Snap 的那一回合）
     cube_next: int | None = None     # 下回合生效的赌注（Snap 后翻倍）

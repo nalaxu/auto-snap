@@ -318,3 +318,23 @@ def test_retreat_check_expected_cubes():
     assert retreat_check(st(4, 2, 2, opp_snap_turn=4), 0.10)[0]            # 对手刚 Snap（第 4 回合）：F=4，阈值 25%
     assert retreat_check(st(6, 4, 8), 0.40, threshold=0.5)[0]              # 固定阈值 50%
     assert retreat_check(st(6, 4, 8), None) == (False, "")                 # 规则 AI 兜底没有胜率：不撤退
+
+
+def test_skip_model_when_nothing_playable():
+    """用户建议：T1 手牌全是 2 费以上，直接结束回合，不调用大模型。"""
+    from brain.llm.decider import LLMDecider, nothing_to_decide
+    from brain.models import Card, GameState, Location
+
+    class Boom:
+        def complete_json(self, *a, **k):
+            raise AssertionError("不应调用大模型")
+
+    def st(turn, energy, hand):
+        return GameState(turn=turn, energy=energy, hand=hand, locations=[Location(idx=i, name="Ruins") for i in range(3)])
+
+    t1 = st(1, 1, [Card(id="Mirage", cost=2, power=3), Card(id="Leader", cost=6, power=5)])
+    d = LLMDecider(Boom(), llm.TaskConfig("m")).decide(t1)
+    assert d.source == "skip:no_playable" and not d.actions
+    assert nothing_to_decide(st(1, 1, [Card(id="Quinjet", cost=1, power=1)])) is None   # 有牌能出
+    assert nothing_to_decide(st(4, 1, [Card(id="Leader", cost=6, power=5)])) is None     # 中期还要判断 Snap
+    assert nothing_to_decide(st(6, 1, [Card(id="Leader", cost=6, power=5)])) is None     # 最后一回合要算撤退

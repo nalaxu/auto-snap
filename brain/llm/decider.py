@@ -147,6 +147,27 @@ SCHEMA: dict[str, Any] = {
 }
 
 
+def nothing_to_decide(state: GameState) -> TurnDecision | None:
+    """本回合没有任何可做的事 -> 直接结束回合，不问大模型（如 T1 手牌全是 2 费以上）。
+
+    条件：没有费用够且有合法地点的手牌、没有可激活 / 可移动的场上牌；且不需要做 Snap / 撤退判断
+    （前两回合不 Snap；最后一回合与对手刚 Snap 的回合要算撤退，照常问模型）。
+    """
+    from ..location_rules import can_play, move_targets
+
+    if any(c.cost <= state.energy and any(can_play(state, c, l.idx) for l in state.locations) for c in state.hand):
+        return None
+    if any(activatable(state, l) for l in state.locations):
+        return None
+    if any(move_targets(state, c, l.idx) for l in state.locations for c in l.my_cards):
+        return None
+    final_turn = state.turn >= state.max_turn
+    opp_snap_now = state.opp_snap_turn is not None and state.opp_snap_turn >= state.turn - 1
+    if final_turn or opp_snap_now or (state.can_snap and state.turn > 2):
+        return None
+    return TurnDecision(reason="没有能出的牌、可激活或可移动的牌，直接结束回合（不调用大模型）", source="skip:no_playable")
+
+
 def retreat_check(state: GameState, win_prob: float | None, threshold: float | None = None) -> tuple[bool, str]:
     """是否撤退（期望方块最大）。只在两个时点考虑（用户经验）：对手刚 Snap 的回合、最后一回合；其余回合尽量打下去。
 
@@ -295,6 +316,9 @@ class LLMDecider:
 
     def decide(self, state: GameState) -> TurnDecision:
         self.last_raw, self.last_latency, self.last_note = None, None, ""
+        if (skip := nothing_to_decide(state)) is not None:
+            self.last_latency, self.last_note = 0.0, skip.reason
+            return skip
         task, deadline = self._task_for(state)
         budget = self.time_budget(state)
         if budget is not None and budget < self.min_llm_s:

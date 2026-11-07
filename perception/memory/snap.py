@@ -442,6 +442,7 @@ class SnapMemoryReader:
                 "can_raise_stakes": il.get_bool(opp, "CanRaiseStakes"),
                 "snap_turns": il.list_ints(il.get_ptr(opp, "_turnsOnStakesRaiseRequested"), limit=8),
                 "destroyed_by": il.get_int(opp, "NumCardsDestroyedByPlayerThisGame"),   # 对手摧毁 combo 次数（画面可见事件）
+                "discarded_by": il.get_int(opp, "NumCardsDiscardedByPlayerThisGame"),   # 对手弃牌 combo 次数
                 "conceded": bool(il.get_int(opp, "Conceded")),
                 "deck_count": len(zone_cards(opp, "Deck")),
             },
@@ -503,6 +504,7 @@ def to_game_state(snap: dict, deck: list[str] | None = None) -> GameState:
         played_last_turn=any(c.get("turn_revealed") == (snap["turn"] or 0) - 1
                              for l in snap["locations"] for c in l["my_cards"]),
         opp_destroyed=(snap.get("opp") or {}).get("destroyed_by"),
+        opp_discarded=(snap.get("opp") or {}).get("discarded_by"),
         opp_snap_turn=max((snap.get("opp") or {}).get("snap_turns") or [0]) or None,
         turn_timer=not snap.get("no_turn_timer", False),
         hand=hand,

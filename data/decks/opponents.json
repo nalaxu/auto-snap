@@ -82,5 +82,65 @@
       "Venom": 1,
       "WolverineHorseman": 1
     }
+  },
+  "discard": {
+    "name": "弃牌（群蜂/金刚狼/天启/孔苏 + 剑仙/希芙）",
+    "core": "Apocalypse",
+    "signature": [
+      "Swarm",
+      "Wolverine",
+      "Apocalypse",
+      "Khonshu",
+      "ProximaMidnight",
+      "SwordMaster",
+      "LadySif",
+      "Blade",
+      "ColleenWing",
+      "Hellcow",
+      "CorvusGlaive",
+      "Morbius",
+      "Dracula"
+    ],
+    "plan": "用 Sword Master、Lady Sif、Blade、Colleen Wing 等弃牌组件，弃掉 Swarm、Wolverine、Apocalypse、Khonshu 这类被弃后变强/回来的牌；弃牌次数越多，Morbius 越大，Apocalypse、Khonshu 越强，终局大哥收尾。",
+    "counter": "看【对手节奏】的弃牌 combo 次数与能量利用：次数多 → 大哥已充能，终局威胁大，胜率往低估、别大 Snap；次数少、能量浪费 → 对手卡手，可以施压。Dracula 终局会吃手里一张牌的战力。",
+    "samples": [
+      {
+        "game_id": "cc558c9f",
+        "date": "2026-11-07",
+        "result": "loss",
+        "cards": [
+          "Blade",
+          "ColleenWing",
+          "Dracula",
+          "Morbius",
+          "Sunspot",
+          "Swarm"
+        ]
+      },
+      {
+        "game_id": "345533e6",
+        "date": "2026-11-07",
+        "result": "win",
+        "cards": [
+          "AgathaHarkness",
+          "Blade",
+          "InvisibleWoman",
+          "Jubilee",
+          "SwordMaster"
+        ]
+      }
+    ],
+    "seen_cards": {
+      "AgathaHarkness": 1,
+      "Blade": 2,
+      "ColleenWing": 1,
+      "Dracula": 1,
+      "InvisibleWoman": 1,
+      "Jubilee": 1,
+      "Morbius": 1,
+      "Sunspot": 1,
+      "Swarm": 1,
+      "SwordMaster": 1
+    }
   }
 }

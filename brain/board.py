@@ -141,8 +141,9 @@ def _opp_tempo_note(state: GameState) -> list[str]:
     turns = [t for t in range(max(1, state.turn - 3), state.turn)]
     if not turns:
         return []
-    used = ", ".join(f"T{t} {state.opp_energy_by_turn.get(t, 0)}/{t}" for t in turns)
-    combo = f"；摧毁 combo {state.opp_destroyed} 次" if state.opp_destroyed else ""
+    # 效果直接放到场上的牌（如 Jubilee）也会被计入：按回合能量封顶，避免出现 7/4
+    used = ", ".join(f"T{t} {min(state.opp_energy_by_turn.get(t, 0), t)}/{t}" for t in turns)
+    combo = "".join(f"；{name} combo {n} 次" for name, n in (("摧毁", state.opp_destroyed), ("弃牌", state.opp_discarded)) if n)
     return [f"【对手节奏】能量利用 {used}（只计已揭示的牌）{combo}"]
 
 
