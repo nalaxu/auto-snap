@@ -1,0 +1,82 @@
+/* ---------- M4：设置 / 工具 / 悬浮小条 ---------- */
+.btn.icon{width:38px;padding:0;justify-content:center}
+.btn.icon.on{color:var(--gold);border-color:rgba(255,198,61,.6)}
+
+.settings-page .set-bar{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.settings-page .set-bar .sp{flex:1}
+.ok-msg{font-size:12px;color:var(--ok);display:flex;align-items:center;gap:4px}
+.set-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+.set-fields{display:flex;flex-direction:column;padding:8px 16px 16px}
+.set-field{display:flex;flex-direction:column;gap:6px;padding:10px 0 12px;border-bottom:1px solid rgba(150,128,255,.08);position:relative}
+.set-field:last-child{border-bottom:0}
+.set-field.dirty::before{content:"";position:absolute;left:-16px;top:10px;bottom:12px;width:3px;background:var(--gold)}
+.set-label{display:flex;align-items:baseline;gap:10px}
+.set-label b{font-size:13px;font-weight:500}
+.set-label code{font-family:var(--f-mono);font-size:10px;color:var(--mute)}
+.set-field .seg.sm button{min-width:64px}
+.num-row{display:flex;align-items:center;gap:10px}
+.num-row .txt{max-width:160px}
+.secret-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(150,128,255,.08)}
+.secret-row code{font-family:var(--f-mono);font-size:12px}
+
+.tools-page{display:grid;grid-template-columns:320px minmax(0,1fr);gap:16px;align-items:start}
+.tool-list{display:flex;flex-direction:column;gap:8px}
+.tool-card{display:grid;grid-template-columns:30px minmax(0,1fr);gap:12px;padding:12px 14px;text-align:left;cursor:pointer;color:var(--text);font-family:var(--f-body);transition:.12s}
+.tool-card:hover:not(:disabled){border-color:var(--line-hi)}
+.tool-card:disabled{opacity:.45;cursor:default}
+.tool-card.on{border-color:rgba(255,198,61,.6);background:rgba(255,198,61,.07)}
+.tool-card>i{font-size:24px;color:var(--gold);margin-top:2px}
+.tool-card b{display:block;font-size:14px;font-weight:500;margin-bottom:3px}
+.tool-card span{display:block;font-size:11px;color:var(--dim);line-height:1.55}
+.tool-tags{display:flex;gap:6px;margin-top:6px}
+.tool-tags em{font-style:normal;font-size:10px;padding:1px 6px;border:1px solid var(--line);color:var(--dim)}
+.tool-tags em.cost{color:var(--gold);border-color:rgba(255,198,61,.4)}
+.tool-run{min-height:420px;display:flex;flex-direction:column}
+.tool-ctrl{display:flex;align-items:flex-end;gap:12px;padding:12px 16px;flex-wrap:wrap}
+.tool-ctrl .sp{flex:1}
+.field.inline{flex-direction:column;gap:5px;font-size:12px;color:var(--dim)}
+.field.inline .txt{width:120px}
+.tool-out{flex:1;margin:0 16px 16px;padding:12px 14px;min-height:260px;max-height:520px;overflow:auto;font-family:var(--f-mono);font-size:12px;line-height:1.65;
+  white-space:pre-wrap;word-break:break-all;color:#d6d0ff;background:rgba(4,3,18,.65);border:1px solid var(--line)}
+.tool-img{padding:0 16px 16px;display:flex;flex-direction:column;gap:6px}
+.tool-img img{max-width:100%;border:1px solid var(--line)}
+
+/* 悬浮小条（PiP 窗口与 #/mini 共用） */
+.mini-body{margin:0;min-height:100vh;background:linear-gradient(160deg,#141040,#0a0822);color:var(--text);font-family:var(--f-body);overflow:hidden}
+.mini{display:flex;flex-direction:column;gap:8px;padding:10px 12px;height:100vh;box-sizing:border-box;border-top:2px solid var(--gold)}
+.mini-top{display:flex;align-items:center;gap:8px;font-size:13px}
+.mini-top b{font-weight:500}
+.mini-top .sp{flex:1}
+.mini-dot{width:8px;height:8px;border-radius:50%;background:var(--mute)}
+.mini-dot.run{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.mini-dot.warn{background:var(--gold)}
+.mini-mode{font-size:10px;font-weight:700;padding:1px 6px;letter-spacing:1px}
+.mini-mode.live{background:#e0284d;color:#fff}
+.mini-mode.dry{background:rgba(42,163,255,.25);color:#9fd6ff}
+.mini-mode.demo{background:rgba(190,120,255,.25);color:#d6b0ff}
+.mini-rec{display:flex;gap:8px;font-family:var(--f-display);font-size:20px;line-height:1}
+.mini-rec em{font-style:normal;color:var(--ok)}
+.mini-rec em.pos{color:var(--gold)} .mini-rec em.neg{color:var(--opp)}
+.mini-mid{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:12px;align-items:center;flex:1}
+.mini-mid.idle{display:flex;align-items:center;font-size:12px;color:var(--dim)}
+.mini-turn{font-family:var(--f-display);line-height:.8}
+.mini-turn b{font-size:40px;font-weight:600}
+.mini-turn small{font-size:20px;color:var(--mute)}
+.mini-cube{min-width:40px;height:40px;padding:0 6px;display:grid;place-items:center;font-family:var(--f-display);font-size:24px;font-weight:700;color:var(--gold-ink);
+  background:linear-gradient(140deg,#fff2b0,var(--gold) 45%,var(--gold-2));clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
+.mini-info{min-width:0;display:flex;flex-direction:column;gap:5px}
+.mini-line{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
+.mini-line i{color:var(--gold);font-size:15px;flex:none}
+.mini-sub{font-size:11px;color:var(--dim)}
+.mini-sub b{color:var(--gold);font-weight:500}
+.mini-bar{height:5px;background:rgba(255,255,255,.08);transform:skewX(-20deg)}
+.mini-bar span{display:block;height:100%;background:linear-gradient(90deg,var(--cost),#7ef0ff);transition:width .25s linear}
+.mini-bar span.hot{background:linear-gradient(90deg,var(--gold-2),var(--opp))}
+.mini-ctrl{display:flex;gap:6px;justify-content:flex-end}
+.mini-ctrl button{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 12px;font-family:var(--f-body);font-size:12px;cursor:pointer;
+  color:var(--text);background:rgba(255,255,255,.07);border:1px solid var(--line-hi)}
+.mini-ctrl button.stop{background:linear-gradient(180deg,#ff5574,#c3173b);border:0;color:#fff}
+
+@media (max-width:1100px){
+  .set-grid,.tools-page{grid-template-columns:minmax(0,1fr)}
+}

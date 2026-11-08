@@ -5,6 +5,7 @@
 接口：
     GET  /api/options   客户端列表（是否运行 / 已实测）、默认决策器与模型、可回放的对局
     GET  /api/status    机器人进程状态
+    /api/settings       设置（GET / PUT，保留注释）     /api/tools/...  维护脚本（白名单）
     /api/kb/...         知识库：待复核、信号、对手卡组候选、卡组、卡牌 / 场地人工覆盖（见 kb.py）
     GET  /api/stats     战绩总览（?client=&last=）     GET /api/games 对局列表     GET /api/games/{file} 单局逐回合
     POST /api/start     启动机器人 {client, live, decider, max_games, max_turns, skip_current} 或回放 {demo: 文件名, speed}
@@ -28,6 +29,10 @@ from pydantic import BaseModel
 from .bot import ROOT, BotProcess
 from .kb import KnowledgeBase
 from .kb import create_router as create_kb_router
+from .settings import Settings
+from .settings import create_router as create_settings_router
+from .tools import ToolRunner
+from .tools import create_router as create_tools_router
 
 DIST = ROOT / "ui" / "web" / "dist"
 GAMES_DIR = ROOT / "logs" / "games"
@@ -92,7 +97,7 @@ def recent_games(limit: int = 30) -> list[dict]:
     return out
 
 
-def create_app(data_dir: Path | None = None) -> FastAPI:
+def create_app(data_dir: Path | None = None, settings_path: Path | None = None) -> FastAPI:
     hub = Hub()
     bot = BotProcess(hub.publish_threadsafe)
 
@@ -108,6 +113,11 @@ def create_app(data_dir: Path | None = None) -> FastAPI:
     kb = KnowledgeBase(data_dir or ROOT / "data", (data_dir.parent if data_dir else ROOT / "logs") / "kb_backup", GAMES_DIR)
     app.state.kb = kb
     app.include_router(create_kb_router(kb))
+    settings = Settings(settings_path or ROOT / "config" / "settings.toml", ROOT,
+                        (settings_path.parent if settings_path else ROOT / "logs") / "settings_backup")
+    app.include_router(create_settings_router(settings))
+    app.state.tools = ToolRunner(ROOT)
+    app.include_router(create_tools_router(app.state.tools))
 
     @app.get("/api/options")
     def options() -> dict:

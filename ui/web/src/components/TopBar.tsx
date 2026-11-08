@@ -29,7 +29,7 @@ function Brand() {
   );
 }
 
-export function TopBar({ s }: { s: Live }) {
+export function TopBar({ s, onMini, miniOpen }: { s: Live; onMini: () => void; miniOpen: boolean }) {
   const [busy, setBusy] = useState(false);
   const rec = sessionRecord(s.results);
   const st = s.turn;
@@ -101,6 +101,9 @@ export function TopBar({ s }: { s: Live }) {
         <div className="rec-item"><div className="v cubes">{rec.cubes > 0 ? "+" : ""}{rec.cubes}</div><div className="k">魔方</div></div>
       </div>
       <div className="ctrl">
+        <button className={`btn icon ${miniOpen ? "on" : ""}`} onClick={onMini} title="悬浮小条：置顶小窗，游戏全屏时也能看状态、随时停止">
+          <i className="ti ti-picture-in-picture-top" aria-hidden="true" />
+        </button>
         {s.running && !ses?.demo && (
           s.paused ? (
             <button className="btn" disabled={busy} onClick={() => send("resume")}><i className="ti ti-player-play" aria-hidden="true" />继续开局</button>

@@ -4,6 +4,7 @@ import "@tabler/icons-webfont/dist/tabler-icons.min.css";
 import "./styles.css";
 import "./pages.css";
 import "./kb.css";
+import "./m4.css";
 import App from "./App";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

@@ -17,5 +17,6 @@ watchdog>=4.0
 # 外部面板（python main.py ui）
 fastapi>=0.110
 uvicorn>=0.29
+tomlkit>=0.12        # 面板「设置」：保留注释编辑 settings.toml
 # 开发
 pytest>=8.0

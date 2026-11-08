@@ -6,7 +6,10 @@ import { TopBar } from "./components/TopBar";
 import { useLive, useNow } from "./hooks";
 import { useCallback, useEffect, useState } from "react";
 import { kb } from "./kbApi";
+import { MiniView, PipPortal, usePip } from "./components/Mini";
 import { Knowledge } from "./pages/Knowledge";
+import { Settings } from "./pages/Settings";
+import { Tools } from "./pages/Tools";
 import { Review } from "./pages/Review";
 import { Stats } from "./pages/Stats";
 import { Route, useRoute } from "./route";
@@ -17,8 +20,8 @@ const NAV: { icon: string; label: string; page?: Route["page"]; href?: string; s
   { icon: "ti-chart-arcs", label: "战绩", page: "stats", href: "#/stats" },
   { icon: "ti-history", label: "复盘", page: "review", href: "#/review" },
   { icon: "ti-books", label: "知识库", page: "kb", href: "#/kb" },
-  { icon: "ti-tool", label: "工具", soon: "M4" },
-  { icon: "ti-adjustments-horizontal", label: "设置", soon: "M4" },
+  { icon: "ti-tool", label: "工具", page: "tools", href: "#/tools" },
+  { icon: "ti-adjustments-horizontal", label: "设置", page: "settings", href: "#/settings" },
 ];
 
 const WAIT_TEXT: Record<string, [string, string]> = {
@@ -65,11 +68,15 @@ export default function App() {
     kb.overview().then((o) => setKbPending(o.counts.signals + o.counts.unmatched + o.counts.locations)).catch(() => {});
   }, []);
   useEffect(refreshKb, [refreshKb, s.results.length]);   // 每局结束后可能多出待复核项
+  const pip = usePip();
+  const now = useNow(pip.win || route.page === "mini" ? 250 : 1000);
+  if (route.page === "mini")
+    return <div className="mini-body"><MiniView s={s} now={now} /></div>;
   return (
     <>
       <div className="grain" />
       <div className="app">
-        <TopBar s={s} />
+        <TopBar s={s} onMini={pip.open} miniOpen={!!pip.win} />
         <nav className="nav">
           {NAV.map((n) =>
             n.href ? (
@@ -88,13 +95,16 @@ export default function App() {
             ),
           )}
           <div className="sep" />
-          <div className="ver">M3<br />只读内存</div>
+          <div className="ver">v1.0<br />只读内存</div>
         </nav>
         <main>
           {route.page === "stats" ? <Stats /> : route.page === "review" ? <Review file={route.arg} />
-            : route.page === "kb" ? <Knowledge tab={route.arg} running={s.running} onChanged={refreshKb} /> : <LivePage s={s} />}
+            : route.page === "kb" ? <Knowledge tab={route.arg} running={s.running} onChanged={refreshKb} />
+            : route.page === "tools" ? <Tools running={s.running} />
+            : route.page === "settings" ? <Settings running={s.running} /> : <LivePage s={s} />}
         </main>
       </div>
+      <PipPortal win={pip.win}><MiniView s={s} now={now} /></PipPortal>
     </>
   );
 }
