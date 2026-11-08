@@ -121,3 +121,14 @@ select.txt option{background:#15123a}
   .kb-trow{grid-template-columns:60px minmax(0,1fr) 44px}
   .kb-trow .kb-tid,.kb-trow .kb-tdesc{display:none}
 }
+
+/* 国服差异 */
+.kb-quote.dim{opacity:.7;border-left-color:rgba(150,128,255,.25)}
+.cn-diff-meta{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:#b7b0d8;padding:0 16px 10px}
+.cn-diff-row .chg{display:inline-flex;gap:4px;align-items:center;font-size:12px;padding:1px 8px;border-radius:3px;background:rgba(124,90,255,.14);color:#e3ddff}
+.cn-diff-row .chg .old{color:#9a93bd;text-decoration:line-through}
+.cn-diff-row .ab{font-size:12.5px;line-height:1.6;margin-top:4px}
+.cn-diff-row .ab .lbl{display:inline-block;min-width:4.5em;color:#9a93bd}
+.cn-diff-row .ab.old{color:#9a93bd}
+button.cn-diff-row{width:100%;background:none;border:0;border-bottom:1px solid rgba(150,128,255,.08);color:inherit;font:inherit;text-align:left;cursor:pointer}
+button.cn-diff-row:hover{background:rgba(255,255,255,.04)}

@@ -47,6 +47,7 @@ class KnowledgeBase:
         self.p_locs = data_dir / "locations.json"
         self.p_unknown = data_dir / "unknown_locations.json"
         self.p_card_db = data_dir / "card_db.json"
+        self.p_card_db_cn = data_dir / "card_db_cn.json"   # tools/build_cn_card_db.py 从国服客户端读取
         self.p_loc_db = data_dir / "location_db.json"
 
     # ------------------------------------------------------------ 基础
@@ -69,8 +70,22 @@ class KnowledgeBase:
         items = d.get("items", d) if isinstance(d, dict) else {}
         return {k: v for k, v in items.items() if not k.startswith("_") and isinstance(v, dict)}
 
-    def card_db(self) -> dict:
+    def global_card_db(self) -> dict:
         return self._items(self.p_card_db)
+
+    def card_db(self) -> dict:
+        """国服库覆盖国际服库（与机器人 brain.knowledge 的合并规则一致）。"""
+        from brain.knowledge import merge_card_dbs
+        return merge_card_dbs(self.global_card_db(), self._items(self.p_card_db_cn))
+
+    def cn_diff(self) -> dict:
+        """国服与国际服不同的卡（生成国服库时写入的 diff），附上人工覆盖情况。"""
+        d = read_json(self.p_card_db_cn)
+        d = d if isinstance(d, dict) else {}
+        cur, items = self._items(self.p_cards), d.get("items") or {}
+        rows = [{**x, "curated": x.get("id") in cur, "params_source": (items.get(x.get("id")) or {}).get("params_source")}
+                for x in d.get("diff") or []]
+        return {"meta": d.get("_meta"), "diff": rows}
 
     def loc_db(self) -> dict:
         return self._items(self.p_loc_db)
@@ -260,7 +275,7 @@ class KnowledgeBase:
                 continue
             m = {**d, **(c or {})}
             out.append({"id": cid, "name": name, "cost": m.get("cost"), "power": m.get("power"), "ability": m.get("ability", ""),
-                        "curated": bool(c), "status": d.get("status")})
+                        "curated": bool(c), "status": d.get("status"), "source": d.get("source", "global")})
             if len(out) >= limit:
                 break
         return out
@@ -269,7 +284,9 @@ class KnowledgeBase:
         db, cur = self.card_db(), self._items(self.p_cards)
         if cid not in db and cid not in cur:
             raise HTTPException(404, "没有这张牌")
-        return {"id": cid, "name": (db.get(cid) or {}).get("name") or cid, "db": db.get(cid), "curated": cur.get(cid)}
+        g = self.global_card_db().get(cid)
+        return {"id": cid, "name": (db.get(cid) or {}).get("name") or cid, "db": db.get(cid), "curated": cur.get(cid),
+                "global": g if (db.get(cid) or {}).get("source") == "cn" else None}
 
     def put_card(self, cid: str, body: dict) -> None:
         _check_id(cid, "卡牌 id")
@@ -489,6 +506,7 @@ def create_router(kb: KnowledgeBase) -> APIRouter:
     def cards(q: str = "", curated: bool = False):
         return kb.search_cards(q, curated)
 
+    r.get("/cn-diff")(kb.cn_diff)
     r.get("/cards/{cid}")(kb.card)
 
     @r.put("/cards/{cid}")

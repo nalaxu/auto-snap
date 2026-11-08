@@ -44,8 +44,13 @@ export type Opponent = {
 
 export type MyDeck = { id: string; name: string; plan: string; cards: Record<string, string>; lessons?: string[]; card_names: Record<string, string> };
 
-export type CardRow = { id: string; name: string; cost: number | null; power: number | null; ability: string; curated: boolean; status?: string };
-export type CardDetail = { id: string; name: string; db: Record<string, any> | null; curated: Record<string, any> | null };
+export type CardRow = { id: string; name: string; cost: number | null; power: number | null; ability: string; curated: boolean; status?: string; source?: string };
+export type CardDetail = { id: string; name: string; db: Record<string, any> | null; curated: Record<string, any> | null; global?: Record<string, any> | null };
+export type CnDiff = {
+  id: string; name: string; curated: boolean; params_source?: string;
+  changes: { cost?: [number, number]; power?: [number, number]; ability?: [string, string]; keywords?: [string[], string[]] };
+};
+export type CnDiffResp = { meta: { client_version?: string; fetched_at?: string; count?: number; diff_count?: number; params?: Record<string, number> } | null; diff: CnDiff[] };
 
 export type LocRow = { id: string; name: string; effect: string; curated: boolean; bias?: Bias | null; source?: string | null };
 export type Bias = { early: number; mid: number; final: number };
@@ -95,6 +100,7 @@ export const kb = {
   deleteOpp: (id: string) => call("DELETE", `/opponents/${enc(id)}`),
   cards: (query: string, curated = false) => call<CardRow[]>("GET", "/cards" + q({ q: query, curated })),
   card: (id: string) => call<CardDetail>("GET", `/cards/${enc(id)}`),
+  cnDiff: () => call<CnDiffResp>("GET", "/cn-diff"),
   putCard: (id: string, b: { cost?: number | null; power?: number | null; ability?: string; notes?: string; tags?: string[] }) => call("PUT", `/cards/${enc(id)}`, b),
   deleteCard: (id: string) => call("DELETE", `/cards/${enc(id)}`),
   locations: (query: string, curated = false) => call<LocRow[]>("GET", "/locations" + q({ q: query, curated })),

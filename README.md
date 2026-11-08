@@ -25,7 +25,8 @@
 python -m venv .venv && .venv\Scripts\activate
 pip install -r requirements.txt
 copy .env.example .env          # 填写 OPENAI_API_KEY / OPENAI_BASE_URL（可选 DEEPSEEK_*）
-python tools/update_card_db.py  # 抓取最新卡牌 / 场地资料
+python tools/update_card_db.py  # 抓取国际服卡牌 / 场地资料（兜底）
+python tools/build_cn_card_db.py  # 开着国服客户端：读取国服卡牌库（优先）
 python -m pytest
 ```
 
@@ -125,7 +126,7 @@ python tools/mem_explore.py --client cn_steam   # 工具同样支持 --client（
 | `gamelog/stats.py` | 战绩汇总与单局逐回合复盘数据（面板「战绩」「复盘」页） |
 | `gamelog/live.py` | 面板实时事件协议（stdout 事件 / stdin 控制）与局面、决策的精简 payload |
 | `ui/` | 外部面板：`server/`（FastAPI + 子进程管理）、`web/`（React 前端）、`replay.py`（回放演示）、`design/`（视觉稿） |
-| `data/` | `card_db.json` / `location_db.json`（抓取）、`cards.json` / `locations.json`（人工，优先）、`templates/ui/`（界面模板） |
+| `data/` | `card_db_cn.json`（国服客户端读取）、`card_db.json` / `location_db.json`（国际服抓取）、`cards.json` / `locations.json`（人工，优先）、`templates/ui/`（界面模板） |
 | `tools/` | 见下方「工具」 |
 | `brain/claude_decider.py`、`fsm/` | 早期占位（未使用；决策已统一到 `brain/llm/`，流程在 `main.auto`） |
 
@@ -178,7 +179,13 @@ python tools/mem_explore.py --client cn_steam   # 工具同样支持 --client（
 - 更新：`python tools/update_card_db.py`（打印新增/变更）→ `data/card_db.json`（748 张）、`data/location_db.json`（221 个）
   - 数据源：Marvel Snap Zone 公开接口（官网 marvelsnap.com / marvelsnap.163.com 没有可抓取的图鉴）；
     其 `carddefid` 与游戏内存的 CardDefId / LocationDefId 一致，直接关联
-  - 国际服数据；国服平衡改动以人工维护的 `data/cards.json`、`data/locations.json` 为准（优先级更高，如 Hawkeye 国服 +3）
+  - 国际服数据；国服缺的卡用它兜底
+- 国服卡牌库：`python tools/build_cn_card_db.py`（面板「工具 → 读取国服卡牌库」）→ `data/card_db_cn.json`
+  - 从正在运行的国服客户端内存只读 `CubeDef.CardDef`：名字、费用、战力、能力模板（客户端语言），就是国服当前版本
+  - 能力里的数值（`+{card.AddedPower}` 等）写在技能代码里，内存没有数据表：用客户端渲染过的文本反推；
+    反推不到且模板与国际服文字结构一致时取国际服数值；都没有写成 `?`（`params_source` = client / global / unknown）
+  - 与国际服不同的卡写进文件的 `diff` 字段，面板「知识库 → 国服差异」查看（48.18 版本：351 张不同）
+  - 资料优先级：人工 `data/cards.json` > 国服库 > 国际服库
 - 出牌限制自动解析（`knowledge.parse_restrictions` / `parse_self_restriction`）：
   场地（The Big House、Kyln、Vault、Crimson Cosmos…）、场上牌（Goose 双方受限、Ebony Maw 仅控制者）、
   卡牌自身（Giganto 只能左、Sentry 不能右、Crossbones 只能领先处…）；国服实测与文字不符的在 `location_rules._IGNORE_DB_TEXT`
@@ -195,7 +202,8 @@ python tools/mem_explore.py --client cn_steam   # 工具同样支持 --client（
 
 | 命令 | 用途 |
 |---|---|
-| `python tools/update_card_db.py` | 更新卡牌/场地资料库 |
+| `python tools/update_card_db.py` | 更新国际服卡牌/场地资料库（兜底） |
+| `python tools/build_cn_card_db.py` | 从国服客户端内存读取国服卡牌库，列出与国际服的差异 |
 | `python tools/bench_decision.py [--only ...] [--games ...]` | 用历史对局重放对比模型/参数的速度与质量 |
 | `python tools/analyze_games.py [--last N]` | 赛后复盘：战绩、场地胜负、未用完能量的回合、被拒出牌 |
 | `python tools/llm_check.py` | 大模型连通性与结构化输出测试 |

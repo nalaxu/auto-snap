@@ -65,9 +65,12 @@ def _self_blocks(state: GameState, card: Card, loc_idx: int, db: knowledge.GameD
 
 
 def hand_control_blocked(state: GameState, db: knowledge.GameDB) -> str | None:
-    """手牌里有接管出牌的牌（Agatha Harkness：偶数回合由她替你出牌）：本回合我方不能自己出牌。"""
+    """手牌里有接管出牌的牌（Agatha Harkness）：本回合我方不能自己出牌。
+    国际服：偶数回合由她出牌（on even turns）；国服：每回合都由她出牌（on all turns）。"""
     for c in state.hand:
         ab = (db.ability(c.id) or "").lower()
+        if "controls your cards on all turns" in ab:
+            return f"{c.id} 在手：每回合由她替你出牌"
         if "controls your cards on even turns" in ab and state.turn % 2 == 0:
             return f"{c.id} 在手：偶数回合由她替你出牌"
     return None

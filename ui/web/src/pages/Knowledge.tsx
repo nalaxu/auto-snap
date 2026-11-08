@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
-import { CardRow, kb, LocRow, MyDeck, Opponent, Overview, SCOPE_TEXT, Signal } from "../kbApi";
+import { CardRow, CnDiffResp, kb, LocRow, MyDeck, Opponent, Overview, SCOPE_TEXT, Signal } from "../kbApi";
 import { CardEditor, LocationEditor, Modal, OpponentEditor, SignalEditor } from "./kb/editors";
 
-type Tab = "queue" | "decks" | "signals" | "cards" | "locations";
+type Tab = "queue" | "decks" | "signals" | "cards" | "cndiff" | "locations";
 const TABS: [Tab, string, string][] = [
   ["queue", "待复核", "ti-inbox"],
   ["decks", "卡组", "ti-cards"],
   ["signals", "放牌信号", "ti-arrows-sort"],
   ["cards", "卡牌", "ti-playing-card"],
+  ["cndiff", "国服差异", "ti-git-compare"],
   ["locations", "场地", "ti-map-2"],
 ];
 
@@ -278,7 +279,7 @@ function Browse<T extends CardRow | LocRow>({ kind, toast }: { kind: "cards" | "
     <div className="panel">
       <div className="ph">
         <span className="ph-tag">{kind === "cards" ? "卡牌" : "场地"}</span>
-        <span className="ph-sub">资料库 + 人工覆盖（人工优先）· 最多显示 60 条</span>
+        <span className="ph-sub">资料库（国服优先，缺的用国际服）+ 人工覆盖（人工优先）· 最多显示 60 条</span>
       </div>
       <div className="kb-search">
         <i className="ti ti-search" aria-hidden="true" />
@@ -301,6 +302,65 @@ function Browse<T extends CardRow | LocRow>({ kind, toast }: { kind: "cards" | "
       </div>
       {open && kind === "cards" && <CardEditor id={open} onClose={() => setOpen(null)} onSaved={() => { setOpen(null); toast("已保存"); load(); }} />}
       {open && kind === "locations" && <LocationEditor id={open} onClose={() => setOpen(null)} onSaved={() => { setOpen(null); toast("已保存"); load(); }} />}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- 国服与国际服差异
+const SRC_TEXT: Record<string, string> = { global: "数值取自国际服", unknown: "有数值没读到" };
+
+function CnDiffView({ toast }: { toast: (m: string) => void }) {
+  const [d, setD] = useState<CnDiffResp | null>(null);
+  const [q, setQ] = useState("");
+  const [statsOnly, setStatsOnly] = useState(false);
+  const [open, setOpen] = useState<string | null>(null);
+  const load = useCallback(() => { kb.cnDiff().then(setD).catch(() => setD({ meta: null, diff: [] })); }, []);
+  useEffect(load, [load]);
+  if (!d) return <div className="brain-empty">读取中…</div>;
+  const m = d.meta;
+  const ql = q.trim().toLowerCase();
+  const rows = d.diff.filter((x) => (!statsOnly || x.changes.cost || x.changes.power)
+    && (!ql || x.id.toLowerCase().includes(ql) || x.name.toLowerCase().includes(ql) || (x.changes.ability?.[1] || "").toLowerCase().includes(ql)));
+  return (
+    <div className="panel">
+      <div className="ph"><span className="ph-tag">国服与国际服不同的卡</span>
+        <span className="ph-sub">国服库由「工具 → 读取国服卡牌库」从游戏内存生成；机器人按 人工覆盖 &gt; 国服 &gt; 国际服 使用</span></div>
+      {!m ? (
+        <div className="empty"><i className="ti ti-database-off" aria-hidden="true" /><div className="big">还没有国服卡牌库</div>
+          <div className="sm">开着国服客户端，到「工具」页运行「读取国服卡牌库」</div></div>
+      ) : (
+        <>
+          <div className="cn-diff-meta">
+            <span>客户端版本 {m.client_version || "未知"}</span><span>读取于 {(m.fetched_at || "").replace("T", " ")}</span>
+            <span>共 {m.count} 张，不同 {m.diff_count} 张</span>
+            {m.params && <span>能力数值：客户端 {m.params.client} · 国际服兜底 {m.params.global} · 未知 {m.params.unknown}</span>}
+          </div>
+          <div className="kb-search">
+            <i className="ti ti-search" aria-hidden="true" />
+            <input className="txt" value={q} onChange={(e) => setQ(e.target.value)} placeholder="搜名字、id 或国服能力文字" />
+            <label className="check"><input type="checkbox" checked={statsOnly} onChange={(e) => setStatsOnly(e.target.checked)} />只看费用 / 战力变化</label>
+          </div>
+          <div className="kb-list">
+            {rows.length === 0 ? <div className="brain-empty">没有匹配的结果</div> : rows.map((x) => (
+              <button key={x.id} className="kb-row cn-diff-row" onClick={() => setOpen(x.id)}>
+                <div className="kb-row-main">
+                  <div className="kb-row-title"><b>{x.name}</b><span className="kb-tid">{x.id}</span>
+                    {x.changes.cost && <span className="chg">费用 <span className="old">{x.changes.cost[0]}</span>→{x.changes.cost[1]}</span>}
+                    {x.changes.power && <span className="chg">战力 <span className="old">{x.changes.power[0]}</span>→{x.changes.power[1]}</span>}
+                    {x.params_source && SRC_TEXT[x.params_source] && <span className="scope">{SRC_TEXT[x.params_source]}</span>}
+                    {x.curated && <span className="flag hot">人工</span>}
+                  </div>
+                  {x.changes.ability && (<>
+                    <div className="ab"><span className="lbl">国服</span>{x.changes.ability[1] || "（白板）"}</div>
+                    <div className="ab old"><span className="lbl">国际服</span>{x.changes.ability[0] || "（白板）"}</div>
+                  </>)}
+                </div>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      {open && <CardEditor id={open} onClose={() => setOpen(null)} onSaved={() => { setOpen(null); toast("已保存"); load(); }} />}
     </div>
   );
 }
@@ -331,6 +391,7 @@ export function Knowledge({ tab, running, onChanged }: { tab?: string; running: 
       {cur === "decks" && <Decks toast={toast.show} />}
       {cur === "signals" && <Signals toast={toast.show} onChanged={refresh} />}
       {cur === "cards" && <Browse kind="cards" toast={toast.show} />}
+      {cur === "cndiff" && <CnDiffView toast={toast.show} />}
       {cur === "locations" && <Browse kind="locations" toast={toast.show} />}
       {toast.msg && <div className="toast">{toast.msg}</div>}
     </div>

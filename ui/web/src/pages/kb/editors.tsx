@@ -1,4 +1,5 @@
 import { ReactNode, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Bias, CardDetail, kb, LocDetail, Opponent, SCOPE_TEXT, Signal } from "../../kbApi";
 
 export function Modal({ title, onClose, children, wide }: { title: string; onClose: () => void; children: ReactNode; wide?: boolean }) {
@@ -7,7 +8,8 @@ export function Modal({ title, onClose, children, wide }: { title: string; onClo
     window.addEventListener("keydown", on);
     return () => window.removeEventListener("keydown", on);
   }, [onClose]);
-  return (
+  // 渲染到 body：.panel 等容器的 backdrop-filter 会让 position:fixed 相对容器定位，弹窗被裁在面板里
+  return createPortal(
     <div className="modal-back" onClick={onClose}>
       <div className={`panel modal kb-modal ${wide ? "wide" : ""}`} onClick={(e) => e.stopPropagation()}>
         <div className="kb-modal-head">
@@ -16,7 +18,8 @@ export function Modal({ title, onClose, children, wide }: { title: string; onClo
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -239,11 +242,17 @@ export function CardEditor({ id, onClose, onSaved }: { id: string; onClose: () =
             <div className="field"><label>备注（实测发现、打法要点）</label><textarea className="txt" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
           </div>
           <div className="kb-ref">
-            <div className="kb-ref-t">资料库</div>
+            <div className="kb-ref-t">资料库{d.db?.source === "cn" ? "（国服客户端）" : "（国际服）"}</div>
             <div className="kb-quote">
               <b>{d.db?.cost ?? "?"} 费 / {d.db?.power ?? "?"} 战力</b>{d.db?.series ? ` · ${d.db.series}` : ""}<br />
               {d.db?.ability || "（白板牌，没有能力）"}
+              {d.db?.params_source === "global" && <div className="kb-row-src">能力数值取自国际服，国服可能不同</div>}
+              {d.db?.params_source === "unknown" && <div className="kb-row-src">「?」是没读到的数值，实测后可在左边补上</div>}
             </div>
+            {d.global && (d.global.cost !== d.db?.cost || d.global.power !== d.db?.power || d.global.ability !== d.db?.ability) && (
+              <><div className="kb-ref-t">国际服（对照）</div>
+                <div className="kb-quote dim"><b>{d.global.cost ?? "?"} 费 / {d.global.power ?? "?"} 战力</b><br />{d.global.ability || "（白板牌）"}</div></>
+            )}
             {d.curated && <><div className="kb-ref-t">当前人工覆盖</div><pre className="kb-pre">{JSON.stringify(d.curated, null, 2)}</pre></>}
           </div>
         </div>

@@ -22,7 +22,7 @@ def test_db_covers_locations_seen_in_games():
     seen = ["SinisterLondon", "DreamDimension", "MirrorDimension", "Krakoa", "Limbo", "KunLun", "XMansion",
             "CentralPark", "Wakanda", "Ebonshire", "Elysium", "ShurisLab"]
     assert all(db.location_effect(n) for n in seen)
-    assert "Nobody can play cards that cost 4 or more here" in db.ability("Goose")
+    assert "Nobody can play cards that cost 4, 5, or 6 here" in db.ability("Goose")   # 国服库优先（国际服是 4 or more）
     # 人工维护的 cards.json 优先（国服实测 Hawkeye +3）
     assert "+3 Power" in db.ability("Hawkeye")
 
@@ -84,5 +84,14 @@ def test_prompt_links_db_details(tmp_path):
     data = json.loads(build_prompt(s, advisor=adv).split("\n", 1)[1])
     assert "copy" in data["locations"][0]["kb"]["effect"]
     assert data["locations"][0]["opp_cards_revealed"] == ["Goose"]
-    assert "cost 4 or more" in data["card_info"]["Goose"]
+    assert "cost 4, 5, or 6" in data["card_info"]["Goose"]
     assert "Hulk" in data["card_info"] and data["hand"][0]["ability"]
+
+
+def test_goose_restriction_both_wordings():
+    for text, blocked, free in (("Ongoing: Nobody can play cards that cost 4 or more here.", [4, 5, 6, 7], [3]),
+                                ("Ongoing: Nobody can play cards that cost 4, 5, or 6 here.", [4, 5, 6], [3, 7])):
+        checks = knowledge.parse_restrictions(text)
+        assert checks
+        assert all(any(c.blocks(6, n, 1) for c in checks) for n in blocked)
+        assert not any(c.blocks(6, n, 1) for c in checks for n in free)

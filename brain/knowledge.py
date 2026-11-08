@@ -1,8 +1,9 @@
 """卡牌 / 场地资料库：按游戏内 id（CardDefId / LocationDefId）查询详细信息。
 
-两层数据，人工维护优先：
+三层数据，前面的优先：
 1. data/cards.json、data/locations.json —— 人工确认（国服实测能力、标签、bias、notes）
-2. data/card_db.json、data/location_db.json —— tools/update_card_db.py 抓取的全量资料（能力文字、基础费用/战力）
+2. data/card_db_cn.json —— tools/build_cn_card_db.py 从国服客户端内存读取（国服当前的费用/战力/能力）
+3. data/card_db.json、data/location_db.json —— tools/update_card_db.py 抓取的国际服全量资料（国服缺的卡兜底）
 
 另外把能力文字里常见的「出牌限制」解析成规则（Goose、The Big House、Kyln…），供 validator / 规则 AI 使用，
 这样新卡/新场地不必等撞上一次被拒才手工补。
@@ -16,22 +17,35 @@ from pathlib import Path
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 CARD_DB_PATH = DATA_DIR / "card_db.json"
+CARD_DB_CN_PATH = DATA_DIR / "card_db_cn.json"
 LOCATION_DB_PATH = DATA_DIR / "location_db.json"
 CURATED_CARDS_PATH = DATA_DIR / "cards.json"
 
 
-def _load_items(path: Path) -> dict:
-    if not path.exists():
+def _load_items(path: Path | None) -> dict:
+    if not path or not path.exists():
         return {}
     d = json.loads(path.read_text("utf-8"))
     items = d.get("items", d)
     return {k: v for k, v in items.items() if not k.startswith("_") and isinstance(v, dict)}
 
 
+def merge_card_dbs(global_items: dict, cn_items: dict) -> dict:
+    """国服库覆盖国际服库（逐字段，空值不覆盖）；国服没有的卡保留国际服资料。"""
+    out = {cid: dict(v) for cid, v in global_items.items()}
+    for cid, v in cn_items.items():
+        base = out.setdefault(cid, {})
+        base.update({k: x for k, x in v.items() if x is not None})
+        base["source"] = "cn"
+    return out
+
+
 class GameDB:
     def __init__(self, card_db: Path = CARD_DB_PATH, location_db: Path = LOCATION_DB_PATH,
-                 curated_cards: Path = CURATED_CARDS_PATH):
-        self.cards_raw = _load_items(card_db)
+                 curated_cards: Path = CURATED_CARDS_PATH, card_db_cn: Path | None = None):
+        # 国服库默认放在国际服库旁边（测试传临时目录时不会读到真实数据）
+        cn = card_db_cn if card_db_cn is not None else card_db.with_name(CARD_DB_CN_PATH.name)
+        self.cards_raw = merge_card_dbs(_load_items(card_db), _load_items(cn))
         self.locations_raw = _load_items(location_db)
         curated = _load_items(curated_cards)
         self.cards: dict[str, dict] = {}
@@ -133,8 +147,13 @@ def parse_restrictions(text: str) -> list[PlayCheck]:
             out.append(PlayCheck(lambda tu, c, p, ns=ns: c in ns, text=m.group(0)))
         else:
             out.append(PlayCheck(_cost_pred(int(m.group(1)), (m.group(4) or "").strip() or None), text=m.group(0)))
-    for m in re.finditer(r"Nobody can play cards that cost (\d+)( or less| or more)? here", t):
-        out.append(PlayCheck(_cost_pred(int(m.group(1)), (m.group(2) or "").strip() or None), text=m.group(0)))
+    # 国际服 Goose：cost 4 or more；国服 Goose：cost 4, 5, or 6
+    for m in re.finditer(r"Nobody can play cards that cost (\d+)(?:, (\d+),? or (\d+))?( or less| or more)? here", t):
+        if m.group(2):
+            ns = {int(m.group(1)), int(m.group(2)), int(m.group(3))}
+            out.append(PlayCheck(lambda tu, c, p, ns=ns: c in ns, text=m.group(0)))
+        else:
+            out.append(PlayCheck(_cost_pred(int(m.group(1)), (m.group(4) or "").strip() or None), text=m.group(0)))
     for m in re.finditer(r"Cards with (\d+) or more Power can't be played here", t):
         n = int(m.group(1))
         out.append(PlayCheck(lambda tu, c, p, n=n: p >= n, text=m.group(0)))

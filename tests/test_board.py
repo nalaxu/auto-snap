@@ -34,7 +34,7 @@ def test_notes_ongoing_opp_new_and_location_events():
                   locations=[loc(0, opp=[goose]), loc(1, opp=[falcon]), loc(2, name="Mindscape")])
     tr.update("g", s)
     text = "\n".join(s.board_notes)
-    assert "【持续】" in text and "Goose" in text and "cost 4 or more" in text
+    assert "【持续】" in text and "Goose" in text and "cost 4, 5, or 6" in text
     assert "【对手上回合】" in text and "Falcon" in text
     assert "【场地事件·2 回合后】" in text and "swap hands" in text
     s6 = GameState(turn=7, energy=6, hand=[], locations=[loc(0, opp=[goose]), loc(1, opp=[falcon]), loc(2, name="Mindscape")])

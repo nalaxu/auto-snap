@@ -91,9 +91,19 @@ def test_agatha_blocks_plays_on_even_turns():
     from brain.location_rules import can_play
     from brain.models import Card
 
+    from brain.location_rules import hand_control_blocked
+
     hand = [Card(id="AgathaHarkness", cost=6, power=12), Card(id="Medusa", cost=2, power=2)]
+    # 国服 Agatha：每回合都由她出牌
     assert not can_play(_board_state(6, hand), hand[1], 1)
-    assert can_play(_board_state(5, hand), hand[1], 1)
+    assert not can_play(_board_state(5, hand), hand[1], 1)
+
+    class GlobalText:   # 国际服文字：只有偶数回合
+        def ability(self, cid):
+            return "Game Start: Draw Agatha. She controls your cards on even turns." if cid == "AgathaHarkness" else ""
+
+    assert hand_control_blocked(_board_state(6, hand), GlobalText())
+    assert hand_control_blocked(_board_state(5, hand), GlobalText()) is None
 
 
 def test_activatable_cards_and_validation():
