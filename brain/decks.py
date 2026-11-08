@@ -14,6 +14,8 @@ import threading
 from datetime import date
 from pathlib import Path
 
+from .kbfile import update_json
+
 log = logging.getLogger(__name__)
 
 DECKS_DIR = Path(__file__).resolve().parent.parent / "data" / "decks"
@@ -100,17 +102,24 @@ class DeckKB:
                     log.warning("写对手卡组候选失败：%r", e)
                 return None
             aid = matched[0]
-            a = self.opponents[aid]
-            samples = [s for s in a.setdefault("samples", []) if s.get("game_id") != game_id[:8]]
-            samples.append({"game_id": game_id[:8], "date": date.today().isoformat(), "result": result, "cards": cards})
-            a["samples"] = samples[-MAX_SAMPLES:]
-            seen = a.setdefault("seen_cards", {})
-            for c in cards:
-                seen[c] = seen.get(c, 0) + 1
+            sample = {"game_id": game_id[:8], "date": date.today().isoformat(), "result": result, "cards": cards}
+
+            def add(data: dict) -> None:   # 在磁盘最新版本上追加（面板可能刚编辑过原型）
+                a = data.get(aid)
+                if a is None:
+                    return
+                samples = [s for s in a.setdefault("samples", []) if s.get("game_id") != game_id[:8]]
+                samples.append(sample)
+                a["samples"] = samples[-MAX_SAMPLES:]
+                seen = a.setdefault("seen_cards", {})
+                for c in cards:
+                    seen[c] = seen.get(c, 0) + 1
+
             try:
-                (self.root / "opponents.json").write_text(json.dumps(self.opponents, ensure_ascii=False, indent=2) + "\n", "utf-8")
+                self.opponents = update_json(self.root / "opponents.json", add)
             except OSError as e:
                 log.warning("写对手卡组库失败：%r", e)
+                add(self.opponents)
             self._index()
             return aid
 

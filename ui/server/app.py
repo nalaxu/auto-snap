@@ -5,6 +5,7 @@
 接口：
     GET  /api/options   客户端列表（是否运行 / 已实测）、默认决策器与模型、可回放的对局
     GET  /api/status    机器人进程状态
+    /api/kb/...         知识库：待复核、信号、对手卡组候选、卡组、卡牌 / 场地人工覆盖（见 kb.py）
     GET  /api/stats     战绩总览（?client=&last=）     GET /api/games 对局列表     GET /api/games/{file} 单局逐回合
     POST /api/start     启动机器人 {client, live, decider, max_games, max_turns, skip_current} 或回放 {demo: 文件名, speed}
     POST /api/control   {cmd: pause | resume | stop | kill}
@@ -17,6 +18,7 @@ import asyncio
 import json
 import tomllib
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
@@ -24,6 +26,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from .bot import ROOT, BotProcess
+from .kb import KnowledgeBase
+from .kb import create_router as create_kb_router
 
 DIST = ROOT / "ui" / "web" / "dist"
 GAMES_DIR = ROOT / "logs" / "games"
@@ -88,7 +92,7 @@ def recent_games(limit: int = 30) -> list[dict]:
     return out
 
 
-def create_app() -> FastAPI:
+def create_app(data_dir: Path | None = None) -> FastAPI:
     hub = Hub()
     bot = BotProcess(hub.publish_threadsafe)
 
@@ -101,6 +105,9 @@ def create_app() -> FastAPI:
 
     app = FastAPI(title="Auto-Snap 面板", docs_url=None, redoc_url=None, lifespan=lifespan)
     app.state.hub, app.state.bot = hub, bot
+    kb = KnowledgeBase(data_dir or ROOT / "data", (data_dir.parent if data_dir else ROOT / "logs") / "kb_backup", GAMES_DIR)
+    app.state.kb = kb
+    app.include_router(create_kb_router(kb))
 
     @app.get("/api/options")
     def options() -> dict:

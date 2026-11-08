@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 
-// 哈希路由：#/live、#/stats、#/review/<对局文件名>
-export type Route = { page: "live" | "stats" | "review"; arg?: string };
+// 哈希路由：#/live、#/stats、#/review/<对局文件名>、#/kb/<标签>
+export type Route = { page: "live" | "stats" | "review" | "kb"; arg?: string };
 
 function parse(): Route {
   const [, page, ...rest] = location.hash.replace(/^#/, "").split("/");
   if (page === "stats") return { page: "stats" };
+  if (page === "kb") return { page: "kb", arg: rest[0] };
   if (page === "review") return { page: "review", arg: rest.length ? decodeURIComponent(rest.join("/")) : undefined };
   return { page: "live" };
 }

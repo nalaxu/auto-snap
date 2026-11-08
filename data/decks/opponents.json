@@ -70,6 +70,20 @@
           "Venom",
           "WolverineHorseman"
         ]
+      },
+      {
+        "game_id": "b260cf8d",
+        "date": "2026-11-08",
+        "result": "win",
+        "cards": [
+          "Armor",
+          "BuckyBarnes",
+          "Colossus",
+          "Hobgoblin",
+          "Nova",
+          "Warpath",
+          "Wolverine"
+        ]
       }
     ],
     "seen_cards": {
@@ -80,7 +94,14 @@
       "Killmonger": 1,
       "Muse": 1,
       "Venom": 1,
-      "WolverineHorseman": 1
+      "WolverineHorseman": 1,
+      "Armor": 1,
+      "BuckyBarnes": 1,
+      "Colossus": 1,
+      "Hobgoblin": 1,
+      "Nova": 1,
+      "Warpath": 1,
+      "Wolverine": 1
     }
   },
   "discard": {

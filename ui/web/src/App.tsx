@@ -4,6 +4,9 @@ import { Feed } from "./components/Feed";
 import { Launch } from "./components/Launch";
 import { TopBar } from "./components/TopBar";
 import { useLive, useNow } from "./hooks";
+import { useCallback, useEffect, useState } from "react";
+import { kb } from "./kbApi";
+import { Knowledge } from "./pages/Knowledge";
 import { Review } from "./pages/Review";
 import { Stats } from "./pages/Stats";
 import { Route, useRoute } from "./route";
@@ -13,7 +16,7 @@ const NAV: { icon: string; label: string; page?: Route["page"]; href?: string; s
   { icon: "ti-swords", label: "实时", page: "live", href: "#/live" },
   { icon: "ti-chart-arcs", label: "战绩", page: "stats", href: "#/stats" },
   { icon: "ti-history", label: "复盘", page: "review", href: "#/review" },
-  { icon: "ti-books", label: "知识库", soon: "M3" },
+  { icon: "ti-books", label: "知识库", page: "kb", href: "#/kb" },
   { icon: "ti-tool", label: "工具", soon: "M4" },
   { icon: "ti-adjustments-horizontal", label: "设置", soon: "M4" },
 ];
@@ -57,6 +60,11 @@ function LivePage({ s }: { s: Live }) {
 export default function App() {
   const s = useLive();
   const route = useRoute();
+  const [kbPending, setKbPending] = useState(0);
+  const refreshKb = useCallback(() => {
+    kb.overview().then((o) => setKbPending(o.counts.signals + o.counts.unmatched + o.counts.locations)).catch(() => {});
+  }, []);
+  useEffect(refreshKb, [refreshKb, s.results.length]);   // 每局结束后可能多出待复核项
   return (
     <>
       <div className="grain" />
@@ -69,6 +77,7 @@ export default function App() {
                 <i className={`ti ${n.icon}`} aria-hidden="true" />
                 {n.label}
                 {n.page === "live" && s.running && route.page !== "live" && <span className="live-dot" title="机器人运行中" />}
+                {n.page === "kb" && kbPending > 0 && <span className="nav-count" title={`${kbPending} 项待复核`}>{kbPending}</span>}
               </a>
             ) : (
               <a key={n.label} className="off" title={`${n.soon} 阶段开放`}>
@@ -79,10 +88,11 @@ export default function App() {
             ),
           )}
           <div className="sep" />
-          <div className="ver">M2<br />只读内存</div>
+          <div className="ver">M3<br />只读内存</div>
         </nav>
         <main>
-          {route.page === "stats" ? <Stats /> : route.page === "review" ? <Review file={route.arg} /> : <LivePage s={s} />}
+          {route.page === "stats" ? <Stats /> : route.page === "review" ? <Review file={route.arg} />
+            : route.page === "kb" ? <Knowledge tab={route.arg} running={s.running} onChanged={refreshKb} /> : <LivePage s={s} />}
         </main>
       </div>
     </>

@@ -78,10 +78,14 @@ class LocationKB:
         return LocationInfo(name=name, effect=effect, source="db") if effect else None
 
     def put(self, info: LocationInfo) -> None:
+        from .kbfile import update_json
+
+        entry = {"effect": info.effect, "source": info.source, "bias": info.bias, "tags": info.tags, "notes": info.notes}
         with self._lock:
-            self._data[info.name] = {"effect": info.effect, "source": info.source, "bias": info.bias,
-                                     "tags": info.tags, "notes": info.notes}
-            self.path.write_text(json.dumps(self._data, ensure_ascii=False, indent=2) + "\n", "utf-8")
+            def add(data: dict) -> None:   # 写进磁盘最新版本，不覆盖面板里的人工修改
+                data[info.name] = entry
+
+            self._data = update_json(self.path, add)
 
 
 def load_cards(path: Path = CARDS_PATH) -> dict:

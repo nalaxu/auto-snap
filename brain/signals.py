@@ -16,6 +16,7 @@ import re
 import threading
 from pathlib import Path
 
+from .kbfile import update_json
 from .models import GameState
 
 SIGNALS_PATH = Path(__file__).resolve().parent.parent / "data" / "signals.json"
@@ -64,8 +65,17 @@ class SignalKB:
         sig = {**sig, "note": text, "source": "auto"}
         with self._lock:
             table[sid] = sig
+
+            def add(data: dict) -> None:   # 写进磁盘最新版本，不覆盖面板里的人工修改
+                data.setdefault("locations", {})
+                data.setdefault("cards", {})
+                data[kind].setdefault(sid, sig)
+
             try:
-                self.path.write_text(json.dumps(self.data, ensure_ascii=False, indent=2) + "\n", "utf-8")
+                fresh = update_json(self.path, add)
+                for k in ("locations", "cards"):
+                    self.data[k] = {**fresh.get(k, {}), **{x: v for x, v in self.data[k].items() if x not in fresh.get(k, {})}}
+                return self.data[kind].get(sid, sig)
             except OSError:
                 pass
         return sig
