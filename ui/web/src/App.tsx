@@ -4,12 +4,15 @@ import { Feed } from "./components/Feed";
 import { Launch } from "./components/Launch";
 import { TopBar } from "./components/TopBar";
 import { useLive, useNow } from "./hooks";
+import { Review } from "./pages/Review";
+import { Stats } from "./pages/Stats";
+import { Route, useRoute } from "./route";
 import type { Live } from "./store";
 
-const NAV: { icon: string; label: string; soon?: string }[] = [
-  { icon: "ti-swords", label: "实时" },
-  { icon: "ti-chart-arcs", label: "战绩", soon: "M2" },
-  { icon: "ti-history", label: "复盘", soon: "M2" },
+const NAV: { icon: string; label: string; page?: Route["page"]; href?: string; soon?: string }[] = [
+  { icon: "ti-swords", label: "实时", page: "live", href: "#/live" },
+  { icon: "ti-chart-arcs", label: "战绩", page: "stats", href: "#/stats" },
+  { icon: "ti-history", label: "复盘", page: "review", href: "#/review" },
   { icon: "ti-books", label: "知识库", soon: "M3" },
   { icon: "ti-tool", label: "工具", soon: "M4" },
   { icon: "ti-adjustments-horizontal", label: "设置", soon: "M4" },
@@ -37,36 +40,49 @@ function Waiting({ s }: { s: Live }) {
   );
 }
 
-export default function App() {
-  const s = useLive();
+function LivePage({ s }: { s: Live }) {
   const now = useNow();
   const showBoard = s.running && s.turn && s.phase !== "menu" && s.phase !== "matching" && s.phase !== "paused";
+  return (
+    <div className="live">
+      <div>
+        {!s.running ? <Launch lastStop={s.stopReason} /> : showBoard ? <Board s={s} now={now} /> : <Waiting s={s} />}
+        <Feed s={s} />
+      </div>
+      <Brain s={s} now={now} />
+    </div>
+  );
+}
+
+export default function App() {
+  const s = useLive();
+  const route = useRoute();
   return (
     <>
       <div className="grain" />
       <div className="app">
         <TopBar s={s} />
         <nav className="nav">
-          {NAV.map((n, i) => (
-            <a key={n.label} className={i === 0 ? "on" : "off"} title={n.soon ? `${n.soon} 阶段开放` : undefined}>
-              <i className={`ti ${n.icon}`} aria-hidden="true" />
-              {n.label}
-              {n.soon && <span className="soon">{n.soon}</span>}
-            </a>
-          ))}
+          {NAV.map((n) =>
+            n.href ? (
+              <a key={n.label} href={n.href} className={route.page === n.page ? "on" : ""}>
+                <i className={`ti ${n.icon}`} aria-hidden="true" />
+                {n.label}
+                {n.page === "live" && s.running && route.page !== "live" && <span className="live-dot" title="机器人运行中" />}
+              </a>
+            ) : (
+              <a key={n.label} className="off" title={`${n.soon} 阶段开放`}>
+                <i className={`ti ${n.icon}`} aria-hidden="true" />
+                {n.label}
+                <span className="soon">{n.soon}</span>
+              </a>
+            ),
+          )}
           <div className="sep" />
-          <div className="ver">M1<br />只读内存</div>
+          <div className="ver">M2<br />只读内存</div>
         </nav>
         <main>
-          <section className="page on">
-            <div className="live">
-              <div>
-                {!s.running ? <Launch lastStop={s.stopReason} /> : showBoard ? <Board s={s} now={now} /> : <Waiting s={s} />}
-                <Feed s={s} />
-              </div>
-              <Brain s={s} now={now} />
-            </div>
-          </section>
+          {route.page === "stats" ? <Stats /> : route.page === "review" ? <Review file={route.arg} /> : <LivePage s={s} />}
         </main>
       </div>
     </>

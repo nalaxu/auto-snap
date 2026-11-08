@@ -5,6 +5,7 @@
 接口：
     GET  /api/options   客户端列表（是否运行 / 已实测）、默认决策器与模型、可回放的对局
     GET  /api/status    机器人进程状态
+    GET  /api/stats     战绩总览（?client=&last=）     GET /api/games 对局列表     GET /api/games/{file} 单局逐回合
     POST /api/start     启动机器人 {client, live, decider, max_games, max_turns, skip_current} 或回放 {demo: 文件名, speed}
     POST /api/control   {cmd: pause | resume | stop | kill}
     WS   /ws            先发 hello（含本次运行的全部事件，页面据此重建状态），之后实时推送事件
@@ -126,6 +127,37 @@ def create_app() -> FastAPI:
     @app.get("/api/status")
     def status() -> dict:
         return bot.status()
+
+    def _filtered(client: str | None, last: int) -> list[dict]:
+        from gamelog.stats import list_games
+
+        games = list_games(GAMES_DIR)
+        if client:
+            games = [g for g in games if (g["client"] or "?") == client]
+        return games[-last:] if last > 0 else games
+
+    @app.get("/api/stats")
+    def stats(client: str | None = None, last: int = 0) -> dict:
+        """战绩总览。client = 客户端 key（早期没记录客户端的对局用 ?），last = 只看最近 N 局。"""
+        from gamelog.stats import aggregate, list_games
+
+        all_games = list_games(GAMES_DIR)
+        return {**aggregate(_filtered(client, last), GAMES_DIR),
+                "clients": sorted({g["client"] or "?" for g in all_games})}
+
+    @app.get("/api/games")
+    def games(client: str | None = None, last: int = 0) -> list[dict]:
+        """对局列表（新的在前）。"""
+        return list(reversed(_filtered(client, last)))
+
+    @app.get("/api/games/{file}")
+    def game(file: str) -> dict:
+        from gamelog.stats import game_detail
+
+        d = game_detail(file, GAMES_DIR)
+        if d is None:
+            raise HTTPException(404, "找不到这局对局记录")
+        return d
 
     @app.post("/api/start")
     def start(req: StartRequest) -> dict:
