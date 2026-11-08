@@ -16,7 +16,8 @@
   没牌可出时不调用模型
 - **策略**：目标期望方块最大——中期 Snap、终局大优势不 Snap、按校准后的胜率计算撤退；关键信息栈 + 卡组 / 信号知识库按需注入
 - 资料库：748 张卡牌、221 个场地；卡组知识库（我方 loki、对手原型 3 个）；放牌顺序信号库
-- 测试：95 个（`python -m pytest`）
+- **外部面板**（M1）：`python main.py ui` 在浏览器里启停机器人、实时看局面 / 大模型决策 / 战报，支持回放历史对局演示
+- 测试：104 个（`python -m pytest`）
 
 ## 快速开始
 
@@ -36,6 +37,21 @@ python main.py auto -v                        # 演练：只决策不动鼠标
 python main.py observe -v                     # 只观察：打印每回合局面
 python main.py auto --live --decider rule_based --max-games 1   # 只用规则 AI
 ```
+
+### 外部面板
+
+```bash
+cd ui/web && npm install && npm run build && cd ../..   # 首次：构建前端（需要 Node 18+）
+python main.py ui                                       # 打开 http://127.0.0.1:8765
+```
+
+- 「出征准备」选客户端、演练 / 实操、大模型 / 规则 AI、局数，开始后实时显示三路战场、手牌、回合倒计时、赌注、
+  大模型思考进度（对比截止时间）、本回合行动的执行结果、校准胜率与撤退线、关键信息栈、战报 / 原始日志
+- 控制：本局后暂停 / 继续开局 / 停止（等同 F8，8 秒没退出自动强制结束）；**按住 F8 仍然有效**
+- 「回放演示」不连游戏，把 `logs/games/*.jsonl` 按实时协议重放，用来调试面板
+- 结构：`ui/server`（FastAPI，只监听 127.0.0.1）以子进程启动 `main.py auto --events`；机器人用 stdout 输出
+  `@@AUTOSNAP {json}` 事件、从 stdin 读控制命令（协议见 `gamelog/live.py`）；前端 `ui/web`（Vite + React + TS），
+  开发时 `npm run dev`（5173 端口，接口代理到 8765）；视觉稿 `ui/design/prototype.html`
 
 每局记录写入 `logs/games/<时间>_<对局id>.jsonl`（局面、场上要点、决策、模型原始输出、执行结果），
 控制台输出建议重定向到 `logs/run_*.txt` 便于复盘。
@@ -98,6 +114,8 @@ python tools/mem_explore.py --client cn_steam   # 工具同样支持 --client（
 | `brain/validator.py` | 决策合法性校验 |
 | `executor/` | 窗口定位（句柄缓存）、比例坐标、平滑拖拽、界面模板识别（`screens.py`）、遮罩检测 |
 | `gamelog/recorder.py` | 对局记录 |
+| `gamelog/live.py` | 面板实时事件协议（stdout 事件 / stdin 控制）与局面、决策的精简 payload |
+| `ui/` | 外部面板：`server/`（FastAPI + 子进程管理）、`web/`（React 前端）、`replay.py`（回放演示）、`design/`（视觉稿） |
 | `data/` | `card_db.json` / `location_db.json`（抓取）、`cards.json` / `locations.json`（人工，优先）、`templates/ui/`（界面模板） |
 | `tools/` | 见下方「工具」 |
 | `brain/claude_decider.py`、`fsm/` | 早期占位（未使用；决策已统一到 `brain/llm/`，流程在 `main.auto`） |
@@ -223,3 +241,4 @@ python tools/mem_explore.py --client cn_steam   # 工具同样支持 --client（
 - [x] P7 对局机制：回合计时预算、激活、移动、Infinaut / Agatha 等出牌限制、对手撤退快速领奖励
 - [x] P8 知识体系：关键信息栈、卡组知识库（我方打法 / 对手原型）、放牌顺序信号、提示词只放通用原则
 - [ ] P9 稳定与提速：后期决策提速、激活 / 移动实战验证、长时间连打、知识库持续积累与复核
+- [ ] P10 外部面板：M1 实时页与启停 ✅ → M2 战绩 / 复盘 → M3 知识库复核 → M4 设置 / 工具 / 悬浮小条

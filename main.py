@@ -5,6 +5,7 @@
     python main.py auto --live --max-turns 1 -v # 实操：只自动打 1 个回合（按住 F8 中止）
     python main.py clients                      # 列出可用客户端及运行状态
     python main.py auto --client cn_official -v # 指定客户端（默认取 config 的 [game].client，可设 SNAP_CLIENT）
+    python main.py ui                           # 外部面板：浏览器里启停、看实时对局（http://127.0.0.1:8765）
 """
 from __future__ import annotations
 
@@ -104,13 +105,24 @@ def observe(settings: dict, interval: float = 0.5, client=None) -> None:
 
 
 def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = False, max_games: int = 0,
-         client=None) -> None:
-    """自动对局：感知 -> 决策 -> 执行 -> 结束回合；对局外按界面识别处理 结算(Collect Rewards) -> 奖励(Next) -> 主界面(Play)。"""
+         client=None, events: bool = False) -> None:
+    """自动对局：感知 -> 决策 -> 执行 -> 结束回合；对局外按界面识别处理 结算(Collect Rewards) -> 奖励(Next) -> 主界面(Play)。
+
+    events=True：向 stdout 输出结构化事件并从 stdin 接收控制命令（外部面板 ui/server 启动时使用，见 gamelog/live.py）。
+    """
     from brain import rule_based
+    from brain.knowledge import default_db
     from brain.validator import validate
     from executor.actions import ActionFailed, Executor, GameOver, PlayRejected
-    from executor.mouse import Aborted
+    from executor.mouse import Aborted, check_abort, request_abort
+    from gamelog.live import Control, LiveBus, decision_payload, state_payload
     from perception import make_state_source
+
+    bus = LiveBus(enabled=events)
+    control = Control(on_stop=request_abort, bus=bus)
+    if events:
+        control.start_stdin_reader()
+    stop_reason = "结束"
 
     from brain import strategy
     from brain.board import BoardTracker
@@ -170,18 +182,21 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
             return
         print("  ⏸ 检测到新手指引，请跟随指引点击（程序暂停等待，按住 F8 可中止）")
         log_event("guide_pause")
-        from executor.mouse import check_abort
-
-        end = time.time() + timeout_s
-        while time.time() < end:
-            check_abort()
-            time.sleep(0.5)
-            handle_overlay()
-            if not guide_active():
-                print("  ▶ 指引结束，继续")
-                time.sleep(0.8)
-                return
-        print("  ⚠ 等待指引超时，继续尝试")
+        prev_phase = bus.phase or "in_game"
+        bus.set_phase("guide")
+        try:
+            end = time.time() + timeout_s
+            while time.time() < end:
+                check_abort()
+                time.sleep(0.5)
+                handle_overlay()
+                if not guide_active():
+                    print("  ▶ 指引结束，继续")
+                    time.sleep(0.8)
+                    return
+            print("  ⚠ 等待指引超时，继续尝试")
+        finally:
+            bus.set_phase(prev_phase)
 
     played_games: set[str] = set()
     from concurrent.futures import ThreadPoolExecutor
@@ -195,14 +210,19 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                 return fut.result(timeout=0.3)
             except TimeoutError:
                 pass
+            check_abort()
             cur = source.snapshot()
             if cur and cur.get("game_id") == game_id and cur.get("finished"):
                 return None
     last_menu_check = 0.0
     last_overlay_check = 0.0
 
+    def reached_max() -> bool:
+        return bool(max_games) and len(finished_games) >= max_games
+
     def want_more() -> bool:
-        return not max_games or len(finished_games) < max_games
+        """还要开下一局吗：没到 --max-games，且面板没有暂停。"""
+        return not reached_max() and not control.paused
 
     def menu_step(press_play: bool, check_guide: bool = True) -> str | None:
         """对局外：识别界面并点击下一步按钮。返回识别到的界面名。check_guide=False：不读内存查新手指引（启动时抢先点 PLAY）。"""
@@ -226,6 +246,7 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                     m2 = ex.screen()
                     if not m2 or m2.name != "play":
                         print("  ▶ 已点击 PLAY，匹配中…")
+                        bus.set_phase("matching")
                         return m.name
                 m = m2
             print("  ⚠ 连点 3 次 PLAY 仍停在主界面")
@@ -254,6 +275,13 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
               f"超时由规则 AI 兜底；对局记录 -> {rec.root}")
     else:
         print(f"决策：规则 AI（场地知识库）；对局记录 -> {rec.root}")
+    db = default_db() if events else None
+    bus.emit("session", live=live, client=client.key, client_label=getattr(client, "label", client.key),
+             decider="llm" if decider is not None else "rule_based",
+             model=f"{decider.task.model}" if decider is not None else "规则 AI",
+             effort=(decider.effort_timed or decider.task.effort) if decider is not None else None,
+             max_games=max_games, max_turns=max_turns, snap=snap_enabled, retreat=retreat_enabled)
+    announced_games: set[str] = set()
 
     def log_event(kind: str, **data) -> None:
         cur = source.last_snapshot
@@ -288,6 +316,7 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
             print(f"跳过当前回合 T{cur['turn']}，从 T{cur['turn'] + 1} 开始接管")
     try:
         while True:
+            check_abort()
             state = source.read_state()
             snap = source.last_snapshot
             if snap and not snap.get("finished"):
@@ -304,15 +333,29 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                     print(f"  对手卡组：{decks.default_kb().opponents[arche].get('name', arche)}（已记入样本）")
                 print(f"对局 {snap['game_id'][:8]} 结束：{summary.get('result')}（场地 {summary.get('my_locations_won')}:"
                       f"{summary.get('opp_locations_won')}，赌注 {summary.get('cube_value')}；已完成 {len(finished_games)} 局）")
+                bus.emit("game_end", game_id=snap["game_id"], games_done=len(finished_games),
+                         archetype=decks.default_kb().opponents[arche].get("name", arche) if arche else None,
+                         **{k: summary.get(k) for k in ("result", "retreat", "my_locations_won", "opp_locations_won",
+                                                         "cube_value", "turns_recorded")})
+                bus.set_phase("menu")
                 if live:
                     back_to_menu()
-                if not want_more():
+                if reached_max():
                     print("按 --max-games 停止")
+                    stop_reason = f"已打完 {max_games} 局"
                     return
+                if control.paused:
+                    print("  ⏸ 面板已暂停：停在主界面，等待继续")
             if state is None or not snap:
                 if decider is not None and hasattr(decider, "warmup"):
                     decider.warmup()           # 等待期间保持到模型服务的连接（新建连接实测 1.4-5s）
                 in_game = bool(snap) and not snap.get("finished")
+                if in_game:
+                    bus.set_phase("in_game")
+                elif control.paused:
+                    bus.set_phase("paused")
+                elif bus.phase not in ("matching",):
+                    bus.set_phase("menu")
                 if live and in_game and time.time() - last_overlay_check > 1:  # 揭示阶段的新卡展示等
                     last_overlay_check = time.time()
                     handle_overlay()
@@ -357,13 +400,24 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
             board.update(snap["game_id"], state)
             if state.board_notes:
                 print("  场上要点：\n    " + "\n    ".join(state.board_notes))
+            bus.set_phase("in_game")
+            if events:
+                if snap["game_id"] not in announced_games:
+                    announced_games.add(snap["game_id"])
+                    bus.emit("game_start", game_id=snap["game_id"], deck_name=getattr(source, "deck_name", ""),
+                             games_done=len(finished_games))
+                state_dump = state.model_dump()
+                deadline = decider.planned_deadline(state) if decider is not None and hasattr(decider, "planned_deadline") else 0.0
+                bus.emit("turn_state", game_id=snap["game_id"], turn=state.turn,
+                         state=state_payload(state_dump, location_report(state), db), deadline=round(deadline, 1))
             t_dec = time.time()
             d = decide_watching(state, snap["game_id"])
             if d is None:
                 print(f"  ■ 对局已结束（{'对手撤退' if (source.last_snapshot or {}).get('opp', {}).get('conceded') else '结束'}），放弃本回合决策")
                 done.add(key)
                 continue
-            if validate(state, d):
+            invalid = validate(state, d)
+            if invalid:
                 d = rule_based.decide(state)
             from brain.board import reorder_for_next_card
             if note := reorder_for_next_card(state, d):
@@ -398,17 +452,28 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                 print(f"    规划：{llm_raw['plan']}")
             rec.start(snap["game_id"], getattr(source, "deck_name", ""), getattr(source, "deck", []))
             executed: list[dict] = []
+            if events:
+                bus.emit("decision", game_id=snap["game_id"], turn=state.turn,
+                         decision=decision_payload(d.model_dump(), state_dump, llm_raw, round(dec_s, 2),
+                                                   note=getattr(decider, "last_note", "") if decider is not None else "",
+                                                   retreat_why=retreat_why or "", invalid=[str(e) for e in invalid or []],
+                                                   db=db))
+
+            def did(item: dict) -> None:
+                executed.append(item)
+                bus.emit("exec", game_id=snap["game_id"], turn=state.turn, **item)
 
             def record(outcome: str) -> None:
                 rec.turn(snap["game_id"], state, d, location_report(state), executed, outcome,
                          llm=llm_raw, decide_s=round(dec_s, 2))
+                bus.emit("turn_done", game_id=snap["game_id"], turn=state.turn, outcome=outcome)
 
             try:
                 ex.prepare()
                 if d.retreat:
                     try:
                         ex.retreat()
-                        executed.append({"retreat": True, "ok": True})
+                        did({"retreat": True, "ok": True})
                         record("retreat")
                         done.add(key)
                         played_games.add(snap["game_id"])
@@ -417,48 +482,49 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                     except GameOver:
                         raise
                     except ActionFailed as e:
-                        executed.append({"retreat": True, "ok": False, "error": str(e)})
+                        did({"retreat": True, "ok": False, "error": str(e)})
                         print(f"  ⚠ 撤退失败：{e}；照常出牌")
                 if d.snap:   # 先 Snap 再出牌：失败不影响本回合出牌
                     try:
                         ex.snap()
-                        executed.append({"snap": True, "ok": True})
+                        did({"snap": True, "ok": True})
                         print(f"  ⚡ SNAP：赌注 {state.cube_stake} → 下回合 {state.cube_stake * 2}")
                     except GameOver:
                         raise
                     except ActionFailed as e:
-                        executed.append({"snap": True, "ok": False, "error": str(e)})
+                        did({"snap": True, "ok": False, "error": str(e)})
                         print(f"  ⚠ Snap 失败：{e}")
                 for a in d.activate:   # 激活先于出牌
                     try:
                         ex.activate(a.card, a.location)
                         ent = next((c.entity for c in state.locations[a.location].my_cards if c.id == a.card), None)
                         activated_cards.add((snap["game_id"], ent))
-                        executed.append({"activate": a.card, "location": a.location, "ok": True})
+                        did({"activate": a.card, "location": a.location, "ok": True})
                         print(f"  ✦ 激活 {a.card}（地点{a.location}）")
                         time.sleep(0.5)
                     except GameOver:
                         raise
                     except ActionFailed as e:
-                        executed.append({"activate": a.card, "location": a.location, "ok": False, "error": str(e)})
+                        did({"activate": a.card, "location": a.location, "ok": False, "error": str(e)})
                         print(f"  ⚠ 激活失败：{e}")
                 for mv in d.moves:   # 激活 → 移动 → 出牌
                     try:
                         ex.move(mv.card, mv.from_location, mv.to_location)
-                        executed.append({"move": mv.card, "from": mv.from_location, "to": mv.to_location, "ok": True})
+                        did({"move": mv.card, "from": mv.from_location, "to": mv.to_location, "ok": True})
                         print(f"  ⇄ 移动 {mv.card}：地点{mv.from_location} → 地点{mv.to_location}")
                         time.sleep(0.4)
                     except GameOver:
                         raise
                     except ActionFailed as e:
-                        executed.append({"move": mv.card, "ok": False, "error": str(e)})
+                        did({"move": mv.card, "ok": False, "error": str(e)})
                         print(f"  ⚠ 移动失败：{e}")
                 for a in d.actions:
                     ex.play(a.card, a.location)
                     board.record_play(state.turn, a.location)
-                    executed.append({"card": a.card, "location": a.location, "ok": True})
+                    did({"card": a.card, "location": a.location, "ok": True})
                     time.sleep(0.3)
                 ex.end_turn()
+                did({"end_turn": True, "ok": True})
                 record("done")
                 done.add(key)
                 played_games.add(snap["game_id"])
@@ -470,7 +536,7 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                 print(f"  ■ {e}，停止本回合操作")
                 continue
             except PlayRejected as e:
-                executed.append({"card": e.card_id, "location": e.location, "ok": False, "error": "rejected"})
+                did({"card": e.card_id, "location": e.location, "ok": False, "error": "rejected"})
                 if live and (handle_overlay() or guide_active()):
                     record("blocked_by_guide")  # 被提示/指引挡住，不是地点限制：处理后重试
                     print(f"  ↺ {e.card_id} 被新手指引挡住")
@@ -493,6 +559,7 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                 print(f"  ⚠ 执行失败（第 {failures[key]} 次）：{e}")
                 if failures[key] >= 3:
                     print("  同一回合连续失败 3 次，停止自动模式")
+                    stop_reason = "同一回合连续执行失败 3 次"
                     return
                 time.sleep(1.5)
                 continue
@@ -500,12 +567,18 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                 done.add(key)
             if max_turns and turns >= max_turns:
                 print(f"已执行 {turns} 个回合，按 --max-turns 停止")
+                stop_reason = f"已执行 {turns} 个回合"
                 return
-    except Aborted:
-        print("F8：已中止")
+    except Aborted as e:
+        stop_reason = str(e) or "F8 中止"
+        print(f"{stop_reason}：已中止")
     except KeyboardInterrupt:
-        pass
+        stop_reason = "Ctrl+C"
+    except Exception as e:
+        stop_reason = f"异常：{e!r}"
+        raise
     finally:
+        bus.emit("stopped", reason=stop_reason, games_done=len(finished_games))
         if hasattr(source, "close"):
             source.close()
 
@@ -514,13 +587,16 @@ def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8", line_buffering=True)
     sys.stderr.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("mode", choices=["observe", "auto", "clients"], nargs="?", default="observe")
+    ap.add_argument("mode", choices=["observe", "auto", "clients", "ui"], nargs="?", default="observe")
     ap.add_argument("--client", help="客户端：cn_steam / cn_official / global / auto（覆盖 config [game].client）")
     ap.add_argument("--live", action="store_true", help="auto 模式下真正操作鼠标（默认演练）")
     ap.add_argument("--max-turns", type=int, default=0, help="auto 模式执行 N 个回合后停止（0 = 不限）")
     ap.add_argument("--max-games", type=int, default=0, help="auto 模式打完 N 局后停止（0 = 不限）")
     ap.add_argument("--skip-current", action="store_true", help="auto 模式跳过当前回合，从下一回合开始接管")
     ap.add_argument("--decider", choices=["llm", "rule_based"], help="覆盖 config 中的 brain.decider")
+    ap.add_argument("--events", action="store_true", help="auto 模式输出结构化事件、从 stdin 接收控制命令（外部面板使用）")
+    ap.add_argument("--port", type=int, default=8765, help="ui 模式：面板端口（只监听 127.0.0.1）")
+    ap.add_argument("--no-browser", action="store_true", help="ui 模式：不自动打开浏览器")
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO if args.verbose else logging.WARNING, format="%(asctime)s %(name)s %(message)s")
@@ -530,10 +606,14 @@ def main() -> None:
     if args.mode == "clients":
         list_clients(settings)
         return
+    if args.mode == "ui":
+        from ui.server.app import serve
+        serve(port=args.port, open_browser=not args.no_browser)
+        return
     client = select_client(settings, args.client)
     if args.mode == "auto":
         auto(settings, live=args.live, max_turns=args.max_turns, skip_current=args.skip_current, max_games=args.max_games,
-             client=client)
+             client=client, events=args.events)
     else:
         observe(settings, client=client)
 

@@ -14,5 +14,8 @@ psutil>=5.9
 pydirectinput>=1.0.4
 # 工具（tools/watch_live.py）
 watchdog>=4.0
+# 外部面板（python main.py ui）
+fastapi>=0.110
+uvicorn>=0.29
 # 开发
 pytest>=8.0

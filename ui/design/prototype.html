@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auto-Snap 控制台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@400;500;600;700&family=ZCOOL+QingKe+HuangYou&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+:root{
+  --void:#07061a;
+  --deep:#120f35;
+  --indigo:#221a5e;
+  --panel:rgba(24,19,66,.78);
+  --panel-hi:rgba(38,30,96,.85);
+  --line:rgba(150,128,255,.22);
+  --line-hi:rgba(190,170,255,.45);
+  --gold:#ffc63d;
+  --gold-2:#ff9a1a;
+  --gold-ink:#3a2200;
+  --cost:#2aa3ff;
+  --cost-2:#0a5fd1;
+  --power:#ff8a1f;
+  --power-2:#d4430a;
+  --me:#ffc63d;
+  --opp:#ff4f72;
+  --ok:#38e6a8;
+  --text:#f4f0ff;
+  --dim:#a8a1d6;
+  --mute:#6f68a3;
+  --f-display:'Teko',sans-serif;
+  --f-cn:'ZCOOL QingKe HuangYou','Noto Sans SC',sans-serif;
+  --f-body:'Noto Sans SC',sans-serif;
+  --f-mono:'JetBrains Mono',monospace;
+  --cut:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--void);
+  color:var(--text);
+  font-family:var(--f-body);
+  font-size:13px;
+  overflow-x:hidden;
+  min-width:0;
+}
+body::before{
+  content:"";position:fixed;inset:0;z-index:-2;
+  background:
+    radial-gradient(60% 50% at 78% 8%,rgba(255,64,170,.28),transparent 70%),
+    radial-gradient(55% 60% at 8% 92%,rgba(40,120,255,.30),transparent 70%),
+    radial-gradient(40% 40% at 45% 45%,rgba(120,60,255,.22),transparent 70%),
+    linear-gradient(160deg,#0d0b2b 0%,#07061a 60%,#0b0626 100%);
+}
+body::after{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(circle,rgba(255,255,255,.07) 1px,transparent 1.4px) 0 0/7px 7px,
+    repeating-linear-gradient(115deg,transparent 0 120px,rgba(255,255,255,.018) 120px 122px);
+  mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.35) 60%,#000 100%);
+}
+.grain{position:fixed;inset:0;pointer-events:none;z-index:50;opacity:.07;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");}
+
+.app{display:grid;grid-template-columns:84px minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);min-height:100vh}
+
+/* ---------- top bar ---------- */
+.top{
+  grid-column:1/-1;display:flex;align-items:center;gap:18px;
+  padding:10px 20px 10px 14px;
+  background:linear-gradient(180deg,rgba(18,14,52,.95),rgba(18,14,52,.6));
+  border-bottom:1px solid var(--line);
+  position:relative;
+}
+.top::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;
+  background:linear-gradient(90deg,transparent,var(--gold) 20%,var(--gold-2) 50%,transparent 80%);opacity:.55}
+.brand{display:flex;align-items:center;gap:10px;flex:none;margin-right:6px}
+.turn-label{white-space:nowrap}
+.brand-mark{width:40px;height:40px;position:relative;flex:none}
+.brand-word{font-family:var(--f-display);font-size:34px;line-height:.8;letter-spacing:1px;font-style:italic;font-weight:700;
+  background:linear-gradient(180deg,#fff7d6 0%,var(--gold) 45%,var(--gold-2) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(2px 2px 0 #4a1d00);transform:skewX(-6deg)}
+.brand-sub{font-size:10px;color:var(--dim);letter-spacing:3px;margin-top:2px}
+
+.chips{display:flex;gap:8px;align-items:center;flex-wrap:nowrap;min-width:0}
+.chip{display:inline-flex;white-space:nowrap;flex:none;align-items:center;gap:6px;height:26px;padding:0 12px;font-size:12px;
+  background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--dim);
+  clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%)}
+.chip b{color:var(--text);font-weight:500}
+.chip.run{background:rgba(56,230,168,.12);border-color:rgba(56,230,168,.4);color:var(--ok)}
+.chip.mode{background:linear-gradient(90deg,#ff3d5e,#c2163a);border:0;color:#fff;font-weight:700;letter-spacing:2px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(56,230,168,.7);animation:ping 1.6s infinite}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(56,230,168,.7)}80%,100%{box-shadow:0 0 0 8px rgba(56,230,168,0)}}
+
+.turnbox{margin-left:auto;display:flex;align-items:center;gap:14px}
+.turn-label{font-family:var(--f-cn);font-size:13px;color:var(--dim)}
+.turn-num{font-family:var(--f-display);font-size:40px;line-height:.75;font-weight:600}
+.turn-num small{font-size:22px;color:var(--mute)}
+.pips{display:flex;gap:4px}
+.pip{width:16px;height:8px;background:rgba(255,255,255,.1);transform:skewX(-20deg)}
+.pip.done{background:var(--dim)}
+.pip.now{background:var(--gold);box-shadow:0 0 12px var(--gold)}
+
+.stake{display:flex;align-items:center;gap:10px;padding-left:16px;border-left:1px solid var(--line)}
+.cube{width:46px;height:46px;position:relative;perspective:200px}
+.cube-in{position:absolute;inset:0;transform-style:preserve-3d;animation:spin 9s linear infinite}
+.cube-f{position:absolute;inset:6px;display:grid;place-items:center;font-family:var(--f-display);font-size:28px;font-weight:700;color:var(--gold-ink);
+  background:linear-gradient(140deg,#fff2b0,var(--gold) 45%,var(--gold-2));border:1px solid #ffe28a}
+.cube-f:nth-child(1){transform:translateZ(17px)}
+.cube-f:nth-child(2){transform:rotateY(90deg) translateZ(17px);filter:brightness(.8)}
+.cube-f:nth-child(3){transform:rotateY(180deg) translateZ(17px);filter:brightness(.7)}
+.cube-f:nth-child(4){transform:rotateY(-90deg) translateZ(17px);filter:brightness(.85)}
+@keyframes spin{from{transform:rotateX(-18deg) rotateY(0)}to{transform:rotateX(-18deg) rotateY(360deg)}}
+.stake-txt{line-height:1.15}
+.stake-txt .k{font-size:11px;color:var(--dim)}
+.stake-txt .v{font-family:var(--f-display);font-size:22px;letter-spacing:.5px}
+.stake-txt .v em{font-style:normal;color:var(--gold)}
+
+.record{display:flex;gap:14px;align-items:center;padding-left:16px;border-left:1px solid var(--line)}
+.rec-item{text-align:center;line-height:1}
+.rec-item .v{font-family:var(--f-display);font-size:28px;font-weight:600}
+.rec-item .k{font-size:10px;color:var(--dim);letter-spacing:1px}
+.v.win{color:var(--ok)} .v.cubes{color:var(--gold)}
+
+.ctrl{display:flex;gap:8px;padding-left:16px;border-left:1px solid var(--line)}
+.btn{font-family:var(--f-body);font-size:12px;font-weight:500;height:34px;padding:0 16px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;
+  color:var(--text);background:rgba(255,255,255,.06);border:1px solid var(--line-hi);
+  clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%);transition:.15s}
+.btn:hover{background:rgba(255,255,255,.14)}
+.btn.stop{background:linear-gradient(180deg,#ff5574,#c3173b);border:0;color:#fff}
+.btn.stop:hover{filter:brightness(1.12)}
+.btn.gold{background:linear-gradient(180deg,#ffe07a,var(--gold) 40%,var(--gold-2));border:0;color:var(--gold-ink);font-weight:700}
+.btn i{font-size:16px}
+kbd{font-family:var(--f-mono);font-size:10px;padding:1px 4px;border:1px solid rgba(255,255,255,.4);border-radius:3px;opacity:.85}
+
+/* ---------- nav ---------- */
+.nav{padding:18px 10px;display:flex;flex-direction:column;gap:6px;border-right:1px solid var(--line);background:rgba(10,8,32,.55)}
+.nav a{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 0;color:var(--mute);text-decoration:none;font-size:12px;position:relative;cursor:pointer;transition:.15s}
+.nav a i{font-size:24px}
+.nav a:hover{color:var(--text)}
+.nav a.on{color:var(--gold-ink)}
+.nav a.on::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,#ffe07a,var(--gold) 50%,var(--gold-2));
+  clip-path:polygon(0 8px,8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%);box-shadow:0 0 18px rgba(255,198,61,.5)}
+.nav a .soon{position:absolute;top:4px;right:2px;font-family:var(--f-display);font-size:12px;line-height:1;color:var(--mute);border:1px solid var(--line);padding:1px 3px 0}
+.nav .sep{flex:1}
+.nav .ver{font-family:var(--f-mono);font-size:10px;color:var(--mute);text-align:center}
+
+/* ---------- panels ---------- */
+main{padding:18px 20px 20px;min-width:0}
+.page{display:none}
+.page.on{display:block}
+.live{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;align-items:start}
+.panel{position:relative;background:var(--panel);border:1px solid var(--line);
+  clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut));
+  backdrop-filter:blur(6px)}
+.panel::before{content:"";position:absolute;left:0;top:0;width:60px;height:3px;background:var(--gold)}
+.ph{display:flex;align-items:center;gap:10px;padding:12px 16px 0}
+.ph-tag{font-family:var(--f-cn);font-size:16px;letter-spacing:1px;color:var(--gold)}
+.ph-sub{font-size:11px;color:var(--dim)}
+.ph .sp{flex:1}
+
+/* ---------- board ---------- */
+.board{padding-bottom:16px}
+.timer{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--dim)}
+.timer-bar{width:180px;height:6px;background:rgba(255,255,255,.08);position:relative;overflow:hidden;transform:skewX(-20deg)}
+.timer-bar span{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,var(--ok),#a8ff6a);animation:drain 41s linear forwards}
+@keyframes drain{from{width:62%}to{width:0}}
+.timer b{font-family:var(--f-display);font-size:22px;color:var(--text);font-weight:500;line-height:1}
+.energy{display:flex;align-items:center;gap:8px}
+.energy-gem{width:38px;height:38px;display:grid;place-items:center;font-family:var(--f-display);font-size:28px;font-weight:700;color:#fff;
+  background:radial-gradient(circle at 35% 30%,#9fe0ff,var(--cost) 45%,var(--cost-2));border-radius:50%;
+  box-shadow:0 0 0 2px #cbeeff,0 0 18px rgba(42,163,255,.7);text-shadow:0 2px 0 #053a85}
+.energy small{font-size:11px;color:var(--dim);line-height:1.2}
+
+.lanes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:16px 16px 0}
+.lane{display:flex;flex-direction:column;gap:8px;opacity:0;animation:rise .6s cubic-bezier(.2,.8,.2,1) forwards}
+.lane:nth-child(2){animation-delay:.08s}.lane:nth-child(3){animation-delay:.16s}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.slots{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+.slot{aspect-ratio:3/4;border:1px dashed rgba(170,150,255,.18);background:rgba(255,255,255,.015)}
+
+.loc{position:relative;height:112px;overflow:visible;isolation:isolate}
+.loc-art{position:absolute;inset:0;clip-path:polygon(0 10px,10px 0,calc(100% - 10px) 0,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0 calc(100% - 10px));
+  background:var(--art);border:0}
+.loc-art::after{content:"";position:absolute;inset:0;background:
+  radial-gradient(circle,rgba(0,0,0,.25) 1px,transparent 1.5px) 0 0/5px 5px,
+  linear-gradient(180deg,transparent 30%,rgba(6,4,24,.85));}
+.loc.lead-me .loc-art{box-shadow:inset 0 0 0 2px var(--me)}
+.loc-frame{position:absolute;inset:-1px;pointer-events:none;clip-path:inherit}
+.loc-name{position:absolute;left:12px;right:12px;bottom:22px;font-family:var(--f-display);font-size:26px;line-height:.9;font-weight:600;letter-spacing:.5px;text-shadow:0 2px 0 rgba(0,0,0,.6)}
+.loc-eff{position:absolute;left:12px;right:60px;bottom:7px;font-size:11px;color:#d9d3ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.loc-gem{position:absolute;right:-8px;width:44px;height:44px;display:grid;place-items:center;font-family:var(--f-display);font-size:26px;font-weight:700;z-index:2;
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.loc-gem.opp{top:-12px;background:linear-gradient(180deg,#ff8aa2,var(--opp));color:#3d0010}
+.loc-gem.me{bottom:-12px;background:linear-gradient(180deg,#fff0a8,var(--me) 50%,var(--gold-2));color:var(--gold-ink)}
+.loc-gem.dim{background:linear-gradient(180deg,#5e568f,#3a3370);color:#cfc9f5}
+.loc-gem.win{animation:glow 2s ease-in-out infinite}
+@keyframes glow{50%{filter:drop-shadow(0 0 10px var(--gold)) brightness(1.15)}}
+.loc-flag{position:absolute;left:10px;top:8px;display:flex;gap:4px}
+.flag{font-size:10px;padding:2px 7px;background:rgba(6,4,24,.7);border:1px solid rgba(255,255,255,.2);color:#e9e4ff}
+.flag.hot{background:var(--gold);color:var(--gold-ink);border:0;font-weight:700}
+.flag.cold{background:rgba(56,230,168,.18);border-color:rgba(56,230,168,.5);color:var(--ok)}
+
+/* card */
+.card{position:relative;aspect-ratio:3/4;--a:#5b3bd6;--b:#1d0f66;
+  background:linear-gradient(155deg,var(--a),var(--b));
+  clip-path:polygon(6px 0,calc(100% - 6px) 0,100% 6px,100% calc(100% - 6px),calc(100% - 6px) 100%,6px 100%,0 calc(100% - 6px),0 6px);
+  box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.35);overflow:hidden;transition:transform .18s}
+.card::before{content:"";position:absolute;inset:0;background:radial-gradient(circle,rgba(255,255,255,.14) 1px,transparent 1.5px) 0 0/4px 4px;mix-blend-mode:overlay}
+.card .ini{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--f-display);font-size:30px;font-weight:700;color:rgba(255,255,255,.22);letter-spacing:-1px}
+.card .nm{position:absolute;left:0;right:0;bottom:0;padding:10px 2px 3px;text-align:center;font-family:var(--f-display);font-size:13px;line-height:1;letter-spacing:.3px;
+  background:linear-gradient(180deg,transparent,rgba(0,0,0,.75));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .pw{position:absolute;right:2px;top:2px;min-width:20px;height:20px;padding:0 3px;display:grid;place-items:center;font-family:var(--f-display);font-size:17px;font-weight:700;line-height:1;color:#fff;
+  background:linear-gradient(180deg,#ffb15c,var(--power) 50%,var(--power-2));clip-path:polygon(0 0,100% 0,100% 70%,50% 100%,0 70%);text-shadow:0 1px 0 #6b1d00}
+.card .co{position:absolute;left:2px;top:2px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-display);font-size:16px;font-weight:700;color:#fff;
+  background:radial-gradient(circle at 35% 30%,#a7e3ff,var(--cost) 50%,var(--cost-2));box-shadow:0 0 0 1px #d2f0ff;text-shadow:0 1px 0 #053a85}
+.card.hidden{--a:#2b2560;--b:#14103a}
+.card.hidden .ini{color:rgba(170,150,255,.35);font-size:26px}
+.card.fresh{box-shadow:inset 0 0 0 2px var(--opp)}
+.card.buffed .pw{background:linear-gradient(180deg,#b6ff9a,#3fd16c 50%,#118a3b);text-shadow:0 1px 0 #064d1e}
+
+/* hand */
+.hand-wrap{margin:22px 16px 0;padding:12px 16px 4px;border-top:1px solid var(--line);display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:20px;align-items:end}
+.deckinfo{display:flex;flex-direction:column;gap:8px;font-size:12px;color:var(--dim);padding-bottom:12px}
+.deckinfo b{font-family:var(--f-display);font-size:22px;color:var(--text);font-weight:500;line-height:1;margin-right:4px}
+.hand{display:flex;justify-content:center;align-items:flex-end;padding-top:20px;min-height:170px}
+.hand .card{width:104px;flex:none;margin:0 -6px;transform-origin:50% 120%}
+.hand .card .co{width:28px;height:28px;font-size:22px;left:4px;top:4px}
+.hand .card .pw{min-width:28px;height:28px;font-size:22px;right:4px;top:4px}
+.hand .card .nm{font-size:16px;padding:16px 4px 6px}
+.hand .card .ini{font-size:44px}
+.hand .card:hover{transform:translateY(-16px) rotate(0deg)!important;z-index:5}
+.hand .card.plan{box-shadow:inset 0 0 0 3px var(--gold),0 0 0 0 transparent}
+.plan-tag{position:absolute;left:50%;top:-14px;transform:translateX(-50%);white-space:nowrap;font-size:11px;font-weight:700;padding:3px 9px;color:var(--gold-ink);
+  background:var(--gold);clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%);z-index:6}
+.hand-slot{position:relative}
+.opp-hand{display:flex;flex-direction:column;align-items:flex-end;gap:6px;font-size:12px;color:var(--dim);padding-bottom:12px}
+.backs{display:flex}
+.backs span{width:22px;height:30px;margin-left:-8px;background:linear-gradient(155deg,#ff4f72,#6a0f3a);clip-path:polygon(3px 0,100% 0,100% calc(100% - 3px),calc(100% - 3px) 100%,0 100%,0 3px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
+
+/* feed */
+.feed{margin-top:18px}
+.feed-list{padding:10px 16px 14px;font-family:var(--f-mono);font-size:12px;line-height:1.85;max-height:148px;overflow:hidden;
+  mask-image:linear-gradient(180deg,#000 70%,transparent)}
+.feed-row{display:grid;grid-template-columns:70px 34px 66px minmax(0,1fr);gap:8px;color:var(--dim)}
+.feed-row .t{color:var(--mute)}
+.feed-row .turn{color:var(--dim)}
+.feed-row .k{font-family:var(--f-body);font-size:11px;font-weight:500;padding:0 6px;height:18px;margin-top:3px;line-height:18px;text-align:center}
+.k.play{background:rgba(255,198,61,.16);color:var(--gold)}
+.k.llm{background:rgba(42,163,255,.16);color:#7cc8ff}
+.k.state{background:rgba(255,255,255,.07);color:var(--dim)}
+.k.snap{background:var(--gold);color:var(--gold-ink)}
+.k.warn{background:rgba(255,79,114,.16);color:var(--opp)}
+.feed-row.new{color:var(--text);animation:flash 1.2s ease-out}
+@keyframes flash{from{background:rgba(255,198,61,.18)}to{background:transparent}}
+
+/* brain */
+.brain{display:flex;flex-direction:column;gap:18px}
+.brain-head{display:grid;grid-template-columns:118px minmax(0,1fr);gap:16px;align-items:center;padding:14px 16px 16px}
+.ring{position:relative;width:118px;height:118px}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.ring .val b{font-family:var(--f-display);font-size:38px;font-weight:600}
+.ring .val small{font-size:10px;color:var(--dim);margin-top:2px}
+.ring-arc{stroke-dasharray:314;stroke-dashoffset:314;animation:arc 1.4s .3s cubic-bezier(.2,.8,.2,1) forwards}
+@keyframes arc{to{stroke-dashoffset:var(--off)}}
+.meta{display:flex;flex-direction:column;gap:8px;font-size:12px;color:var(--dim)}
+.meta .row{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed var(--line);padding-bottom:6px}
+.meta .row b{color:var(--text);font-weight:500}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;font-weight:700}
+.badge.ok{background:rgba(56,230,168,.16);color:var(--ok)}
+
+.actions{padding:12px 16px 16px;display:flex;flex-direction:column;gap:8px}
+.act{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:10px;padding:8px 10px;background:rgba(255,255,255,.04);border:1px solid var(--line);
+  clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);opacity:0;animation:slidein .5s cubic-bezier(.2,.8,.2,1) forwards}
+.act:nth-child(2){animation-delay:.12s}.act:nth-child(3){animation-delay:.24s}
+@keyframes slidein{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+.act-ic{width:34px;height:34px;display:grid;place-items:center;font-size:18px;background:rgba(255,255,255,.06);color:var(--dim)}
+.act-ic.play{background:rgba(255,198,61,.15);color:var(--gold)}
+.act-ic.snap{background:var(--gold);color:var(--gold-ink)}
+.act-ic.skip{color:var(--mute)}
+.act .t1{font-size:13px;font-weight:500}
+.act .t2{font-size:11px;color:var(--dim)}
+.act .st{font-size:11px;color:var(--ok)}
+.act .st.wait{color:var(--mute)}
+.act.muted{opacity:.55}
+
+.gauge{padding:12px 16px 18px}
+.gauge-top{display:flex;align-items:baseline;justify-content:space-between}
+.gauge-big{font-family:var(--f-display);font-size:48px;line-height:.8;font-weight:600;color:var(--gold)}
+.gauge-big small{font-size:22px}
+.gauge-raw{font-size:12px;color:var(--dim);text-align:right;line-height:1.5}
+.gauge-raw s{color:var(--mute)}
+.track{position:relative;height:14px;margin:18px 0 22px;background:linear-gradient(90deg,rgba(255,79,114,.35) 0 25%,rgba(255,255,255,.08) 25% 100%);transform:skewX(-20deg)}
+.track .fill{position:absolute;inset:0 auto 0 0;width:0;background:linear-gradient(90deg,var(--gold-2),var(--gold));animation:fillw 1.2s .4s cubic-bezier(.2,.8,.2,1) forwards}
+@keyframes fillw{to{width:55%}}
+.track .raw{position:absolute;top:-4px;bottom:-4px;left:68%;width:2px;background:var(--dim)}
+.track .thr{position:absolute;top:-6px;bottom:-6px;left:25%;width:2px;background:var(--opp)}
+.track-lbl{position:relative;font-size:10px;color:var(--mute);height:12px}
+.track-lbl span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+.verdict{margin-top:6px;font-size:12px;color:var(--dim);display:flex;gap:8px;align-items:center}
+.verdict i{color:var(--ok);font-size:16px}
+
+.notes{padding:10px 16px 16px;display:flex;flex-direction:column;gap:6px}
+.note{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;font-size:12px;line-height:1.5;padding:6px 10px;background:rgba(255,255,255,.03);border-left:3px solid var(--c)}
+.note .tg{font-size:10px;font-weight:700;padding:1px 6px;color:var(--c);border:1px solid var(--c);white-space:nowrap;margin-top:1px}
+.reason{margin:0 16px 16px;padding:12px 14px;font-size:12.5px;line-height:1.7;color:#e3ddff;background:rgba(255,198,61,.06);border:1px solid rgba(255,198,61,.25);position:relative}
+.reason::before{content:"“";position:absolute;left:8px;top:-14px;font-family:var(--f-display);font-size:48px;color:var(--gold);line-height:1}
+
+/* ---------- stats page ---------- */
+.hero{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.stat{padding:18px 18px 16px;opacity:0;animation:rise .6s cubic-bezier(.2,.8,.2,1) forwards}
+.stat:nth-child(2){animation-delay:.07s}.stat:nth-child(3){animation-delay:.14s}.stat:nth-child(4){animation-delay:.21s}
+.stat .k{font-family:var(--f-cn);font-size:15px;color:var(--dim)}
+.stat .v{font-family:var(--f-display);font-size:64px;line-height:.85;font-weight:600;margin-top:10px}
+.stat .v small{font-size:26px;color:var(--dim);margin-left:4px}
+.stat .s{font-size:12px;color:var(--mute);margin-top:6px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px;margin-top:14px}
+.chart{padding:4px 12px 12px}
+.chart svg{width:100%;height:240px;display:block}
+.games{padding:6px 0 10px}
+.grow{display:grid;grid-template-columns:52px 92px minmax(0,1fr) 54px;gap:10px;align-items:center;padding:8px 16px;border-bottom:1px solid rgba(150,128,255,.08);font-size:12px;cursor:pointer;transition:.12s}
+.grow:hover{background:rgba(255,255,255,.04)}
+.res{font-family:var(--f-display);font-size:16px;font-weight:600;text-align:center;padding:2px 0 0;line-height:1.2;clip-path:polygon(5px 0,100% 0,calc(100% - 5px) 100%,0 100%)}
+.res.win{background:rgba(56,230,168,.16);color:var(--ok)}
+.res.loss{background:rgba(255,79,114,.16);color:var(--opp)}
+.grow .when{color:var(--mute);font-family:var(--f-mono);font-size:11px}
+.grow .locs{color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grow .cb{font-family:var(--f-display);font-size:20px;text-align:right}
+.grow .cb.win{color:var(--gold)} .grow .cb.loss{color:var(--opp)}
+.bars{padding:10px 16px 16px;display:flex;flex-direction:column;gap:10px}
+.bar{display:grid;grid-template-columns:28px minmax(0,1fr) 46px;gap:10px;align-items:center;font-size:12px}
+.bar .lbl{font-family:var(--f-display);font-size:18px;color:var(--dim)}
+.bar .b{height:12px;background:rgba(255,255,255,.06);transform:skewX(-20deg);position:relative}
+.bar .b span{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,var(--gold-2),var(--gold))}
+.bar .b span.neg{background:linear-gradient(90deg,#a3173a,var(--opp))}
+.bar .n{text-align:right;font-family:var(--f-display);font-size:18px}
+
+@media (max-width:1280px){
+  .live{grid-template-columns:minmax(0,1fr)}
+  .brand{width:auto}
+  .brand-sub{display:none}
+  .record{display:none}
+  .grid2{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:900px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .nav{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);padding:6px}
+  .nav a{min-width:64px}
+  .nav .sep,.nav .ver{display:none}
+  .top{flex-wrap:wrap;gap:10px}
+  .turnbox{margin-left:0}
+  .lanes{grid-template-columns:minmax(0,1fr)}
+  .hero{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .hand-wrap{grid-template-columns:minmax(0,1fr)}
+  .hand .card{width:76px}
+  main{padding:14px 12px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}.lane,.act,.stat{opacity:1}.track .fill{width:55%}.ring-arc{stroke-dashoffset:var(--off)}}
+</style>
+</head>
+<body>
+<div class="grain"></div>
+<div class="app">
+
+<header class="top">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true">
+      <polygon points="20,2 36,11 36,29 20,38 4,29 4,11" fill="#ffc63d"/>
+      <polygon points="20,2 36,11 20,20 4,11" fill="#fff2b0"/>
+      <polygon points="20,20 36,11 36,29 20,38" fill="#ff9a1a"/>
+      <path d="M14 26 L20 14 L26 26 M16.5 22 H23.5" stroke="#3a2200" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div>
+      <div class="brand-word">AUTO·SNAP</div>
+      <div class="brand-sub">自动对局指挥台</div>
+    </div>
+  </div>
+  <div class="chips">
+    <span class="chip run"><span class="dot"></span>运行中 · 第 <b>6</b> 局</span>
+    <span class="chip mode">实操</span>
+    <span class="chip"><i class="ti ti-device-desktop" aria-hidden="true"></i><b>国服官网</b>·<i class="ti ti-brain" aria-hidden="true"></i><b>gpt-6.1-sol</b>·<i class="ti ti-cards" aria-hidden="true"></i><b>loki-tmp</b></span>
+  </div>
+
+  <div class="turnbox">
+    <div>
+      <div class="turn-label">回合</div>
+      <div class="turn-num">5<small>/6</small></div>
+    </div>
+    <div class="pips"><i class="pip done"></i><i class="pip done"></i><i class="pip done"></i><i class="pip done"></i><i class="pip now"></i><i class="pip"></i></div>
+  </div>
+  <div class="stake">
+    <div class="cube" aria-hidden="true"><div class="cube-in"><div class="cube-f">4</div><div class="cube-f">4</div><div class="cube-f">4</div><div class="cube-f">4</div></div></div>
+    <div class="stake-txt"><div class="k">当前赌注</div><div class="v">2 → <em>4</em></div></div>
+  </div>
+  <div class="record">
+    <div class="rec-item"><div class="v win">4-1</div><div class="k">本次胜负</div></div>
+    <div class="rec-item"><div class="v cubes">+7</div><div class="k">魔方</div></div>
+  </div>
+  <div class="ctrl">
+    <button class="btn"><i class="ti ti-player-pause" aria-hidden="true"></i>本局后暂停</button>
+    <button class="btn stop"><i class="ti ti-player-stop" aria-hidden="true"></i>停止 <kbd>F8</kbd></button>
+  </div>
+</header>
+
+<nav class="nav" id="nav">
+  <a class="on" data-page="live"><i class="ti ti-swords" aria-hidden="true"></i>实时</a>
+  <a data-page="stats"><i class="ti ti-chart-arcs" aria-hidden="true"></i>战绩</a>
+  <a data-page="stats"><i class="ti ti-history" aria-hidden="true"></i>复盘<span class="soon">M2</span></a>
+  <a><i class="ti ti-books" aria-hidden="true"></i>知识库<span class="soon">M3</span></a>
+  <a><i class="ti ti-tool" aria-hidden="true"></i>工具<span class="soon">M4</span></a>
+  <a><i class="ti ti-adjustments-horizontal" aria-hidden="true"></i>设置<span class="soon">M4</span></a>
+  <div class="sep"></div>
+  <div class="ver">v0.9<br>只读内存</div>
+</nav>
+
+<main>
+<!-- ================= LIVE ================= -->
+<section class="page on" id="page-live">
+<div class="live">
+  <div>
+    <div class="panel board">
+      <div class="ph">
+        <span class="ph-tag">战场</span><span class="ph-sub">内存快照 · 12ms 前</span>
+        <span class="sp"></span>
+        <div class="timer"><i class="ti ti-hourglass" aria-hidden="true"></i>回合剩余 <b>41s</b><div class="timer-bar"><span></span></div></div>
+        <div class="energy"><div class="energy-gem">5</div><small>本回合<br>能量</small></div>
+      </div>
+      <div class="lanes" id="lanes"></div>
+
+      <div class="hand-wrap">
+        <div class="deckinfo">
+          <div><b>6</b>牌库剩余</div>
+          <div><b>1</b>弃牌堆</div>
+        </div>
+        <div class="hand" id="hand"></div>
+        <div class="opp-hand">
+          <div class="backs"><span></span><span></span><span></span><span></span></div>
+          <div>对手手牌 4 · 牌库 7</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel feed">
+      <div class="ph"><span class="ph-tag">战报</span><span class="ph-sub">logs/games/20261108_225328.jsonl</span></div>
+      <div class="feed-list" id="feed"></div>
+    </div>
+  </div>
+
+  <aside class="brain">
+    <div class="panel">
+      <div class="ph"><span class="ph-tag">大模型决策</span><span class="sp"></span><span class="badge ok">已返回 · 合法</span></div>
+      <div class="brain-head">
+        <div class="ring">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="10"/>
+            <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,79,114,.35)" stroke-width="10" stroke-dasharray="314" stroke-dashoffset="251" transform="rotate(288 60 60)"/>
+            <circle class="ring-arc" cx="60" cy="60" r="50" fill="none" stroke="url(#rg)" stroke-width="10" stroke-linecap="butt" style="--off:229"/>
+            <defs><linearGradient id="rg" x1="0" x2="1"><stop offset="0" stop-color="#2aa3ff"/><stop offset="1" stop-color="#7ef0ff"/></linearGradient></defs>
+          </svg>
+          <div class="val"><b>6.8s</b><small>截止 25s</small></div>
+        </div>
+        <div class="meta">
+          <div class="row"><span>来源</span><b>大模型（无兜底）</b></div>
+          <div class="row"><span>重试</span><b>0 次</b></div>
+          <div class="row"><span>计时预算</span><b>剩余 − 7s = 34s</b></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="ph"><span class="ph-tag">本回合行动</span><span class="ph-sub">激活 → 移动 → 出牌</span></div>
+      <div class="actions">
+        <div class="act muted"><div class="act-ic skip"><i class="ti ti-arrows-move" aria-hidden="true"></i></div><div><div class="t1">移动：无</div><div class="t2">New York 第 6 回合才能移入</div></div><span class="st wait">跳过</span></div>
+        <div class="act"><div class="act-ic play"><i class="ti ti-cards" aria-hidden="true"></i></div><div><div class="t1">Agatha → Kun Lun</div><div class="t2">3 费 · 吃到 Kun Lun +3</div></div><span class="st"><i class="ti ti-check" aria-hidden="true"></i> 内存确认</span></div>
+        <div class="act"><div class="act-ic snap"><i class="ti ti-cube" aria-hidden="true"></i></div><div><div class="t1">Snap 加注</div><div class="t2">2 → 4，终局前一回合</div></div><span class="st"><i class="ti ti-check" aria-hidden="true"></i> 已点击</span></div>
+      </div>
+    </div>
+
+    <div class="panel gauge">
+      <div class="ph" style="padding:0 0 10px"><span class="ph-tag">胜率</span><span class="sp"></span><span class="ph-sub">按 30 局历史校准</span></div>
+      <div class="gauge-top">
+        <div class="gauge-big">55<small>%</small></div>
+        <div class="gauge-raw">模型原始 <s>68%</s><br>撤退阈值 25%</div>
+      </div>
+      <div class="track"><div class="fill"></div><div class="raw"></div><div class="thr"></div></div>
+      <div class="track-lbl"><span style="left:25%;color:var(--opp)">撤退线</span><span style="left:55%;color:var(--gold)">校准</span><span style="left:70%">原始</span></div>
+      <div class="verdict"><i class="ti ti-shield-check" aria-hidden="true"></i>高于撤退线，继续对局</div>
+    </div>
+
+    <div class="panel">
+      <div class="ph"><span class="ph-tag">关键信息栈</span><span class="ph-sub">每回合重建 · 4 / 10</span></div>
+      <div class="notes" id="notes"></div>
+      <div class="reason">守住 Kun Lun 并吃到 +3，Boardwalk 差距太大暂不追；留 New York 给第 6 回合移动 Spider-Man，对手 4 张手牌里大概率有 Sera 后续，趁领先先 Snap。</div>
+    </div>
+  </aside>
+</div>
+</section>
+
+<!-- ================= STATS ================= -->
+<section class="page" id="page-stats">
+  <div class="hero" id="hero"></div>
+  <div class="grid2">
+    <div class="panel">
+      <div class="ph"><span class="ph-tag">魔方走势</span><span class="ph-sub">累计净得 · 每局</span></div>
+      <div class="chart"><svg id="trend" viewBox="0 0 720 240" preserveAspectRatio="none" aria-label="魔方累计走势"></svg></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><span class="ph-tag">输赢分布</span><span class="ph-sub">按魔方数</span></div>
+      <div class="bars" id="bars"></div>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:14px">
+    <div class="ph"><span class="ph-tag">最近对局</span><span class="ph-sub">点击进入逐回合复盘</span></div>
+    <div class="games" id="games"></div>
+  </div>
+</section>
+</main>
+</div>
+
+<script>
+const LANES=[
+  {name:"KUN LUN",eff:"打到这里的下一张牌 +3",art:"linear-gradient(135deg,#ff7a3d 0%,#b8222f 45%,#3b0d4a 100%)",opp:9,me:14,flags:[["本回合 +3","hot"]],
+   oppCards:[{n:"Wolverine",c:2,p:3,a:"#d9a21b",b:"#5c3a06"},{hidden:1}],
+   meCards:[{n:"Hawkeye",c:1,p:4,a:"#7d3bd6",b:"#2a0f66",buff:1},{n:"Loki",c:4,p:7,a:"#1fae6b",b:"#063d2a"},{n:"Agatha",c:3,p:6,a:"#a01e6a",b:"#33062a",fresh:1}]},
+  {name:"NEW YORK",eff:"第 6 回合可以把牌移到这里",art:"linear-gradient(135deg,#3a8dff 0%,#2a3bb8 50%,#140a4a 100%)",opp:0,me:0,flags:[["T6 可移入","cold"]],
+   oppCards:[{n:"Ironheart",c:3,p:0,a:"#e04a2f",b:"#4d0d07"}],meCards:[]},
+  {name:"BOARDWALK",eff:"持续：左右两边地点 +1 战力",art:"linear-gradient(135deg,#f5d04a 0%,#e0751f 45%,#5a1a3a 100%)",opp:14,me:6,flags:[],
+   oppCards:[{n:"Mystique",c:3,p:3,a:"#3a5bd6",b:"#0f1a66"},{n:"Sera",c:5,p:5,a:"#e6e0ff",b:"#5c4a9e",fresh:1},{hidden:1}],
+   meCards:[{n:"Spider-Man",c:3,p:6,a:"#e02a3a",b:"#3d0a1a"}]}
+];
+const HAND=[
+  {n:"Jeff",c:2,p:3,a:"#3fc0ff",b:"#0b3a7a"},
+  {n:"Infinaut",c:6,p:20,a:"#ff6b2b",b:"#4a0b1a"},
+  {n:"White Queen",c:4,p:6,a:"#d8e6ff",b:"#4a5aa8"},
+  {n:"Wong",c:4,p:2,a:"#ff9a3d",b:"#5a1e06"}
+];
+const NOTES=[
+  ["本回合有效","#ffc63d","Kun Lun：打到这里的下一张牌 +3"],
+  ["持续","#7cc8ff","Boardwalk：对手 Mystique 复制了 Ongoing"],
+  ["对手上回合","#ff4f72","Sera（5 费）→ Boardwalk，对手满费"],
+  ["场地事件","#38e6a8","New York 第 6 回合可移入（还有 1 回合）"]
+];
+const FEED=[
+  ["22:58:23","T5","play","Agatha → Kun Lun，内存确认落位（2 次读取 3ms）"],
+  ["22:58:22","T5","snap","Snap：赌注 2 → 4"],
+  ["22:58:21","T5","llm","大模型返回 6.8s · 校验通过 · 胜率 68%（校准 55%）"],
+  ["22:58:14","T5","state","状态稳定：能量 5，抽到 Wong，开始决策"],
+  ["22:58:02","T4","warn","对手打出 Sera → Boardwalk（满费）"],
+  ["22:57:31","T4","play","Spider-Man → Boardwalk，内存确认"],
+  ["22:57:24","T4","llm","大模型返回 9.1s · 校验通过"]
+];
+const KIND={play:"出牌",llm:"大模型",state:"状态",snap:"SNAP",warn:"对手"};
+const HIST=[["11-07 10:04","loss",2,["Limbo","ShurisLab","Krakoa"]],["11-07 10:11","win",2,["Elysium","MonsterIsland","XMansion"]],["11-07 10:22","win",4,["KunLun","WhiteHotRoom","Boardwalk"]],["11-07 10:28","win",2,["CentralPark","JosiesBar","Olympia"]],["11-07 12:37","win",2,["SinisterLondon","SinisterLondon","DreamDimension"]],["11-07 12:58","win",4,["Proscenium","TheIceBox","Mindscape"]],["11-07 13:08","win",4,["TinkerersWorkshop","Elysium","OrchisForge"]],["11-07 13:29","win",4,["StarBrandCrater","SpaceThrone","ThunderboltsTower"]],["11-07 14:09","win",2,["CrimsonCosmos","JosiesBar","Limbo"]],["11-07 14:21","win",2,["OnslaughtsCitadel","TheAbbey","Ebonshire"]],["11-07 16:26","win",2,["Flooded","Flooded","Vault"]],["11-07 16:40","win",2,["MuirIsland","BarSinister","StrangeAcademy"]],["11-07 16:55","win",1,["NewYork","RevealOn2","RevealOn3"]],["11-07 16:57","win",2,["Madripoor","Wakanda","Camelot"]],["11-07 17:06","win",1,["VibraniumMines","OttosLab","AvengersCompound"]],["11-07 17:20","win",4,["StarlightCitadel","Bifrost","StarlightCitadel"]],["11-07 17:36","win",1,["Camelot","StarkTower","OrchisForge"]],["11-07 17:55","loss",8,["Raft","GammaLab","KunLun"]],["11-07 18:14","win",4,["AsgardBesieged","Asgard","Mindscape"]],["11-07 21:04","win",4,["Proscenium","Limbo","CentralPark"]],["11-07 21:10","loss",2,["VibraniumMines","Madripoor","ZennLa"]],["11-07 21:14","win",4,["Milano","NegativeZone","Utopia"]],["11-07 21:41","win",4,["Jotunheim","Atlantis","Camelot"]],["11-07 21:44","loss",4,["TinkerersWorkshop","Kvch","NewYork"]],["11-07 22:13","loss",2,["BrooklynBridge","AvengersCompound","Boardwalk"]],["11-07 22:17","win",4,["Utopia","WhitePalace","Triskelion"]],["11-07 22:33","loss",2,["PitOfExile","PitOfExile","PitOfExile"]],["11-07 22:37","loss",2,["Murderworld","Shadowland","Asgard"]],["11-07 22:49","win",4,["CrownCity","PitOfExile","Shadowland"]],["11-07 22:53","loss",2,["Superflow","CastleZemo","Vault"]]];
+
+const ini=n=>n.replace(/[^A-Z]/g,"").slice(0,2)||n.slice(0,2).toUpperCase();
+function card(c){
+  if(c.hidden) return `<div class="card hidden"><div class="ini">?</div><div class="nm">未揭示</div></div>`;
+  const cls=["card",c.fresh?"fresh":"",c.buff?"buffed":""].join(" ");
+  return `<div class="${cls}" style="--a:${c.a};--b:${c.b}" title="${c.n} · ${c.c} 费 ${c.p} 战力"><div class="ini">${ini(c.n)}</div><span class="co">${c.c}</span><span class="pw">${c.p}</span><div class="nm">${c.n}</div></div>`;
+}
+function slots(list){let h="";for(let i=0;i<4;i++)h+=list[i]?card(list[i]):`<div class="slot"></div>`;return `<div class="slots">${h}</div>`}
+document.getElementById("lanes").innerHTML=LANES.map(l=>{
+  const meLead=l.me>l.opp, oppLead=l.opp>l.me;
+  return `<div class="lane">
+    ${slots(l.oppCards)}
+    <div class="loc ${meLead?"lead-me":""}" style="--art:${l.art}">
+      <div class="loc-art"></div>
+      <div class="loc-flag">${l.flags.map(f=>`<span class="flag ${f[1]}">${f[0]}</span>`).join("")}</div>
+      <div class="loc-gem opp ${oppLead?"":"dim"}">${l.opp}</div>
+      <div class="loc-name">${l.name}</div>
+      <div class="loc-eff">${l.eff}</div>
+      <div class="loc-gem me ${meLead?"win":"dim"}">${l.me}</div>
+    </div>
+    ${slots(l.meCards)}
+  </div>`}).join("");
+
+const n=HAND.length;
+document.getElementById("hand").innerHTML=HAND.map((c,i)=>{
+  const r=(i-(n-1)/2)*5, y=Math.abs(i-(n-1)/2)*6;
+  return `<div class="hand-slot" style="transform:translateY(${y}px)">${card(c).replace('class="card','style="transform:rotate('+r+'deg)" class="card')}</div>`;
+}).join("");
+
+document.getElementById("notes").innerHTML=NOTES.map(x=>`<div class="note" style="--c:${x[1]}"><span class="tg">${x[0]}</span><span>${x[2]}</span></div>`).join("");
+document.getElementById("feed").innerHTML=FEED.map((f,i)=>`<div class="feed-row ${i==0?"new":""}"><span class="t">${f[0]}</span><span class="turn">${f[1]}</span><span class="k ${f[2]}">${KIND[f[2]]}</span><span>${f[3]}</span></div>`).join("");
+
+/* stats */
+const wins=HIST.filter(g=>g[1]=="win"), net=HIST.reduce((s,g)=>s+(g[1]=="win"?g[2]:-g[2]),0);
+const avgWin=(wins.reduce((s,g)=>s+g[2],0)/wins.length).toFixed(1);
+const losses=HIST.filter(g=>g[1]=="loss"), avgLoss=(losses.reduce((s,g)=>s+g[2],0)/losses.length).toFixed(1);
+document.getElementById("hero").innerHTML=[
+  ["对局",HIST.length,"局","11-07 起 · 国服"],
+  ["胜率",Math.round(wins.length/HIST.length*100),"%",`${wins.length} 胜 ${losses.length} 负`],
+  ["魔方净得",(net>0?"+":"")+net,"","期望魔方最大"],
+  ["场均",avgWin,`/ −${avgLoss}`,"胜局得 / 负局失"]
+].map(s=>`<div class="panel stat"><div class="k">${s[0]}</div><div class="v">${s[1]}<small>${s[2]}</small></div><div class="s">${s[3]}</div></div>`).join("");
+
+(function(){
+  let acc=0;const pts=HIST.map(g=>acc+=g[1]=="win"?g[2]:-g[2]);
+  const W=720,H=240,p=24,max=Math.max(...pts,0)+4,min=Math.min(...pts,0)-4;
+  const x=i=>p+i*(W-2*p)/(pts.length-1), y=v=>H-p-(v-min)*(H-2*p)/(max-min);
+  let path=pts.map((v,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+y(v).toFixed(1)).join(" ");
+  let area=path+` L${x(pts.length-1)} ${y(0)} L${x(0)} ${y(0)} Z`;
+  let grid="";for(let v=0;v<=max;v+=10){grid+=`<line x1="${p}" x2="${W-p}" y1="${y(v)}" y2="${y(v)}" stroke="rgba(150,128,255,.12)" stroke-dasharray="3 5"/><text x="${p-4}" y="${y(v)+4}" fill="#6f68a3" font-size="11" text-anchor="end" font-family="Teko">${v}</text>`}
+  const dots=pts.map((v,i)=>`<circle cx="${x(i)}" cy="${y(v)}" r="3.2" fill="${HIST[i][1]=="win"?"#ffc63d":"#ff4f72"}" stroke="#120f35" stroke-width="1.5"/>`).join("");
+  document.getElementById("trend").innerHTML=`<defs><linearGradient id="ag" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#ffc63d" stop-opacity=".35"/><stop offset="1" stop-color="#ffc63d" stop-opacity="0"/></linearGradient></defs>
+  ${grid}<line x1="${p}" x2="${W-p}" y1="${y(0)}" y2="${y(0)}" stroke="rgba(255,255,255,.25)"/>
+  <path d="${area}" fill="url(#ag)"/><path d="${path}" fill="none" stroke="#ffc63d" stroke-width="2.5" stroke-linejoin="round"/>${dots}
+  <text x="${x(pts.length-1)-6}" y="${y(pts[pts.length-1])-10}" fill="#ffc63d" font-family="Teko" font-size="26" text-anchor="end">+${pts[pts.length-1]}</text>`;
+})();
+
+(function(){
+  const keys=[8,4,2,1],rows=[];
+  keys.forEach(k=>{const w=HIST.filter(g=>g[1]=="win"&&g[2]==k).length,l=HIST.filter(g=>g[1]=="loss"&&g[2]==k).length;rows.push([k,w,l])});
+  const mx=Math.max(...rows.map(r=>Math.max(r[1],r[2])));
+  document.getElementById("bars").innerHTML=rows.map(r=>`
+    <div class="bar"><span class="lbl">+${r[0]}</span><div class="b"><span style="width:${r[1]/mx*100}%"></span></div><span class="n" style="color:var(--gold)">${r[1]}</span></div>
+    <div class="bar"><span class="lbl">−${r[0]}</span><div class="b"><span class="neg" style="width:${r[2]/mx*100}%"></span></div><span class="n" style="color:var(--opp)">${r[2]}</span></div>`).join("");
+})();
+
+document.getElementById("games").innerHTML=HIST.slice().reverse().slice(0,10).map(g=>`
+  <div class="grow"><span class="res ${g[1]}">${g[1]=="win"?"胜":"负"}</span><span class="when">${g[0]}</span>
+  <span class="locs">${g[3].join(" · ")}</span><span class="cb ${g[1]}">${g[1]=="win"?"+":"−"}${g[2]}</span></div>`).join("");
+
+document.getElementById("nav").addEventListener("click",e=>{
+  const a=e.target.closest("a[data-page]");if(!a)return;
+  document.querySelectorAll(".nav a").forEach(x=>x.classList.toggle("on",x===a));
+  document.querySelectorAll(".page").forEach(p=>p.classList.toggle("on",p.id==="page-"+a.dataset.page));
+});
+</script>
+</body>
+</html>

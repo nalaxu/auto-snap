@@ -275,6 +275,16 @@ class LLMDecider:
             left -= max(0.0, time.monotonic() - state.timer_read_at)
         return left - self.timer_reserve_s
 
+    def planned_deadline(self, state: GameState) -> float:
+        """本回合最多等大模型多少秒（与 decide 的截止逻辑一致）；0 = 不调用大模型（没牌可出 / 时间不够）。供面板显示。"""
+        if nothing_to_decide(state) is not None:
+            return 0.0
+        _, deadline = self._task_for(state)
+        budget = self.time_budget(state)
+        if budget is not None and budget < self.min_llm_s:
+            return 0.0
+        return min(deadline, budget) if budget is not None else deadline
+
     def decide(self, state: GameState) -> TurnDecision:
         self.last_raw, self.last_latency, self.last_note = None, None, ""
         if (skip := nothing_to_decide(state)) is not None:

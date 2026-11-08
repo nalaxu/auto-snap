@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import ctypes
 import random
+import threading
 import time
 from ctypes import wintypes
 
@@ -49,11 +50,21 @@ def enable_dpi_awareness() -> None:
             pass
 
 
+_external_abort = threading.Event()   # 外部面板「停止」（gamelog/live.Control 设置）
+
+
+def request_abort() -> None:
+    """程序内请求中止：效果同按住 F8，下一个检查点抛出 Aborted。"""
+    _external_abort.set()
+
+
 def abort_pressed() -> bool:
-    return bool(_user32.GetAsyncKeyState(VK_F8) & 0x8000)
+    return _external_abort.is_set() or bool(_user32.GetAsyncKeyState(VK_F8) & 0x8000)
 
 
 def check_abort() -> None:
+    if _external_abort.is_set():
+        raise Aborted("面板停止")
     if abort_pressed():
         raise Aborted("F8 中止")
 
