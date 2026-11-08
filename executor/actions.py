@@ -239,13 +239,12 @@ class Executor:
                 time.sleep(0.2)
             return False
 
-        for hold in (1.5, 2.2):   # 只有确认「未激活」才再按：已激活时再长按会取消激活
-            self._guard()
-            mouse.press(pos, hold_s=hold)
-            if staged():
-                return
-        self.save_evidence(f"activate_failed_T{s.get('turn')}_{card_id}")
-        raise ActionFailed(f"长按 {card_id} 后画面没有出现激活状态")
+        # 只长按一次：激活状态的画面识别不可靠，实测第二次长按会把刚激活的牌取消激活
+        self._guard()
+        mouse.press(pos, hold_s=1.5)
+        if not staged():
+            self.save_evidence(f"activate_unconfirmed_T{s.get('turn')}_{card_id}")
+            log.warning("长按 %s 后未识别到激活状态（截图已保存）；不再重复长按，以免取消激活", card_id)
 
     def move(self, card_id: str, from_loc: int, to_loc: int) -> None:
         """把我方场上牌从一个地点拖到另一个地点（场地允许移入 / 卡牌 Moveable），用内存确认它出现在目标地点。"""
@@ -271,28 +270,61 @@ class Executor:
         raise ActionFailed(f"{card_id} 没能移到地点{to_loc}")
 
     def retreat(self) -> None:
-        """点左下 RETREAT，用内存确认（我方 Conceded 或对局结束）。
+        """点左下 RETREAT → 弹窗里选「Retreat Later」（稍后撤退）→ 结束回合。
 
-        确认弹窗的样子尚未实测：不猜点击位置。未确认时保存截图、按 Esc 关闭可能的弹窗，抛 ActionFailed（上层照常出牌）。
+        稍后撤退在回合结束时生效；若对手同回合也撤退则判平、双方都不掉分，期望魔方数优于立即撤退。
+        弹窗用模板识别；没识别到时保存截图、按 Esc 关闭，抛 ActionFailed（上层照常出牌）。
         """
+        from . import screens
+
         s = _live(self.snapshot())
         assert self.rect is not None
         pos = self.rect.to_px(*RETREAT_BUTTON)
         log.info("撤退 T%s 赌注 %s  点击 %s", s.get("turn"), s.get("cube_value"), pos)
         if self.dry_run:
             return
+
+        def dialog() -> screens.Match | None:
+            img = self.capture()
+            if img is None:
+                return None
+            m = screens.retreat_later(img)
+            return m if m.found else None
+
         self._guard()
         mouse.click(pos)
-        end = time.time() + 3
+        m, end = None, time.time() + 3
         while time.time() < end:
+            m = dialog()
+            if m:
+                break
             s2 = self.snapshot()
             if s2 and (s2.get("finished") or s2["me"].get("conceded")):
                 return
-            time.sleep(0.1)
-        self.save_evidence(f"retreat_dialog_T{s.get('turn')}")
-        mouse.key("esc")
-        time.sleep(0.5)
-        raise ActionFailed("点击 RETREAT 后未确认撤退（截图已保存，待补确认弹窗模板）")
+            time.sleep(0.15)
+        if m is None:
+            self.save_evidence(f"retreat_dialog_T{s.get('turn')}")
+            mouse.key("esc")
+            time.sleep(0.5)
+            raise ActionFailed("点击 RETREAT 后没有出现撤退确认弹窗（截图已保存）")
+        later = self.rect.to_px(*m.center)
+        log.info("撤退弹窗：选「稍后撤退」 点击 %s（匹配 %.2f）", later, m.score)
+        mouse.click(later)
+        time.sleep(0.6)
+        if dialog():   # 第一次没点上：再点一次
+            mouse.click(later)
+            time.sleep(0.6)
+            if dialog():
+                self.save_evidence(f"retreat_later_failed_T{s.get('turn')}")
+                mouse.key("esc")
+                time.sleep(0.5)
+                raise ActionFailed("点击「稍后撤退」后弹窗未关闭（截图已保存）")
+        try:   # 稍后撤退在回合结束时生效：直接结束回合，不再出牌
+            self.end_turn()
+        except GameOver:
+            pass
+        except ActionFailed as e:
+            log.warning("稍后撤退后结束回合未确认：%s（回合计时结束时撤退仍会生效）", e)
 
     def end_turn(self) -> None:
         s = _live(self.snapshot())

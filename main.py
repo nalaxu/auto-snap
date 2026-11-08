@@ -477,7 +477,7 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                         record("retreat")
                         done.add(key)
                         played_games.add(snap["game_id"])
-                        print(f"  ⤺ 撤退：只输当前赌注 {state.cube_stake}")
+                        print(f"  ⤺ 稍后撤退并结束回合：最多输当前赌注 {state.cube_stake}（对手同时撤退则平局）")
                         continue
                     except GameOver:
                         raise

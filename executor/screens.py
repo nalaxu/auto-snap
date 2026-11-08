@@ -150,6 +150,23 @@ def activation_staged(img) -> float:
     return float(cv2.minMaxLoc(cv2.matchTemplate(roi, t, cv2.TM_CCOEFF_NORMED))[1])
 
 
+def retreat_later(img) -> Match:
+    """撤退确认弹窗里的「Retreat Later*」按钮（模板取自 2026-11-08 实机截图，按钮中心 ≈ (0.560, 0.739)）。
+
+    不放进 ROIS：弹窗左下也有「Esc Close」，避免干扰 current()/handle_overlay 的判断。
+    """
+    t = _template("retreat_later")
+    if t is None:
+        return Match("retreat_later", 0.0, (0.560, 0.739))
+    arr = _board(img)
+    H, W = arr.shape[:2]
+    x0, y0 = int(0.40 * W), int(0.60 * H)
+    roi = arr[y0:int(0.88 * H), x0:int(0.75 * W)]
+    _, score, _, loc = cv2.minMaxLoc(cv2.matchTemplate(roi, t, cv2.TM_CCOEFF_NORMED))
+    th, tw = t.shape[:2]
+    return Match("retreat_later", float(score), ((x0 + loc[0] + tw / 2) / W, (y0 + loc[1] + th / 2) / H))
+
+
 BLUR_THRESHOLD = 50.0  # 实测：指引遮罩时棋盘区清晰度 ≈ 2，正常画面 ≥ 867
 
 

@@ -53,6 +53,15 @@ def test_snap_click_matches_layout():
     assert screens.OVERLAY_CLICKS["tap_to_snap"] == SNAP_BUTTON
 
 
+def test_retreat_later_button():
+    """撤退确认弹窗：识别「Retreat Later*」并给出按钮中心（实测 2026-11-08）；其他界面不误判。"""
+    m = screens.retreat_later(Image.open(FIX / "retreat_dialog.png").resize((2537, 1427)))
+    assert m.found
+    assert abs(m.center[0] - 0.560) < 0.01 and abs(m.center[1] - 0.739) < 0.01
+    for name in ("ingame_t4.jpg", "match_end.jpg", "main_menu.jpg", "card_detail.png", "activate_staged.png"):
+        assert screens.retreat_later(Image.open(FIX / name)).score < 0.6, name
+
+
 def test_activation_staged_hint():
     """激活后牌上方出现「Press & Hold to Deactivate」（实测 820618e1 T6 Spider-Man）；其他界面不误判。"""
     from PIL import Image
