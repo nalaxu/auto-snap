@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { CardRow, CnDiffResp, kb, LocRow, MyDeck, Opponent, Overview, SCOPE_TEXT, Signal } from "../kbApi";
 import { CardEditor, LocationEditor, Modal, OpponentEditor, SignalEditor } from "./kb/editors";
+import { Ratings } from "./kb/Ratings";
 
-type Tab = "queue" | "decks" | "signals" | "cards" | "cndiff" | "locations";
+type Tab = "queue" | "decks" | "signals" | "cards" | "cndiff" | "locations" | "arena";
 const TABS: [Tab, string, string][] = [
   ["queue", "待复核", "ti-inbox"],
   ["decks", "卡组", "ti-cards"],
@@ -10,6 +11,7 @@ const TABS: [Tab, string, string][] = [
   ["cards", "卡牌", "ti-playing-card"],
   ["cndiff", "国服差异", "ti-git-compare"],
   ["locations", "场地", "ti-map-2"],
+  ["arena", "竞技场评分", "ti-trophy"],
 ];
 
 function useToast() {
@@ -393,6 +395,7 @@ export function Knowledge({ tab, running, onChanged }: { tab?: string; running: 
       {cur === "cards" && <Browse kind="cards" toast={toast.show} />}
       {cur === "cndiff" && <CnDiffView toast={toast.show} />}
       {cur === "locations" && <Browse kind="locations" toast={toast.show} />}
+      {cur === "arena" && <Ratings toast={toast.show} />}
       {toast.msg && <div className="toast">{toast.msg}</div>}
     </div>
   );

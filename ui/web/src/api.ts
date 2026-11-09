@@ -1,6 +1,10 @@
 export type ClientOpt = { key: string; label: string; running: boolean; verified: boolean };
 export type GameOpt = { file: string; started: string; result: string; cube_value: number; turns_recorded: number; locations: string[] };
-export type Options = { clients: ClientOpt[]; client: string; decider: string; model: string; games: GameOpt[] };
+export type Options = {
+  clients: ClientOpt[]; client: string; decider: string; model: string; games: GameOpt[];
+  game_mode?: "ranked" | "arena";
+  arena?: { buy_tickets: boolean; max_runs: number; draft_decider: string };
+};
 
 export type StartOpts = {
   client?: string;
@@ -9,6 +13,9 @@ export type StartOpts = {
   max_games?: number;
   max_turns?: number;
   skip_current?: boolean;
+  game_mode?: "ranked" | "arena";
+  max_runs?: number;
+  buy_tickets?: boolean;
   demo?: string;
   speed?: number;
   loop?: boolean;
@@ -16,6 +23,9 @@ export type StartOpts = {
 
 export type GameSummary = {
   file: string;
+  mode?: "ranked" | "arena";
+  arena_hp?: number | null;
+  arena_score?: number | null;
   game_id: string;
   started: string;
   ended?: string;
@@ -38,6 +48,27 @@ export type GameSummary = {
 };
 
 export type Group = { key: string; games: number; wins: number; cubes: number };
+
+export type ArenaRun = {
+  run_id: string; started: string; ended: string | null; finished: boolean; score: number | null; hp: number | null;
+  games: number; wins: number; losses: number; picks: number; swaps: number; declined_swaps: number; deck: string[];
+  tier: number | null;
+};
+
+export type ArenaStats = {
+  runs: ArenaRun[]; runs_total: number; runs_finished: number; avg_score: number | null;
+  tier_dist: [number | null, number][];
+  games: number; results: Record<string, number>; cubes: number;
+  by_hp: { hp: string; games: number; wins?: number; snaps?: number; retreats?: number; cubes?: number }[];
+  forfeits: { run_id: string; hp_before: number; cube_value: number; overflow: number; forfeit: number }[];
+  picks: number; swaps: number; declined_swaps: number;
+};
+
+export type RatingRow = {
+  id: string; name: string; cost: number | null; power: number | null; ability: string;
+  rating: number | null; tags: string[]; note: string; source: "auto" | "manual" | null;
+};
+export type RatingsResp = { rows: RatingRow[]; matched: number; counts: { total: number; rated: number; manual: number }; tags: string[] };
 
 export type Stats = {
   games: number;
@@ -109,7 +140,11 @@ export const api = {
   options: () => call<Options>("/api/options"),
   start: (o: StartOpts) => call("/api/start", { method: "POST", body: JSON.stringify(o) }),
   control: (cmd: "pause" | "resume" | "stop" | "kill") => call("/api/control", { method: "POST", body: JSON.stringify({ cmd }) }),
-  stats: (client?: string, last?: number) => call<Stats>("/api/stats" + qs({ client, last })),
-  games: (client?: string, last?: number) => call<GameSummary[]>("/api/games" + qs({ client, last })),
+  stats: (client?: string, last?: number, mode?: string) => call<Stats>("/api/stats" + qs({ client, last, mode })),
+  games: (client?: string, last?: number, mode?: string) => call<GameSummary[]>("/api/games" + qs({ client, last, mode })),
+  arenaStats: () => call<ArenaStats>("/api/arena/stats"),
+  ratings: (q = "", tag = "", source = "") => call<RatingsResp>("/api/arena/ratings" + qs({ q, tag, source })),
+  putRating: (id: string, body: { rating: number; tags: string[]; note: string }) =>
+    call(`/api/arena/ratings/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(body) }),
   game: (file: string) => call<GameDetail>(`/api/games/${encodeURIComponent(file)}`),
 };

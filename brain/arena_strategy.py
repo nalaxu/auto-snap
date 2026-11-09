@@ -106,7 +106,6 @@ class ArenaContext:
     """一局竞技场对局的整场背景（开局读一次，局内不变）。"""
     score: int
     hp: int
-    opp_hp: int | None = None
     model: ArenaModel = field(default_factory=ArenaModel)
 
     def breakeven(self, stake_low: int, stake_high: int) -> float:
@@ -132,7 +131,7 @@ class ArenaContext:
         no_snap = cube_next if final_turn else cube_next * 2      # 不 Snap 时的终局赌注（终局自动翻倍）
         cur, nxt = self.model.tier_of(self.score)
         return {
-            "hp": self.hp, "score": self.score, "opp_hp": self.opp_hp,
+            "hp": self.hp, "score": self.score,
             "tier_now": cur, "next_tier_at": nxt, "max_score": self.model.max_score,
             "snap_breakeven": round(100 * self.breakeven(no_snap, no_snap * 2)),
         }

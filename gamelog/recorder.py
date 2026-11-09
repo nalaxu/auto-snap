@@ -50,6 +50,7 @@ class GameRecorder:
         self.started: dict[str, str] = {}
         self.turns: dict[str, int] = {}
         self.ended: set[str] = set()
+        self.modes: dict[str, str] = {}
 
     def _path(self, game_id: str) -> Path:
         if game_id not in self.files:
@@ -65,10 +66,14 @@ class GameRecorder:
         except OSError as e:
             log.warning("写对局记录失败：%r", e)
 
-    def start(self, game_id: str, deck_name: str = "", deck: list[str] | None = None) -> None:
+    def start(self, game_id: str, deck_name: str = "", deck: list[str] | None = None, mode: str = "ranked",
+              arena: dict | None = None) -> None:
+        """mode：ranked | arena；arena：竞技场开局的整场背景（血量 / 积分 / 档位）。"""
         if game_id in self.files:
             return
-        self._write(game_id, {"type": "game_start", "client": self.client, "deck_name": deck_name, "deck": deck or []})
+        self.modes[game_id] = mode
+        self._write(game_id, {"type": "game_start", "client": self.client, "mode": mode, "deck_name": deck_name,
+                              "deck": deck or [], "arena": arena})
 
     def turn(self, game_id: str, state: Any, decision: Any, locations: list[dict], executed: list[dict], outcome: str,
              llm: dict | None = None, decide_s: float | None = None) -> None:
@@ -107,7 +112,8 @@ class GameRecorder:
         self._write(gid, {"type": "game_end", **summary, "final": final})
         try:
             with (self.root / "index.jsonl").open("a", encoding="utf-8") as f:
-                f.write(json.dumps({"game_id": gid, "started": self.started.get(gid), "ended": _now(), **summary,
+                f.write(json.dumps({"game_id": gid, "started": self.started.get(gid), "ended": _now(),
+                                    "mode": self.modes.get(gid, "ranked"), **summary,
                                     "locations": [l["name"] for l in final], "file": self._path(gid).name},
                                    ensure_ascii=False) + "\n")
         except OSError as e:

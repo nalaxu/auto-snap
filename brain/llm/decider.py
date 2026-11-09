@@ -46,9 +46,8 @@ SYSTEM = """你是《漫威终极逆转》（Marvel Snap 国服）的顶尖玩�
 6. activate / moves：激活不花能量、每张一次，最迟最后一回合用掉（除非会输掉某一路），只能激活 activatable 里的牌；
    有可移动时判断移动能否多赢或守住一路。执行顺序：激活 → 移动 → 出牌。
 7. win_probability：本回合出牌后我方最终获胜的概率（0–100）。要现实，考虑对手未揭示的手牌与终局爆发；程序据此计算撤退。
-8. arena（如有，竞技场局）：整场背景。hp / score 是我方本场血量与积分，opp_hp 是对手血量；snap_breakeven 是程序按血量、积分、
-   宝箱档位算出的 Snap 胜率门槛（%），你的 win_probability 达不到它时不要 Snap（程序也会否决）。对手血量低时更敢 Snap，
-   其 Snap 不一定代表强牌。hand_notes 是手牌的竞技场要点。双方卡组都是随机组的，不要套用排位的固定卡组思路。
+8. arena（如有，竞技场局）：整场背景。hp / score 是我方本场血量与积分；snap_breakeven 是程序按血量、积分、
+   宝箱档位算出的 Snap 胜率门槛（%），你的 win_probability 达不到它时不要 Snap（程序也会否决）。hand_notes 是手牌的竞技场要点。双方卡组都是随机组的，不要套用排位的固定卡组思路。
 
 只输出 JSON。card 用 hand 中的 id，location 用场地 idx（0/1/2）。文字用中文且简短：effect / why ≤ 20 字，plan、reason ≤ 40 字。"""
 

@@ -16,6 +16,7 @@
   没牌可出时不调用模型
 - **策略**：目标期望方块最大——中期 Snap、终局大优势不 Snap、按校准后的胜率计算撤退；关键信息栈 + 卡组 / 信号知识库按需注入
 - 资料库：748 张卡牌、221 个场地；卡组知识库（我方 loki、对手原型 3 个）；放牌顺序信号库
+- **竞技场（国服 Arena Mode）**：`python main.py auto --live --game-mode arena`（或面板选「竞技场」）——进入竞技场、门票开场、大模型 12 轮组卡（评分表 `data/arena/ratings.json` 作参考）、换牌、按血量与宝箱档位的整场期望 Snap / 撤退；整场记录 `logs/arena/runs.jsonl`。详见 `docs/arena-mode-plan.md`
 - **外部面板**：`python main.py ui` 在浏览器里启停机器人、实时看局面 / 大模型决策 / 战报；战绩总览与逐回合复盘；知识库复核与编辑；设置、维护工具、置顶悬浮小条；支持回放历史对局演示
 - 测试：134 个（`python -m pytest`）
 

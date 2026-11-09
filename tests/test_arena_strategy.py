@@ -76,10 +76,10 @@ def test_snap_veto():
 def test_prompt_contains_arena_context_not_deck_kb():
     from brain.llm.decider import build_prompt
 
-    ctx = ArenaContext(score=4, hp=6, opp_hp=3)
+    ctx = ArenaContext(score=4, hp=6)
     st = make_state(turn=3, arena=ctx.prompt(1, final_turn=False))
     text = build_prompt(st)
-    assert '"arena"' in text and '"hp": 6' in text and '"opp_hp": 3' in text and "snap_breakeven" in text
+    assert '"arena"' in text and '"hp": 6' in text and "opp_hp" not in text and "snap_breakeven" in text
     assert "deck_notes" not in text
 
 

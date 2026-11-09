@@ -107,7 +107,13 @@ def summarize(row: dict, records: list[dict]) -> dict:
     flags = Counter(f for t in turns for f in turn_flags(t))
     snap_turn = next((t["turn"] for t in turns if "snap" in turn_flags(t)), None)
     win_probs = [t["decision"].get("win_probability") for t in turns if t["decision"].get("win_probability") is not None]
+    first_arena = next((t["state"].get("arena") for t in turns if t["state"].get("arena")), None)
+    arena = start.get("arena") or first_arena
+    mode = start.get("mode") or row.get("mode") or ("arena" if arena else "ranked")
     return {
+        "mode": mode,
+        "arena_hp": (arena or {}).get("hp"),
+        "arena_score": (arena or {}).get("score"),
         "file": row.get("file"),
         "game_id": row.get("game_id") or (records[0].get("game_id") if records else None),
         "started": row.get("started"),

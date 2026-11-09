@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 from brain import arena_draft
+from gamelog.arena_log import ArenaRunLog, game_record
 from perception.arena import ArenaState
 
 from . import screens
@@ -31,10 +32,31 @@ class ArenaOptions:
     swap_threshold: float = 1.0          # 换牌规则兜底的提升阈值
 
 
+def _card(cid: str) -> dict:
+    from brain.arena_ratings import default_ratings
+    from brain.knowledge import default_db
+
+    c = default_db().card(cid)
+    return {"id": cid, "name": c.get("name") or cid, "cost": c.get("cost"), "power": c.get("power"),
+            "rating": default_ratings().rating(cid)}
+
+
+def state_payload(st: ArenaState) -> dict:
+    """面板用的竞技场状态：数值 + 卡牌（名字 / 费用 / 战力 / 评分）+ 档位进度。"""
+    from gamelog.arena_stats import TIERS
+
+    nxt = next((t for t in TIERS if t > st.score), None)
+    return {**st.summary(), "deck": [_card(c) for c in st.deck], "candidates": [_card(c) for c in st.candidates],
+            "max_hp": st.config.max_hp, "max_score": st.config.max_score, "score_per_swap": st.config.score_per_swap,
+            "next_tier": nxt, "run_id": st.run_id}
+
+
 class ArenaFlow:
     def __init__(self, ex, read_arena: Callable[[], ArenaState | None], options: ArenaOptions | None = None,
-                 emit: Callable[..., None] | None = None, live: bool = True, decider=None):
-        """decider：brain.llm.arena_decider.ArenaDecider（大模型组卡 / 换牌）；None 用规则打分。"""
+                 emit: Callable[..., None] | None = None, live: bool = True, decider=None,
+                 run_log: ArenaRunLog | None = None):
+        """decider：brain.llm.arena_decider.ArenaDecider（大模型组卡 / 换牌）；None 用规则打分。
+        emit：面板事件（gamelog.live.LiveBus.emit）；run_log：整场记录 logs/arena/runs.jsonl。"""
         self.ex = ex
         self.decider = decider
         self.read_arena = read_arena
@@ -44,6 +66,41 @@ class ArenaFlow:
         self.runs_started = 0
         self.runs_finished: set[str] = set()
         self.last_run_id = ""
+        self.log = run_log
+        self.prev: ArenaState | None = None          # 上一次读到的状态（对比出一局的积分 / 血量变化）
+        self.pending_game: dict | None = None        # 主循环告知的刚结束对局 {game_id, result, cube_value}
+        self._last_summary: dict | None = None
+
+    def _event(self, kind: str, run_id: str, **data) -> None:
+        """面板事件 arena_<kind> + 整场记录。"""
+        self.emit(f"arena_{kind}", run_id=run_id, **data)
+        if self.log:
+            self.log.write(kind, run_id, **data)
+
+    def note_game(self, game_id: str, result: str | None, cube_value: int | None) -> None:
+        """主循环：一局竞技场对局结束（结果来自对局快照），等下次读到整场状态变化时写 game 记录。"""
+        self.pending_game = {"game_id": game_id, "result": result, "cube_value": cube_value}
+
+    def observe(self, st: ArenaState | None) -> None:
+        """每次读到状态：整场开始 / 结束、单局积分血量变化、面板状态更新。"""
+        self._track_run(st)
+        if not st:
+            return
+        p = self.prev
+        if p and p.run_id == st.run_id and st.games > p.games:
+            g = self.pending_game or {}
+            rec = game_record(p, st, g.get("result"), g.get("cube_value"), g.get("game_id", ""))
+            self.pending_game = None
+            if self.log:
+                self.log.write("game", st.run_id, **rec)
+            print(f"  竞技场结算：积分 {p.score} → {st.score}（{st.score - p.score:+d}），血量 {p.hp} → {st.hp}"
+                  + (f"，超出 {rec['overflow']} 没收 {rec['forfeit']}" if rec.get("forfeit") is not None else ""))
+        if p is None or st.run_id != p.run_id or st.games != p.games or st.version != p.version:
+            self.prev = st
+        summary = st.summary()
+        if summary != self._last_summary:
+            self._last_summary = summary
+            self.emit("arena_state", **state_payload(st))
 
     # ------------------------------------------------------------ 工具
     def _wait_state(self, cond: Callable[[ArenaState], bool], timeout_s: float = 6.0) -> ArenaState | None:
@@ -65,7 +122,7 @@ class ArenaFlow:
         if st.finished and st.run_id not in self.runs_finished and st.run_id == self.last_run_id:
             self.runs_finished.add(st.run_id)
             print(f"  🏁 本场竞技结束：积分 {st.score}，血量 {st.hp}，共 {st.games} 局")
-            self.emit("arena_run_end", run_id=st.run_id, score=st.score, hp=st.hp, games=st.games)
+            self._event("run_end", st.run_id, score=st.score, hp=st.hp, games=st.games, deck=st.deck)
 
     def reached_max_runs(self) -> bool:
         return bool(self.opt.max_runs) and len(self.runs_finished) >= self.opt.max_runs
@@ -78,7 +135,7 @@ class ArenaFlow:
             return "no_window"
         name, d = screens.arena_screen(img)
         st = self.read_arena()
-        self._track_run(st)
+        self.observe(st)
         if name is None:
             m = screens.current(img)
             if m and m.name in ("collect_rewards", "next"):     # 单局结算：Collect Rewards → Next
@@ -130,7 +187,7 @@ class ArenaFlow:
         new = self._wait_state(lambda s: s.phase == "draft", timeout_s=8)
         if new:
             self.runs_started += 1
-            self.emit("arena_run_start", run_id=new.run_id, tickets=new.tickets)
+            self._event("run_start", new.run_id, tickets=new.tickets)
             print(f"  ▶ 开始新一场竞技（剩余门票 {new.tickets}）")
         return "arena_start"
 
@@ -141,8 +198,8 @@ class ArenaFlow:
         pick = (self.decider.pick(st.deck, cands, st.config.deck_size) if self.decider
                 else arena_draft.choose_pick(st.deck, cands, st.config.deck_size))
         print(f"  组卡 {st.draft_round}/{st.config.deck_size}：{cands} → {pick.card}（{pick.source}：{pick.reason}）")
-        self.emit("arena_pick", round=st.draft_round, candidates=cands, pick=pick.card,
-                  scores=[round(x, 2) for x in pick.scores], reason=pick.reason, source=pick.source)
+        self._event("pick", st.run_id, round=st.draft_round, candidates=cands, pick=pick.card,
+                    scores=[round(x, 2) for x in pick.scores], reason=pick.reason, source=pick.source)
         n = len(st.deck)
         self.ex.click_rel(ARENA_DRAFT_SELECT[pick.index], f"Select {pick.card}")
         if not self.live:
@@ -165,11 +222,12 @@ class ArenaFlow:
         ver = st.version
         if sw.out_index is None:
             print(f"  换牌：候选 {cands} 都不值得换（{sw.source}：{sw.reason}），刷新放弃")
-            self.emit("arena_swap", candidates=cands, out=None, inc=None, reason=sw.reason, source=sw.source)
+            self._event("swap", st.run_id, candidates=cands, out=None, inc=None, reason=sw.reason, source=sw.source)
             self.ex.click_rel(ARENA_SWAP_REFRESH, "刷新（放弃换牌）")
         else:
             print(f"  换牌：{sw.out_card} → {sw.in_card}（{sw.source}：{sw.reason}）")
-            self.emit("arena_swap", candidates=cands, out=sw.out_card, inc=sw.in_card, reason=sw.reason, source=sw.source)
+            self._event("swap", st.run_id, candidates=cands, out=sw.out_card, inc=sw.in_card, reason=sw.reason,
+                        source=sw.source)
             self.ex.press_rel(arena_deck_pos(sw.out_index), f"选中 {sw.out_card}", hold_s=1.0)
             time.sleep(0.5)
             self.ex.click_rel(ARENA_SWAP_SELECT[sw.in_index], f"Select {sw.in_card}")

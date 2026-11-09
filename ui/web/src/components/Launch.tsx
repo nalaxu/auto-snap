@@ -8,6 +8,9 @@ export function Launch({ lastStop }: { lastStop?: string }) {
   const [live, setLive] = useState(false);
   const [decider, setDecider] = useState("llm");
   const [maxGames, setMaxGames] = useState(1);
+  const [gameMode, setGameMode] = useState<"ranked" | "arena">("ranked");
+  const [maxRuns, setMaxRuns] = useState(0);
+  const [buyTickets, setBuyTickets] = useState(false);
   const [skipCurrent, setSkipCurrent] = useState(false);
   const [demo, setDemo] = useState("");
   const [speed, setSpeed] = useState(2);
@@ -20,6 +23,8 @@ export function Launch({ lastStop }: { lastStop?: string }) {
       setOpts(o);
       setClient((c) => c || o.client);
       setDecider(o.decider || "llm");
+      setGameMode((m) => (o.game_mode === "arena" ? "arena" : m));
+      if (o.arena) { setBuyTickets(o.arena.buy_tickets); setMaxRuns(o.arena.max_runs); }
       setDemo((d) => d || o.games[0]?.file || "");
     }).catch((e) => setErr(`读取配置失败：${e.message}`));
 
@@ -38,7 +43,12 @@ export function Launch({ lastStop }: { lastStop?: string }) {
     }
   };
 
-  const go = () => (live ? setConfirm(true) : start({ client, live, decider, max_games: maxGames, skip_current: skipCurrent }));
+  const arena = gameMode === "arena";
+  const body = (isLive: boolean) => ({
+    client, live: isLive, decider, max_games: maxGames, skip_current: skipCurrent, game_mode: gameMode,
+    ...(arena ? { max_runs: maxRuns, buy_tickets: buyTickets } : {}),
+  });
+  const go = () => (live ? setConfirm(true) : start(body(false)));
   const cur = opts?.clients.find((c) => c.key === client);
 
   return (
@@ -51,6 +61,28 @@ export function Launch({ lastStop }: { lastStop?: string }) {
       </div>
 
       <div className="launch-grid">
+        <div className="field">
+          <label>玩法</label>
+          <div className="seg">
+            <button className={!arena ? "on" : ""} onClick={() => setGameMode("ranked")}>排位</button>
+            <button className={arena ? "on" : ""} onClick={() => setGameMode("arena")}>竞技场</button>
+          </div>
+          <span className="hint">
+            {arena ? "从主界面进入 Game Modes → Arena Mode；组卡 / 换牌由大模型决定，Snap / 撤退按血量与宝箱档位算整场期望" : "主界面点 PLAY，用当前选中的卡组"}
+          </span>
+        </div>
+
+        {arena ? (
+          <div className="field">
+            <label>打几场竞技（0 = 不限）</label>
+            <input type="number" min={0} max={50} value={maxRuns} onChange={(e) => setMaxRuns(Math.max(0, Number(e.target.value) || 0))} />
+            <label className="check">
+              <input type="checkbox" checked={buyTickets} onChange={(e) => setBuyTickets(e.target.checked)} />
+              门票不足时用金块购买（150 金块 / 张；有门票时总是先用门票）
+            </label>
+          </div>
+        ) : <div />}
+
         <div className="field">
           <label>客户端</label>
           <select value={client} onChange={(e) => setClient(e.target.value)}>
@@ -86,7 +118,7 @@ export function Launch({ lastStop }: { lastStop?: string }) {
         </div>
 
         <div className="field">
-          <label>打几局（0 = 不限）</label>
+          <label>{arena ? "最多打几局对局（0 = 不限，按场数停）" : "打几局（0 = 不限）"}</label>
           <input type="number" min={0} max={200} value={maxGames} onChange={(e) => setMaxGames(Math.max(0, Number(e.target.value) || 0))} />
           <label className="check">
             <input type="checkbox" checked={skipCurrent} onChange={(e) => setSkipCurrent(e.target.checked)} />
@@ -129,12 +161,12 @@ export function Launch({ lastStop }: { lastStop?: string }) {
           <div className="panel modal" onClick={(e) => e.stopPropagation()}>
             <h3>开始实操？</h3>
             <p>
-              机器人会接管鼠标，在「{cur?.label ?? client}」里自动对局{maxGames ? ` ${maxGames} 局` : "（不限局数）"}。
+              机器人会接管鼠标，在「{cur?.label ?? client}」里自动{arena ? `打竞技场${maxRuns ? ` ${maxRuns} 场` : "（不限场数）"}${maxGames ? `，最多 ${maxGames} 局对局` : ""}${buyTickets ? "；门票不足时会花 150 金块买票" : "；没有门票就停下"}` : `对局${maxGames ? ` ${maxGames} 局` : "（不限局数）"}`}。
               运行期间不要操作鼠标；按住 <kbd>F8</kbd> 或点面板上的停止可以随时中止。
             </p>
             <div className="row">
               <button className="btn" onClick={() => setConfirm(false)}>取消</button>
-              <button className="btn stop" disabled={busy} onClick={() => start({ client, live: true, decider, max_games: maxGames, skip_current: skipCurrent })}>
+              <button className="btn stop" disabled={busy} onClick={() => start(body(true))}>
                 <i className="ti ti-swords" aria-hidden="true" />开始实操
               </button>
             </div>

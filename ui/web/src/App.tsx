@@ -1,3 +1,4 @@
+import { ArenaPanel } from "./components/Arena";
 import { Board } from "./components/Board";
 import { Brain } from "./components/Brain";
 import { Feed } from "./components/Feed";
@@ -26,7 +27,7 @@ const NAV: { icon: string; label: string; page?: Route["page"]; href?: string; s
 
 const WAIT_TEXT: Record<string, [string, string]> = {
   starting: ["正在启动", "附加游戏进程、定位内存结构（有缓存时几乎瞬间完成）"],
-  menu: ["在主界面", "识别到 PLAY 按钮后会自动开下一局"],
+  menu: ["在主界面 / 竞技场界面", "排位：识别到 PLAY 自动开下一局；竞技场：进入竞技场、组卡 / 换牌后开局"],
   matching: ["匹配中", "已点击 PLAY，等待对手"],
   in_game: ["对手回合 / 揭示中", "轮到我方出牌时显示局面"],
   guide: ["新手指引", "程序已暂停，请跟随游戏指引点击"],
@@ -53,6 +54,7 @@ function LivePage({ s }: { s: Live }) {
     <div className="live">
       <div>
         {!s.running ? <Launch lastStop={s.stopReason} /> : showBoard ? <Board s={s} now={now} /> : <Waiting s={s} />}
+        {s.running && s.arena && <ArenaPanel s={s} />}
         <Feed s={s} />
       </div>
       <Brain s={s} now={now} />

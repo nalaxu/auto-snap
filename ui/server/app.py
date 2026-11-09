@@ -7,8 +7,11 @@
     GET  /api/status    机器人进程状态
     /api/settings       设置（GET / PUT，保留注释）     /api/tools/...  维护脚本（白名单）
     /api/kb/...         知识库：待复核、信号、对手卡组候选、卡组、卡牌 / 场地人工覆盖（见 kb.py）
-    GET  /api/stats     战绩总览（?client=&last=）     GET /api/games 对局列表     GET /api/games/{file} 单局逐回合
-    POST /api/start     启动机器人 {client, live, decider, max_games, max_turns, skip_current} 或回放 {demo: 文件名, speed}
+    /api/arena/ratings  竞技场评分表复核（见 arena.py）
+    GET  /api/stats     战绩总览（?client=&last=&mode=）  GET /api/arena/stats 竞技场战绩
+    GET  /api/games     对局列表（?mode=）                GET /api/games/{file} 单局逐回合
+    POST /api/start     启动机器人 {client, live, decider, max_games, max_turns, skip_current, game_mode, max_runs, buy_tickets}
+                        或回放 {demo: 文件名, speed}
     POST /api/control   {cmd: pause | resume | stop | kill}
     WS   /ws            先发 hello（含本次运行的全部事件，页面据此重建状态），之后实时推送事件
 前端静态文件：ui/web/dist（cd ui/web && npm install && npm run build）
@@ -26,6 +29,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from .arena import create_router as create_arena_router
 from .bot import ROOT, BotProcess
 from .kb import KnowledgeBase
 from .kb import create_router as create_kb_router
@@ -45,6 +49,9 @@ class StartRequest(BaseModel):
     max_games: int = 0
     max_turns: int = 0
     skip_current: bool = False
+    game_mode: str | None = None        # ranked | arena（None = config [game].mode）
+    max_runs: int | None = None         # 竞技场：打几场（0 = 不限）
+    buy_tickets: bool | None = None     # 竞技场：门票不足时用金块买（None = config [arena]）
     verbose: bool = False
     demo: str | None = None
     speed: float = 1.0
@@ -118,6 +125,7 @@ def create_app(data_dir: Path | None = None, settings_path: Path | None = None) 
     app.include_router(create_settings_router(settings))
     app.state.tools = ToolRunner(ROOT)
     app.include_router(create_tools_router(app.state.tools))
+    app.include_router(create_arena_router())
 
     @app.get("/api/options")
     def options() -> dict:
@@ -133,7 +141,11 @@ def create_app(data_dir: Path | None = None, settings_path: Path | None = None) 
                 running = False
             items.append({"key": key, "label": c.label, "running": running, "verified": c.verified})
         task = settings.get("llm", {}).get("tasks", {}).get("decision", {})
+        arena = settings.get("arena", {}) or {}
         return {
+            "game_mode": settings.get("game", {}).get("mode", "ranked"),
+            "arena": {"buy_tickets": bool(arena.get("buy_ticket_with_gold", False)), "max_runs": int(arena.get("max_runs", 0)),
+                      "draft_decider": arena.get("draft_decider", "llm")},
             "clients": items,
             "client": current,
             "decider": settings.get("brain", {}).get("decider", "llm"),
@@ -145,27 +157,36 @@ def create_app(data_dir: Path | None = None, settings_path: Path | None = None) 
     def status() -> dict:
         return bot.status()
 
-    def _filtered(client: str | None, last: int) -> list[dict]:
+    def _filtered(client: str | None, last: int, mode: str | None = None) -> list[dict]:
         from gamelog.stats import list_games
 
         games = list_games(GAMES_DIR)
         if client:
             games = [g for g in games if (g["client"] or "?") == client]
+        if mode:
+            games = [g for g in games if g.get("mode", "ranked") == mode]
         return games[-last:] if last > 0 else games
 
     @app.get("/api/stats")
-    def stats(client: str | None = None, last: int = 0) -> dict:
-        """战绩总览。client = 客户端 key（早期没记录客户端的对局用 ?），last = 只看最近 N 局。"""
+    def stats(client: str | None = None, last: int = 0, mode: str | None = None) -> dict:
+        """战绩总览。client = 客户端 key（早期没记录客户端的对局用 ?），last = 只看最近 N 局，mode = ranked | arena。"""
         from gamelog.stats import aggregate, list_games
 
         all_games = list_games(GAMES_DIR)
-        return {**aggregate(_filtered(client, last), GAMES_DIR),
+        return {**aggregate(_filtered(client, last, mode), GAMES_DIR),
                 "clients": sorted({g["client"] or "?" for g in all_games})}
 
+    @app.get("/api/arena/stats")
+    def arena_stats() -> dict:
+        """竞技场战绩：整场列表、平均积分、档位分布、按血量分组的对局表现、没收观测。"""
+        from gamelog.arena_stats import aggregate as arena_aggregate
+
+        return arena_aggregate(arena_games=_filtered(None, 0, "arena"))
+
     @app.get("/api/games")
-    def games(client: str | None = None, last: int = 0) -> list[dict]:
+    def games(client: str | None = None, last: int = 0, mode: str | None = None) -> list[dict]:
         """对局列表（新的在前）。"""
-        return list(reversed(_filtered(client, last)))
+        return list(reversed(_filtered(client, last, mode)))
 
     @app.get("/api/games/{file}")
     def game(file: str) -> dict:

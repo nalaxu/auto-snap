@@ -148,12 +148,14 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
         source.arena_mode = True
         from brain.llm import make_arena_decider
         from executor.arena_flow import ArenaFlow, ArenaOptions
+        from gamelog.arena_log import ArenaRunLog
         acfg = settings.get("arena", {})
         arena_flow = ArenaFlow(ex, source.arena_state, ArenaOptions(
             buy_ticket_with_gold=bool(acfg.get("buy_ticket_with_gold", False)),
             max_runs=int(max_runs if max_runs is not None else acfg.get("max_runs", 0)),
             swap_threshold=float(acfg.get("swap_threshold", 1.0))), emit=bus.emit, live=live,
-            decider=make_arena_decider(settings) if acfg.get("draft_decider", "llm") == "llm" else None)
+            decider=make_arena_decider(settings) if acfg.get("draft_decider", "llm") == "llm" else None,
+            run_log=ArenaRunLog())
         print(f"竞技场：组卡 / 换牌 {'大模型 ' + arena_flow.decider.task.model if arena_flow.decider else '规则打分'}；"
               f"买票 {'允许' if arena_flow.opt.buy_ticket_with_gold else '不允许'}；"
               f"场数上限 {arena_flow.opt.max_runs or '不限'}")
@@ -341,6 +343,8 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
         t0 = time.time()
         source.tutorial_running()
         print(f"  内存读取就绪（{time.time() - t0:.1f}s）")
+    if arena_flow is not None:   # 启动时先推一次竞技场状态（面板立即显示血量 / 积分 / 卡组；演练模式也有）
+        arena_flow.observe(source.arena_state())
     if skip_current:  # 当前回合留给玩家手动完成，从下一回合开始接管
         cur = source.snapshot()
         if cur and not cur.get("finished"):
@@ -371,6 +375,8 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                          archetype=decks.default_kb().opponents[arche].get("name", arche) if arche else None,
                          **{k: summary.get(k) for k in ("result", "retreat", "my_locations_won", "opp_locations_won",
                                                          "cube_value", "turns_recorded")})
+                if arena_flow is not None:
+                    arena_flow.note_game(snap["game_id"], summary.get("result"), summary.get("cube_value"))
                 bus.set_phase("menu")
                 if live:
                     back_to_menu()
@@ -430,7 +436,7 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                 if snap["game_id"] not in arena_ctx:
                     ast = source.arena_state()
                     arena_ctx[snap["game_id"]] = ArenaContext(
-                        score=ast.score, hp=ast.hp, opp_hp=None,
+                        score=ast.score, hp=ast.hp,
                         model=ArenaModel.from_settings(settings, ast.config.max_score)) if ast and ast.phase == "run" else None
                     if arena_ctx[snap["game_id"]]:
                         c0 = arena_ctx[snap["game_id"]]
@@ -518,7 +524,9 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
             llm_raw = getattr(decider, "last_raw", None) if decider is not None else None
             if llm_raw and llm_raw.get("plan"):
                 print(f"    规划：{llm_raw['plan']}")
-            rec.start(snap["game_id"], getattr(source, "deck_name", ""), getattr(source, "deck", []))
+            rec.start(snap["game_id"], getattr(source, "deck_name", ""), getattr(source, "deck", []),
+                      mode="arena" if (arena_ctx.get(snap["game_id"]) or is_arena_game(snap)) else "ranked",
+                      arena=state.arena)
             executed: list[dict] = []
             if events:
                 bus.emit("decision", game_id=snap["game_id"], turn=state.turn,
@@ -665,6 +673,8 @@ def main() -> None:
     ap.add_argument("--max-games", type=int, default=0, help="auto 模式打完 N 局后停止（0 = 不限）")
     ap.add_argument("--game-mode", choices=["ranked", "arena"], help="auto 模式：排位（默认）或竞技场（覆盖 config [game].mode）")
     ap.add_argument("--max-runs", type=int, help="竞技场：打完 N 场竞技后停止（覆盖 config [arena].max_runs，0 = 不限）")
+    ap.add_argument("--buy-tickets", action=argparse.BooleanOptionalAction, default=None,
+                    help="竞技场：门票不足时用金块买（覆盖 config [arena].buy_ticket_with_gold）")
     ap.add_argument("--skip-current", action="store_true", help="auto 模式跳过当前回合，从下一回合开始接管")
     ap.add_argument("--decider", choices=["llm", "rule_based"], help="覆盖 config 中的 brain.decider")
     ap.add_argument("--events", action="store_true", help="auto 模式输出结构化事件、从 stdin 接收控制命令（外部面板使用）")
@@ -676,6 +686,8 @@ def main() -> None:
     settings = load_settings()
     if args.decider:
         settings.setdefault("brain", {})["decider"] = args.decider
+    if args.buy_tickets is not None:
+        settings.setdefault("arena", {})["buy_ticket_with_gold"] = args.buy_tickets
     if args.mode == "clients":
         list_clients(settings)
         return

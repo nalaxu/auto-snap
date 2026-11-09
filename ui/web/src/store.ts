@@ -83,6 +83,26 @@ export type ExecT = {
   error?: string;
 };
 
+export type ArenaCardT = { id: string; name: string; cost: number | null; power: number | null; rating: number | null };
+
+export type ArenaT = {
+  run_id?: string;
+  phase: "none" | "draft" | "run";
+  tickets: number;
+  score: number;
+  hp: number;
+  max_hp: number;
+  max_score: number;
+  games: number;
+  swaps_left: number;
+  swap_points: number;
+  score_per_swap: number;
+  next_tier: number | null;
+  avatar_progress: number;
+  candidates: ArenaCardT[];
+  deck: ArenaCardT[];
+};
+
 export type SessionT = {
   live: boolean;
   demo?: boolean;
@@ -93,6 +113,7 @@ export type SessionT = {
   effort?: string | null;
   max_games: number;
   max_turns: number;
+  game_mode?: "ranked" | "arena";
 };
 
 export type GameResultT = {
@@ -129,6 +150,7 @@ export type Live = {
   execs: ExecT[];
   turnOutcome?: string;
   results: GameResultT[];
+  arena?: ArenaT;
   feed: FeedItem[];
   logs: { t: number; text: string }[];
 };
@@ -261,6 +283,19 @@ export function reduce(s: Live, ev: Ev): Live {
         feed: feed(s, { t, kind: "end", text: `对局结束：${res}${r.retreat ? (r.retreat === "opp" ? "（对手撤退）" : "（我方撤退）") : ""} ${sign}${r.cube_value ?? "?"} 魔方${r.archetype ? ` · 对手 ${r.archetype}` : ""}` }),
       };
     }
+    case "arena_state":
+      return { ...s, arena: ev as unknown as ArenaT };
+    case "arena_run_start":
+      return { ...s, feed: feed(s, { t, kind: "state", text: `开始新一场竞技（剩余门票 ${ev.tickets ?? "?"}）` }) };
+    case "arena_pick":
+      return { ...s, feed: feed(s, { t, kind: "llm", text: `组卡 ${ev.round}/12：${(ev.candidates ?? []).join(" / ")} → ${ev.pick}（${ev.reason ?? ""}）` }) };
+    case "arena_swap":
+      return {
+        ...s,
+        feed: feed(s, { t, kind: "llm", text: ev.out ? `换牌：${ev.out} → ${ev.inc}（${ev.reason ?? ""}）` : `换牌：候选 ${(ev.candidates ?? []).join(" / ")} 都不换，刷新放弃（${ev.reason ?? ""}）` }),
+      };
+    case "arena_run_end":
+      return { ...s, feed: feed(s, { t, kind: "end", text: `本场竞技结束：积分 ${ev.score}，血量 ${ev.hp}，共 ${ev.games} 局` }) };
     case "control":
       return {
         ...s,

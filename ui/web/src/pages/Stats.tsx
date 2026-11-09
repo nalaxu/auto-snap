@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api, GameSummary, Stats as StatsT } from "../api";
 import { CLIENT_LABEL, pct, resultText, shortTime, signed } from "../format";
 import { go, reviewHref } from "../route";
+import { ArenaStatsView } from "./ArenaStats";
 
 const LASTS: [number, string][] = [[0, "全部"], [50, "近 50 局"], [20, "近 20 局"], [10, "近 10 局"]];
 
@@ -84,6 +85,7 @@ export function GameRow({ g }: { g: GameSummary }) {
       <span className="when">{shortTime(g.started)}</span>
       <span className="locs">
         {g.locations.map((l) => l.name).join(" · ")}
+        {g.mode === "arena" && <em className="mode-tag">竞技场{g.arena_hp != null ? ` · 血 ${g.arena_hp}` : ""}</em>}
         {g.retreat && <em className="tagx">{g.retreat === "opp" ? "对手撤退" : "我方撤退"}</em>}
         {g.snap_turn && <em className="tagx gold">T{g.snap_turn} Snap</em>}
         {g.fallbacks > 0 && <em className="tagx">兜底 {g.fallbacks}</em>}
@@ -96,6 +98,19 @@ export function GameRow({ g }: { g: GameSummary }) {
 }
 
 export function Stats() {
+  const [mode, setMode] = useState<"ranked" | "arena">("ranked");
+  const modeSeg = (
+    <div className="seg sm">
+      <button className={mode === "ranked" ? "on" : ""} onClick={() => setMode("ranked")}>排位</button>
+      <button className={mode === "arena" ? "on" : ""} onClick={() => setMode("arena")}>竞技场</button>
+    </div>
+  );
+  if (mode === "arena")
+    return <div className="stats-page"><div className="filters">{modeSeg}</div><ArenaStatsView /></div>;
+  return <RankedStats modeSeg={modeSeg} />;
+}
+
+function RankedStats({ modeSeg }: { modeSeg: JSX.Element }) {
   const [client, setClient] = useState("");
   const [last, setLast] = useState(0);
   const [s, setS] = useState<StatsT | null>(null);
@@ -105,7 +120,7 @@ export function Stats() {
 
   useEffect(() => {
     setErr("");
-    Promise.all([api.stats(client, last), api.games(client, last)])
+    Promise.all([api.stats(client, last, "ranked"), api.games(client, last, "ranked")])
       .then(([a, b]) => { setS(a); setGames(b); })
       .catch((e) => setErr(`读取战绩失败：${e.message}`));
   }, [client, last]);
@@ -114,8 +129,8 @@ export function Stats() {
   if (!s) return <div className="panel"><div className="empty"><div className="spinner" /><div className="sm">读取对局记录…</div></div></div>;
   if (!s.games)
     return (
-      <div className="panel"><div className="empty"><i className="ti ti-chart-arcs" aria-hidden="true" /><div className="big">还没有对局</div>
-        <div className="sm">打完第一局后，这里会显示胜率、魔方走势和决策质量</div></div></div>
+      <div className="stats-page"><div className="filters">{modeSeg}</div><div className="panel"><div className="empty"><i className="ti ti-chart-arcs" aria-hidden="true" /><div className="big">还没有对局</div>
+        <div className="sm">打完第一局后，这里会显示胜率、魔方走势和决策质量</div></div></div></div>
     );
 
   const d = s.decisions;
@@ -125,6 +140,7 @@ export function Stats() {
   return (
     <div className="stats-page">
       <div className="filters">
+        {modeSeg}
         <div className="seg sm">
           <button className={!client ? "on" : ""} onClick={() => setClient("")}>全部客户端</button>
           {s.clients.map((c) => (

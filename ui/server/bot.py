@@ -61,6 +61,13 @@ class BotProcess:
             args += ["--max-turns", str(int(opts["max_turns"]))]
         if opts.get("skip_current"):
             args.append("--skip-current")
+        if opts.get("game_mode") in ("ranked", "arena"):
+            args += ["--game-mode", opts["game_mode"]]
+        if opts.get("game_mode") == "arena":
+            if opts.get("max_runs") is not None:
+                args += ["--max-runs", str(max(0, int(opts["max_runs"])))]
+            if opts.get("buy_tickets") is not None:
+                args.append("--buy-tickets" if opts["buy_tickets"] else "--no-buy-tickets")
         if opts.get("verbose"):
             args.append("-v")
         return args
