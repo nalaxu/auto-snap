@@ -141,6 +141,9 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
     ex = Executor(source.snapshot, client, dry_run=not live)
     arena_flow = None
     from perception.memory_source import is_arena_game
+    from brain import arena_strategy
+    from brain.arena_strategy import ArenaContext, ArenaModel
+    arena_ctx: dict[str, ArenaContext | None] = {}   # game_id -> 竞技场整场背景
     if game_mode == "arena":
         source.arena_mode = True
         from brain.llm import make_arena_decider
@@ -423,6 +426,18 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                     if c.id not in seen:
                         seen.append(c.id)
             state.opp_seen, state.deck_name = list(seen), getattr(source, "deck_name", "")
+            if arena_flow is not None or is_arena_game(snap):   # 竞技场：整场背景（开局读一次，局内不变）
+                if snap["game_id"] not in arena_ctx:
+                    ast = source.arena_state()
+                    arena_ctx[snap["game_id"]] = ArenaContext(
+                        score=ast.score, hp=ast.hp, opp_hp=None,
+                        model=ArenaModel.from_settings(settings, ast.config.max_score)) if ast and ast.phase == "run" else None
+                    if arena_ctx[snap["game_id"]]:
+                        c0 = arena_ctx[snap["game_id"]]
+                        print(f"  ⚔ 竞技场对局：血量 {c0.hp}，积分 {c0.score}")
+                actx = arena_ctx.get(snap["game_id"])
+                if actx:
+                    state.arena = actx.prompt(state.cube_next or state.cube_stake, state.turn >= state.max_turn)
             for l in state.locations:   # 本程序激活过的牌（内存里没有可靠的「已激活」标志）
                 for c in l.my_cards:
                     c.activated = (snap["game_id"], c.entity) in activated_cards
@@ -474,7 +489,18 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                 d.win_probability = default_calibrator().calibrate(d.win_probability, state.turn >= state.max_turn)
                 if abs(d.win_probability - d.win_probability_raw) >= 0.03:
                     print(f"  胜率校准：模型 {d.win_probability_raw:.0%} → 历史校准 {d.win_probability:.0%}")
-            want_retreat, retreat_why = retreat_check(state, d.win_probability, retreat_threshold)
+            actx = arena_ctx.get(snap["game_id"])
+            if actx:
+                want_retreat, retreat_why = arena_strategy.retreat_check(state, d.win_probability, actx)
+                if d.snap:
+                    veto, veto_why = arena_strategy.snap_veto(d.win_probability, actx, state.cube_next or state.cube_stake,
+                                                              state.turn >= state.max_turn)
+                    if veto:
+                        d.snap = False
+                        d.reason += f"（Snap 被否决：{veto_why}）"
+                        print(f"  Snap 否决：{veto_why}")
+            else:
+                want_retreat, retreat_why = retreat_check(state, d.win_probability, retreat_threshold)
             if retreat_why:
                 print(f"  撤退判断：{retreat_why} → {'撤退' if want_retreat else '继续'}")
             d.retreat = want_retreat and retreat_enabled

@@ -70,6 +70,7 @@ class GameState(BaseModel):
     history: list[str] = Field(default_factory=list)
     forbidden: list[tuple[str, int]] = Field(default_factory=list)  # 运行时发现的 (card_id, 地点) 禁止组合
     board_notes: list[str] = Field(default_factory=list)  # 场上最新要点（brain/board.py 每回合重建，旧信息自动失效）
+    arena: dict | None = None   # 竞技场局的整场背景（血量 / 积分 / 档位 / Snap 门槛，brain/arena_strategy.py），排位为 None
 
 
 class ActionType(str, Enum):

@@ -42,6 +42,21 @@ buy_ticket_with_gold = false  # 门票不足时用金块购买（150 金块 / �
 max_runs = 0                  # 打完 N 场竞技后停止（0 = 不限）；命令行 --max-runs 覆盖
 swap_threshold = 1.0          # 换牌规则兜底：整副卡组得分（评分表 + 曲线 + 配合）提升超过该值才换
 draft_decider = "llm"         # 组卡 / 换牌：llm（大模型，规则分作参考与兜底）| rule
+# 对局内 Snap / 撤退按整场期望（brain/arena_strategy.py）：档位价值 + 剩余血量 + 折半没收
+game_win_rate = 0.5           # 整场模型里之后每局的胜率（积累竞技场对局后校准）
+retreat_floor = 0.10          # 撤退线下限：胜算很低时即使血少也撤退保分
+snap_floor = 0.25             # Snap 门槛下限：绝境 Snap 也要有起码的翻盘机会
+
+[arena.tier_value]            # 宝箱档位价值（用户决定以档位为主）：积分 >= 门槛即得该档；15 神秘变体、30 高级神秘变体、35 新头像
+-8 = 0
+0 = 1
+5 = 2
+10 = 3.5
+15 = 6
+20 = 7
+25 = 8
+30 = 11
+35 = 14
 
 [display]
 resolution = [1920, 1080]     # 建议固定窗口化分辨率
