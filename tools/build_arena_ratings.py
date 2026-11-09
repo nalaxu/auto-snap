@@ -66,8 +66,14 @@ SCHEMA = {
 
 
 def card_line(cid: str) -> str:
+    """一张卡一行；生成衍生牌的附上衍生牌的身材与能力（如 Sam Wilson → Cap's Shield），否则大模型只看到名字。"""
+    from brain.arena_links import default_links
+
     c = default_db().card(cid)
-    return f"- {cid}（{c.get('name') or cid}）{c.get('cost')}费{c.get('power')}力：{c.get('ability') or '无能力'}"
+    line = f"- {cid}（{c.get('name') or cid}）{c.get('cost')}费{c.get('power')}力：{c.get('ability') or '无能力'}"
+    for t in default_links().token_info(cid):
+        line += f"\n  · 衍生 {t['name']} {t['cost']}费{t['power']}力：{t['ability']}"
+    return line
 
 
 def rate_batch(client, task, ids: list[str]) -> dict[str, dict]:

@@ -3,10 +3,12 @@
     python tools/arena_draft_trial.py --seed 1            # 模拟一次组卡（大模型 + 规则对照）
     python tools/arena_draft_trial.py --rule-only         # 只用规则
     python tools/arena_draft_trial.py --live-swap         # 读游戏内存里的当前卡组与换牌候选，给出换牌建议（不操作）
+    python tools/arena_draft_trial.py --replay-swaps 6a5974d8   # 按 logs/arena/runs.jsonl 重建卡组，重新决策当时的每次换牌
 """
 from __future__ import annotations
 
 import argparse
+import json
 import random
 import sys
 import tomllib
@@ -33,9 +35,14 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--rule-only", action="store_true")
     ap.add_argument("--live-swap", action="store_true")
+    ap.add_argument("--replay-swaps", metavar="RUN_ID", help="整场 id（前缀即可）")
     args = ap.parse_args()
     settings = tomllib.loads((ROOT / "config" / "settings.toml").read_text("utf-8"))
     decider = None if args.rule_only else llm.make_arena_decider(settings)
+
+    if args.replay_swaps:
+        replay_swaps(args.replay_swaps, decider)
+        return
 
     if args.live_swap:
         from perception.arena import ArenaReader
@@ -71,6 +78,34 @@ def main() -> None:
     for name, deck in (("规则", deck_rule), ("大模型", deck_llm)):
         if deck:
             print(f"{name}卡组 曲线 {rules.curve_counts(deck)} 得分 {rules.deck_score(deck):.1f}：{', '.join(deck)}")
+
+
+def replay_swaps(run_prefix: str, decider) -> None:
+    """按整场记录重建卡组（组卡 + 实际换牌），对每次换牌重新决策并与当时的选择对照；之后仍按当时的选择更新卡组。"""
+    deck: list[str] = []
+    ctx = {"score": 0, "hp": 10, "games": 0}
+    for line in (ROOT / "logs" / "arena" / "runs.jsonl").read_text("utf-8").splitlines():
+        e = json.loads(line)
+        if not str(e.get("run_id", "")).startswith(run_prefix):
+            continue
+        if e["kind"] == "pick":
+            deck.append(e["pick"])
+        elif e["kind"] == "game":
+            ctx = {"score": e["score_after"], "hp": e["hp_after"], "games": ctx["games"] + 1}
+        elif e["kind"] == "swap":
+            cands = e["candidates"][:3]
+            print(f"— 卡组：{', '.join(deck)}")
+            print(f"  候选：{' | '.join(label(c) for c in cands)}")
+            print(f"  当时：{e.get('out')} → {e.get('inc')}（{e.get('reason')}）")
+            r = rules.choose_swap(deck, cands)
+            print(f"  规则：{r.out_card} → {r.in_card}（{r.reason}）")
+            if decider:
+                d = decider.swap(deck, cands, ctx)
+                print(f"  现在：{d.out_card} → {d.in_card}（{d.reason}）")
+            if e.get("out") in deck:
+                deck[deck.index(e["out"])] = e["inc"]
+    if not deck:
+        print(f"没有找到整场 {run_prefix}")
 
 
 if __name__ == "__main__":

@@ -110,3 +110,42 @@ def test_llm_swap_out_of_range_falls_back(ratings):
     d = ArenaDecider(FakeClient({"swap": True, "out": 11, "in": 2, "reason": ""}), TASK)
     sw = d.swap(DECK[:5], ["Leader", "Shocker"])
     assert sw.source == "rule"
+
+
+# ---- 点名联系 / 衍生牌（brain/arena_links.py）----
+
+def test_links_tokens_and_reach():
+    from brain.arena_links import default_links
+    lk = default_links()
+    assert lk.tokens("SamWilson") == ["CapsShield"]
+    assert lk.tokens("Thor") == ["Mjolnir"]
+    assert lk.tokens("MaryJane") == [] and lk.reach("MaryJane") == {"SpiderMan"}   # 卡池牌是点名，不算衍生
+    assert lk.linked("SpiderMan", "MaryJane")
+    assert lk.linked("SquirrelGirl", "SquirrelGirl") is False
+    info = lk.token_info("SamWilson")[0]
+    assert info["name"] == "Cap's Shield" and "moves" in info["ability"]
+
+
+def test_links_name_prefers_pool_card():
+    from brain.arena_links import default_links
+    lk = default_links()
+    assert lk.names["Sentinel"] == "Sentinel" and lk.names["Spider-Man"] == "SpiderMan"
+
+
+def test_synergy_counts_named_link(ratings):
+    from brain.arena_links import CardLinks, set_default_links
+    lk = CardLinks()
+    lk.reach = lambda cid: {"Kingpin"} if cid == "Shocker" else set()     # 假设 Shocker 点名 Kingpin
+    set_default_links(lk)
+    try:
+        assert rules.synergy(["Kingpin"], "Shocker") == pytest.approx(rules.SYNERGY_LINK)
+        assert rules.synergy(["Shocker"], "Kingpin") == pytest.approx(rules.SYNERGY_LINK + 0)
+    finally:
+        set_default_links(None)
+
+
+def test_swap_prompt_shows_creates_and_links(ratings):
+    from brain.llm.arena_decider import card_info
+    info = card_info("SamWilson", ["SamWilson", "Magneto"])
+    assert info["creates"][0]["name"] == "Cap's Shield"
+    assert "links" not in info

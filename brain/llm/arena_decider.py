@@ -9,6 +9,7 @@ import logging
 from typing import Any
 
 from .. import arena_draft as rules
+from ..arena_links import default_links
 from ..arena_ratings import default_ratings
 from ..knowledge import default_db
 from .base import LLMClient, LLMError, TaskConfig
@@ -24,6 +25,8 @@ SYSTEM = """你是《漫威终极逆转》（Marvel Snap 国服）竞技场模�
    这不是硬约束，但越到后面几轮，越要补齐曲线缺口、避免某个费用堆积。
 3. 配合：needs:<体系> 的牌只有卡组里已有该体系组件时才值得拿；已经形成方向时，同体系牌加分。
 4. 针对卡（tech）在随机环境里价值打折。
+5. 一张牌的价值包括它生成的衍生牌（creates，看衍生牌自己的能力）和与卡组其他牌的点名联系（links）。
+   换下一张牌前，先看它带走了什么：衍生牌、被其他牌依赖的组件、赋予的能力；换进的牌也看它和卡组的联系。
 rule_score 是程序按上述原则算出的参考分（越高越好），可以参考但要自己判断，尤其是卡牌之间的具体配合。
 
 只输出 JSON，reason 用中文、≤ 40 字。"""
@@ -48,11 +51,18 @@ SWAP_SCHEMA: dict[str, Any] = {
 }
 
 
-def card_info(cid: str) -> dict:
+def card_info(cid: str, deck: list[str] | None = None) -> dict:
+    """卡牌信息；有衍生牌附 creates，给了卡组时附与卡组其他牌的点名联系 links。"""
     c = default_db().card(cid)
     r = default_ratings().get(cid) or {}
-    return {"id": cid, "cost": c.get("cost"), "power": c.get("power"), "ability": c.get("ability") or "无能力",
-            "rating": r.get("rating"), "tags": r.get("tags", []), "note": r.get("note", "")}
+    out = {"id": cid, "cost": c.get("cost"), "power": c.get("power"), "ability": c.get("ability") or "无能力",
+           "rating": r.get("rating"), "tags": r.get("tags", []), "note": r.get("note", "")}
+    links = default_links()
+    if creates := links.token_info(cid):
+        out["creates"] = creates
+    if deck and (lk := links.deck_links(deck, cid)):
+        out["links"] = lk
+    return out
 
 
 def curve_text(deck: list[str]) -> dict:
@@ -69,8 +79,9 @@ class ArenaDecider:
         fallback = rules.choose_pick(deck, candidates, deck_size)
         data = {
             "round": f"{len(deck) + 1}/{deck_size}",
-            "candidates": [dict(card_info(c), idx=i, rule_score=round(fallback.scores[i], 1)) for i, c in enumerate(candidates)],
-            "deck": [card_info(c) for c in deck],
+            "candidates": [dict(card_info(c, deck + [c]), idx=i, rule_score=round(fallback.scores[i], 1))
+                           for i, c in enumerate(candidates)],
+            "deck": [card_info(c, deck) for c in deck],
             "curve_now": curve_text(deck),
         }
         user = "组卡三选一，pick 填候选的 idx：\n" + json.dumps(data, ensure_ascii=False)
@@ -88,8 +99,8 @@ class ArenaDecider:
     def swap(self, deck: list[str], candidates: list[str], context: dict | None = None) -> rules.Swap:
         fallback = rules.choose_swap(deck, candidates, self.swap_threshold)
         data = {
-            "deck": [dict(card_info(c), idx=i) for i, c in enumerate(deck)],
-            "candidates": [dict(card_info(c), idx=i) for i, c in enumerate(candidates)],
+            "deck": [dict(card_info(c, deck), idx=i) for i, c in enumerate(deck)],
+            "candidates": [dict(card_info(c, deck + [c]), idx=i) for i, c in enumerate(candidates)],
             "curve_now": curve_text(deck),
             "rule_suggestion": {"out": fallback.out_card, "in": fallback.in_card, "gain": round(fallback.gain, 1)},
             "run": context or {},

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .arena_links import default_links
 from .arena_ratings import default_ratings
 from .knowledge import default_db
 
@@ -16,6 +17,7 @@ from .knowledge import default_db
 CURVE = {1: (1, 3), 2: (3, 4), 3: (2, 3), 4: (1, 2), 5: (1, 2), 6: (0, 1)}
 SYNERGY_NEEDS = 0.7      # needs:X 的牌，卡组里每有一张 X 组件（enabler:X 或同体系牌）加分，最多算 3 张
 SYNERGY_ENABLER = 0.4    # enabler:X 的牌，卡组里每有一张 needs:X 加分
+SYNERGY_LINK = 1.0       # 牌面（或其衍生牌）点名了卡组里的另一张牌，或被点名（brain/arena_links.py）
 
 
 @dataclass
@@ -105,6 +107,8 @@ def synergy(deck: list[str], cid: str) -> float:
     for t in enables:
         k = sum(1 for d in deck if t in _themes(d, "needs"))
         s += SYNERGY_ENABLER * min(k, 3)
+    links = default_links()
+    s += SYNERGY_LINK * sum(1 for d in set(deck) if links.linked(cid, d))
     return s
 
 
