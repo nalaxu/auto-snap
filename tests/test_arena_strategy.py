@@ -23,8 +23,10 @@ def test_loss_rules_hp_then_halved_overflow():
     assert loss_value(M, 4, 6, 4) == pytest.approx(value(M, 4, 2))
     # 血量恰好扣到 0：本场结束，不没收
     assert loss_value(M, 12, 4, 4) == pytest.approx(M.terminal(12))
-    # 剩 1 血输 8：超出 7 折半（向上取整 4）从积分没收（用户例子：扣 4 分）
+    # 剩 1 血输 8：超出 7，最多没收赌注一半 4（用户例子：扣 4 分）
     assert loss_value(M, 12, 1, 8) == pytest.approx(M.terminal(8))
+    # 剩 6 血输 8：超出 2，全额没收 2（实测对局 9de0c74b：积分 10 → 8）
+    assert loss_value(M, 10, 6, 8) == pytest.approx(M.terminal(8))
 
 
 def test_win_reaching_cap_ends_run():
@@ -39,10 +41,10 @@ def test_low_hp_makes_snap_cheaper():
 
 
 def test_tier_awareness_near_threshold():
-    # 13 分：赢 2 或赢 4 都到 15 档，Snap（2→4）收益小，门槛高
-    near = ArenaContext(score=13, hp=10).breakeven(2, 4)
+    # 33 分：赢 2 或赢 4 都到 35 封顶，Snap（2→4）几乎没有收益，门槛明显高于平时
+    near = ArenaContext(score=33, hp=10).breakeven(2, 4)
     mid = ArenaContext(score=6, hp=10).breakeven(2, 4)
-    assert near > mid
+    assert near > mid + 0.1
 
 
 def test_retreat_cutoff_floor_and_full_hp_close_to_ranked():
@@ -87,3 +89,11 @@ def test_model_from_settings():
     m = ArenaModel.from_settings({"arena": {"tier_value": {"0": 1, "15": 9}, "game_win_rate": 0.55, "snap_floor": 0.3}})
     assert m.terminal(15) == pytest.approx(9 + 15 * m.avatar_eps)
     assert m.win_rate == 0.55 and m.snap_floor == 0.3
+
+
+def test_quickdraw_moveable_not_self_moveable():
+    from brain.location_rules import self_moveable_text
+
+    assert self_moveable_text("Your cards reveal here with +1 Power. Moveable twice.")
+    assert not self_moveable_text("End of Turn: If you used a Moveable ability, give a Moveable card -1 Cost. Quickdraw:Moveable once.")
+    assert not self_moveable_text("On Reveal: Draw a card.")

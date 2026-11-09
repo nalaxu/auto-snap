@@ -16,7 +16,7 @@ from gamelog.arena_log import ArenaRunLog, game_record
 from perception.arena import ArenaState
 
 from . import screens
-from .layout import ARENA_DRAFT_SELECT, ARENA_SWAP_REFRESH, ARENA_SWAP_SELECT, arena_deck_pos
+from .layout import ARENA_BUY_CANCEL, ARENA_CHEST, ARENA_DRAFT_SELECT, ARENA_SWAP_REFRESH, ARENA_SWAP_SELECT, arena_deck_pos
 
 log = logging.getLogger(__name__)
 
@@ -143,6 +143,29 @@ class ArenaFlow:
                 time.sleep(2.5)
                 return m.name
             return "unknown"
+        if name == "arena_buy":        # 没票点了开始：花 150 金块买票（只在设置允许、且确实要开新一场时确认）
+            if self.opt.buy_ticket_with_gold and press_play and not self.reached_max_runs():
+                cost = st.config.gold_cost if st else 150
+                print(f"  买票：花 {cost} 金块进入竞技场（设置 buy_ticket_with_gold = true）")
+                self.ex.click_rel(d["arena_buy_confirm"].center, f"确认花 {cost} 金块买票")
+                self.emit("arena_buy", cost=cost)
+                if self.log:
+                    self.log.write("buy_ticket", (st.run_id if st else "") or "", cost=cost)
+                time.sleep(3.0)
+                return "arena_buy_confirm"
+            self.ex.click_rel(ARENA_BUY_CANCEL, "取消买票")
+            time.sleep(1.5)
+            if not self.opt.buy_ticket_with_gold:
+                raise ArenaStop("竞技场门票为 0，且未允许用金块购买（设置 [arena].buy_ticket_with_gold）")
+            return "arena_buy_cancel"
+        if name == "arena_chest":      # 整场结束：开宝箱 → CLAIM → 回到竞技场主页
+            self.ex.click_rel(ARENA_CHEST, "打开竞技场宝箱")
+            time.sleep(3.0)
+            return name
+        if name == "arena_claim":
+            self.ex.click_rel(d["arena_claim"].center, "领取宝箱奖励（CLAIM）")
+            time.sleep(3.0)
+            return name
         if name == "main_menu":
             if not press_play:
                 return name
@@ -180,10 +203,9 @@ class ArenaFlow:
             return "arena_landing"
         if st.tickets <= 0 and not self.opt.buy_ticket_with_gold:
             raise ArenaStop("竞技场门票为 0，且未允许用金块购买（设置 [arena].buy_ticket_with_gold）")
-        if st.tickets <= 0:
-            # 买票弹窗还没标定：点开后会进入 arena_popup 分支停下并截图
-            print(f"  门票为 0，按设置用 {st.config.gold_cost} 金块购买（买票弹窗尚未标定，弹出后会停下）")
         self.ex.click_rel(d["arena_tickets"].center, "Arena Tickets（开始竞技）")
+        if st.tickets <= 0:
+            return "arena_tickets"     # 会弹出买票确认，下一步 arena_buy 分支处理
         new = self._wait_state(lambda s: s.phase == "draft", timeout_s=8)
         if new:
             self.runs_started += 1

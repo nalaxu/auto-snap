@@ -12,6 +12,8 @@ _CANT_PLAY / _MUST_PLAY_ON_TURN 为国服实测的人工覆盖，优先于资料
 """
 from __future__ import annotations
 
+import re
+
 from collections.abc import Callable
 
 from . import knowledge
@@ -108,13 +110,21 @@ def can_play(state: GameState, card: Card, loc_idx: int) -> bool:
     return blocked_reason(state, card, loc_idx) is None
 
 
+def self_moveable_text(ability: str) -> bool:
+    """卡牌自带 Moveable。「Quickdraw: Moveable …」只有抽到当回合打出才生效（如 Aunt May），读不到是否触发，按不可移动处理。
+    2026-11-09 实战：Aunt May 没触发 Quickdraw，拖动被游戏拒绝。"""
+    head = ability.lower().split("quickdraw:", 1)[0]
+    # 关键词形式：句首 / 冒号后的「Moveable」「Moveable twice」；排除「a Moveable card / ability」这类提及
+    return bool(re.search(r"(?:^|[.:;]\s*)moveable\b", head.strip()))
+
+
 def move_targets(state: GameState, card: Card, from_idx: int) -> list[int]:
     """我方场上牌本回合可以移到哪些地点：卡牌自带 Moveable，或目标场地本回合允许移入（如 New York 第 6 回合）。
     本回合刚打出的牌（还没揭示）不能移动；目标要有空位。"""
     if card.turn_played is None or card.turn_played >= state.turn:
         return []
     db = knowledge.default_db()
-    self_moveable = "moveable" in (db.ability(card.id) or "").lower()
+    self_moveable = self_moveable_text(db.ability(card.id) or "")
     out = []
     for loc in state.locations:
         if loc.idx == from_idx or loc.my_slots_free <= 0:

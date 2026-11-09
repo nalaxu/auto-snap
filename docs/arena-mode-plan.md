@@ -234,6 +234,15 @@
 - 知识库 → 竞技场评分：搜索 / 标签 / 来源筛选，编辑评分 / 标签 / 要点，保存为 manual（`/api/arena/ratings`）。
 - 浏览器验证：出征准备、演练模式下的实时竞技场面板（读到血量 6、积分 8、卡组 12 张）、战绩竞技场页、评分表编辑弹窗。
 
+### 整场实战（2026-11-09，本场 6ada88d8 打完）
+
+- 5 局：胜 4（玩家）/ 负 4 / 胜 4 / 胜 2 / 负 8 → 积分 8（5 档），头像进度 8 → 16。
+- **没收规则修正**：第 5 局剩 6 血输 8，实际没收 2（超出部分全额），结合用户例子（剩 1 血输 8 没收 4），
+  规则是 `没收 = min(超出部分, ⌈赌注 / 2⌉)`，`brain/arena_strategy.forfeit()` 已改。
+- **整场结束界面**：「Click to Open Arena Chest」→ 奖励列表「CLAIM!」→ 回到竞技场主页；模板 `arena_chest_open` / `arena_claim`，
+  `ArenaFlow` 自动点开宝箱、领取。
+- 修复：Aunt May「Quickdraw: Moveable once」没触发时不能移动，`location_rules.self_moveable_text()` 只认句首的 Moveable 关键词。
+
 ## M5 面板
 
 - 出征准备：模式（排位 / 竞技场）、「门票不足时用金块购买」勾选框、场数。

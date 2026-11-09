@@ -176,6 +176,10 @@ ARENA_ROIS = {
     "arena_tickets": (0.38, 0.75, 0.62, 0.90),   # 竞技场主页「Arena Tickets」开始按钮（没票时点击弹买票）
     "game_modes": (0.25, 0.06, 0.55, 0.16),      # 主界面「GAME MODES」
     "modes_arena": (0.35, 0.10, 0.70, 0.30),     # 模式弹窗里的「ARENA MODE」入口
+    "arena_chest_open": (0.35, 0.60, 0.65, 0.75),  # 整场结束：「Click to Open Arena Chest」（点中间宝箱）
+    "arena_claim": (0.40, 0.88, 0.60, 0.99),     # 宝箱打开后的奖励列表「CLAIM!」
+    "arena_buy_prompt": (0.35, 0.44, 0.65, 0.56),  # 没票点开始：「Do you want to spend 150 金块 to enter?」（模板含 150）
+    "arena_buy_confirm": (0.48, 0.50, 0.64, 0.62),  # 买票弹窗的 CONFIRM
 }
 
 
@@ -196,9 +200,17 @@ def arena_detect(img) -> dict[str, Match]:
 
 def arena_screen(img) -> tuple[str | None, dict[str, Match]]:
     """竞技场相关界面：arena_landing（有门票按钮）/ arena_board（组卡或整场，有 PLAY）/ arena_popup（只有标题）/
-    game_modes（模式弹窗）/ main_menu（主界面）；都不是返回 None。同时返回各按钮匹配。"""
+    arena_buy（花 150 金块买票弹窗）/ arena_chest（整场结束开宝箱）/ arena_claim（宝箱奖励）/ game_modes（模式弹窗）/
+    main_menu（主界面）；
+    都不是返回 None。同时返回各按钮匹配。"""
     d = arena_detect(img)
     ok = {k for k, m in d.items() if m.found}
+    if "arena_buy_prompt" in ok:
+        return "arena_buy", d
+    if "arena_chest_open" in ok:
+        return "arena_chest", d
+    if "arena_claim" in ok:
+        return "arena_claim", d
     if "arena_header" in ok:
         if "arena_tickets" in ok:
             return "arena_landing", d

@@ -56,6 +56,8 @@ def hint_to_slot(hint: tuple[float, float], cards: list[tuple[int, int]], tol: f
 ARENA_DRAFT_SELECT = [(0.4215, 0.391), (0.500, 0.391), (0.5785, 0.391)]   # 组卡三张候选的 Select
 ARENA_SWAP_SELECT = [(0.4825, 0.352), (0.5375, 0.352), (0.593, 0.352)]    # 整场界面换牌候选的 Select
 ARENA_SWAP_REFRESH = (0.6075, 0.182)                                       # 换牌面板右上刷新（放弃本次换牌）
+ARENA_CHEST = (0.500, 0.550)                                               # 整场结束：点宝箱打开
+ARENA_BUY_CANCEL = (0.447, 0.560)                                          # 买票弹窗 CANCEL
 # 卡组 2 行 × 6 列。界面顺序 = 内存 PickedCards 顺序（按费用排序；2026-11-09 实战两次换牌都换下了目标牌）
 ARENA_DECK_X = (0.3965, 0.4385, 0.479, 0.520, 0.561, 0.602)
 ARENA_DECK_Y = (0.524, 0.627)

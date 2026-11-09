@@ -18,7 +18,8 @@ DECK = ["Kingpin", "MariaHill", "Scorpion", "EzekielSims", "JeffTheBabyDolphin",
 
 
 def img(name: str) -> Image.Image:
-    return Image.open(FIX / f"{name}.webp")
+    p = FIX / f"{name}.webp"
+    return Image.open(p if p.exists() else FIX / f"{name}.png")
 
 
 @pytest.mark.parametrize("fixture,expected", [
@@ -177,3 +178,25 @@ def test_max_runs_counts_finished_runs():
     st.finished = True
     f._track_run(st)
     assert f.reached_max_runs()
+
+
+def test_run_end_chest_then_claim():
+    assert screens.arena_screen(img("run_end_chest"))[0] == "arena_chest"
+    assert screens.arena_screen(img("run_end_rewards"))[0] == "arena_claim"
+    f, ex = flow("run_end_chest", ArenaState(run_id="r", finished=True, deck=list(DECK)))
+    assert f.step(press_play=False) == "arena_chest" and ex.clicks[0][2] == "打开竞技场宝箱"
+    f, ex = flow("run_end_rewards", ArenaState(run_id="r", finished=True, deck=list(DECK)))
+    assert f.step(press_play=False) == "arena_claim" and "CLAIM" in ex.clicks[0][2]
+
+
+def test_buy_ticket_dialog():
+    assert screens.arena_screen(img("buy_ticket"))[0] == "arena_buy"
+    st = ArenaState(tickets=0)
+    f, ex = flow("buy_ticket", st, buy_ticket_with_gold=True)
+    assert f.step(press_play=True) == "arena_buy_confirm" and "150 金块" in ex.clicks[0][2]
+    f, ex = flow("buy_ticket", st, buy_ticket_with_gold=True)
+    assert f.step(press_play=False) == "arena_buy_cancel" and ex.clicks[0][2] == "取消买票"
+    f, ex = flow("buy_ticket", st, buy_ticket_with_gold=False)
+    with pytest.raises(ArenaStop):
+        f.step(press_play=True)
+    assert ex.clicks[0][2] == "取消买票"

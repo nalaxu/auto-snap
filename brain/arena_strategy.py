@@ -3,7 +3,8 @@
 规则（用户确认）：
 - 赢 c 魔方：积分 +c；积分 ≥ 35 自动结束，按 35 档结算，超出部分计入下一个头像进度。
 - 输 c 魔方且 c < 血量：扣 c 血，继续打。
-- 输 c 魔方且 c ≥ 血量：血量归零、本场结束；超出部分 (c − 血量) 折半从积分没收（取整规则未知，按向上取整）。
+- 输 c 魔方且 c ≥ 血量：血量归零、本场结束；从积分没收 min(超出部分 c − 血量, ⌈c / 2⌉)。
+  实测：剩 1 血输 8 → 没收 4（用户）；剩 6 血输 8 → 没收 2（2026-11-09 对局 9de0c74b）。即「超出部分全额没收，但最多没收赌注的一半」。
 - 撤退同样按当前赌注扣血 / 没收。
 
 价值：终局价值 U(积分) = 宝箱档位价值（阶梯，用户决定以档位为主）+ 头像进度小权重线性项。
@@ -62,6 +63,11 @@ class ArenaModel:
         return cur, nxt
 
 
+def forfeit(c: int, hp: int) -> int:
+    """输 c 魔方、剩 hp 血（c ≥ hp）时没收的积分：超出部分全额，最多赌注的一半（两次实测）。"""
+    return min(c - hp, math.ceil(c / 2))
+
+
 @lru_cache(maxsize=16)
 def _solver(model: ArenaModel):
     @lru_cache(maxsize=None)
@@ -84,7 +90,7 @@ def _solver(model: ArenaModel):
     def after_loss(score: int, hp: int, c: int) -> float:
         if c < hp:
             return value(score, hp - c)
-        return model.terminal(score - math.ceil((c - hp) / 2))   # 血量归零：超出部分折半没收，本场结束
+        return model.terminal(score - forfeit(c, hp))   # 血量归零：本场结束
 
     return value, after_win, after_loss
 
