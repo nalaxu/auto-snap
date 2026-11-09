@@ -84,14 +84,27 @@
           "Warpath",
           "Wolverine"
         ]
+      },
+      {
+        "game_id": "3774ec02",
+        "date": "2026-11-09",
+        "result": "loss",
+        "cards": [
+          "Agony",
+          "Deadpool",
+          "Death",
+          "Killmonger",
+          "Wolverine",
+          "X23"
+        ]
       }
     ],
     "seen_cards": {
       "Carnage": 1,
-      "Deadpool": 1,
-      "Death": 1,
+      "Deadpool": 2,
+      "Death": 2,
       "Jocasta": 1,
-      "Killmonger": 1,
+      "Killmonger": 2,
       "Muse": 1,
       "Venom": 1,
       "WolverineHorseman": 1,
@@ -101,7 +114,9 @@
       "Hobgoblin": 1,
       "Nova": 1,
       "Warpath": 1,
-      "Wolverine": 1
+      "Wolverine": 2,
+      "Agony": 1,
+      "X23": 1
     }
   },
   "discard": {

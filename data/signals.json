@@ -12,6 +12,18 @@
       "polarity": "bad",
       "note": "下一张打到这里的牌会从对手手牌拉一张牌到对手一侧",
       "source": "auto（复核：对对手有利，改为 bad）"
+    },
+    "Vormir": {
+      "scope": "here",
+      "polarity": "bad",
+      "note": "The next card you play here is destroyed.",
+      "source": "auto"
+    },
+    "Morag": {
+      "scope": "global_here",
+      "polarity": "bad",
+      "note": "You can't play your first card here each turn.",
+      "source": "auto"
     }
   },
   "cards": {
