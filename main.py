@@ -144,6 +144,8 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
     from brain import arena_strategy
     from brain.arena_strategy import ArenaContext, ArenaModel
     arena_ctx: dict[str, ArenaContext | None] = {}   # game_id -> 竞技场整场背景
+    from brain.location_rules import daredevil_watch
+    daredevil_seen: set[tuple] = set()   # (game_id, turn)：已等过夜魔侠观察的回合
     if game_mode == "arena":
         source.arena_mode = True
         from brain.llm import make_arena_decider
@@ -461,6 +463,20 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                 except Exception as e:  # noqa: BLE001
                     log_event("activate_hint_error", error=repr(e))
             board.update(snap["game_id"], state)
+            if live and key not in daredevil_seen and daredevil_watch(state):
+                # 夜魔侠：第 5 回合先看对手出牌，观察期间按钮是「WAITING…」，放牌会被拒。等 END TURN 出现后重读局面再决策
+                daredevil_seen.add(key)
+                print("  ◎ 夜魔侠：等待对手第 5 回合出牌展示完再出牌")
+                log_event("daredevil_wait")
+                end = time.time() + 45
+                while time.time() < end:
+                    check_abort()
+                    m = ex.screen()
+                    if m and m.name == "end_turn":
+                        break
+                    time.sleep(0.5)
+                time.sleep(0.5)
+                continue
             if state.board_notes:
                 print("  场上要点：\n    " + "\n    ".join(state.board_notes))
             bus.set_phase("in_game")

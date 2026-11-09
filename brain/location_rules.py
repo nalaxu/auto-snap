@@ -118,13 +118,35 @@ def self_moveable_text(ability: str) -> bool:
     return bool(re.search(r"(?:^|[.:;]\s*)moveable\b", head.strip()))
 
 
+def _norm(s: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", s.lower())
+
+
+def granted_movers(state: GameState) -> set[str]:
+    """我方已揭示的场上牌通过 Ongoing 赋予移动能力的牌 id：如 Sam Wilson「Ongoing: You can move Cap's Shield.」。
+    2026-11-09 实战：Cap's Shield 每回合都能移（移到 Cap 所在地点 +2），程序之前不认识，一次都没移。"""
+    db = knowledge.default_db()
+    names = {_norm(v.get("name") or k): k for k, v in db.cards.items()}
+    names.update({_norm(k): k for k in db.cards})
+    out: set[str] = set()
+    for loc in state.locations:
+        for c in loc.my_cards:
+            if c.turn_played is not None and c.turn_played >= state.turn:
+                continue
+            for m in re.finditer(r"you can move ([^.]+?)\.", db.ability(c.id) or "", re.I):
+                cid = names.get(_norm(m.group(1)))
+                if cid:
+                    out.add(cid)
+    return out
+
+
 def move_targets(state: GameState, card: Card, from_idx: int) -> list[int]:
     """我方场上牌本回合可以移到哪些地点：卡牌自带 Moveable，或目标场地本回合允许移入（如 New York 第 6 回合）。
     本回合刚打出的牌（还没揭示）不能移动；目标要有空位。"""
     if card.turn_played is None or card.turn_played >= state.turn:
         return []
     db = knowledge.default_db()
-    self_moveable = self_moveable_text(db.ability(card.id) or "")
+    self_moveable = self_moveable_text(db.ability(card.id) or "") or card.id in granted_movers(state)
     out = []
     for loc in state.locations:
         if loc.idx == from_idx or loc.my_slots_free <= 0:
@@ -136,3 +158,11 @@ def move_targets(state: GameState, card: Card, from_idx: int) -> list[int]:
         if ok:
             out.append(loc.idx)
     return out
+
+
+def daredevil_watch(state: GameState) -> bool:
+    """我方有已揭示的 Daredevil（夜魔侠）且现在是第 5 回合：要先等对手出牌展示完（按钮显示 WAITING 时放牌会被拒）。"""
+    if state.turn != 5:
+        return False
+    return any(c.id.startswith("Daredevil") and c.turn_played is not None and c.turn_played < 5
+               for loc in state.locations for c in loc.my_cards)

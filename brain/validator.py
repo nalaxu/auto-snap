@@ -17,6 +17,26 @@ def validate(state: GameState, decision: TurnDecision) -> list[str]:
     slots = {loc.idx: loc.my_slots_free for loc in state.locations}
     playable = {loc.idx: loc.playable for loc in state.locations}
 
+    # 执行顺序 激活 → 移动 → 出牌：先校验移动并更新空位（移走的牌空出格子，本回合可以出牌）
+    from .location_rules import move_targets
+    for mv in decision.moves:
+        if not 0 <= mv.from_location < len(state.locations):
+            errors.append(f"移动 {mv.card}：地点{mv.from_location} 不存在")
+            continue
+        loc = state.locations[mv.from_location]
+        card = next((c for c in loc.my_cards if c.id == mv.card), None)
+        if card is None:
+            errors.append(f"移动 {mv.card}：地点{mv.from_location} 没有这张我方牌")
+            continue
+        if mv.to_location not in move_targets(state, card, mv.from_location):
+            errors.append(f"移动 {mv.card}：本回合不能从地点{mv.from_location} 移到地点{mv.to_location}")
+            continue
+        if slots.get(mv.to_location, 0) <= 0:
+            errors.append(f"移动 {mv.card}：地点{mv.to_location} 已满")
+            continue
+        slots[mv.from_location] += 1
+        slots[mv.to_location] -= 1
+
     for i, act in enumerate(decision.actions):
         if act.card not in copies:
             errors.append(f"动作{i}: 手牌中没有 {act.card}")
@@ -52,15 +72,6 @@ def validate(state: GameState, decision: TurnDecision) -> list[str]:
     for a in decision.activate:
         if (a.card, a.location) not in avail:
             errors.append(f"激活 {a.card}@地点{a.location} 不可用（不是我方场上可激活的牌、本回合刚打出或已激活过）")
-    for mv in decision.moves:
-        loc = state.locations[mv.from_location]
-        card = next((c for c in loc.my_cards if c.id == mv.card), None)
-        if card is None:
-            errors.append(f"移动 {mv.card}：地点{mv.from_location} 没有这张我方牌")
-            continue
-        from .location_rules import move_targets
-        if mv.to_location not in move_targets(state, card, mv.from_location):
-            errors.append(f"移动 {mv.card}：本回合不能从地点{mv.from_location} 移到地点{mv.to_location}")
     return errors
 
 

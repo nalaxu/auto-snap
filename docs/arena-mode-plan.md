@@ -243,6 +243,16 @@
   `ArenaFlow` 自动点开宝箱、领取。
 - 修复：Aunt May「Quickdraw: Moveable once」没触发时不能移动，`location_rules.self_moveable_text()` 只认句首的 Moveable 关键词。
 
+### 第二场实战反馈修复（2026-11-09，用户观察）
+
+1. **Cap's Shield 不移动**：移动能力来自 Sam Wilson「Ongoing: You can move Cap's Shield.」（其他牌赋予），
+   `location_rules.granted_movers()` 解析「You can move <牌名>」，`move_targets` 认这类赋予的移动（Shield 移到 Cap 所在地点 +2）。
+2. **移走后的空位没利用**：校验器原先在移动前算空位，「先移走 Shield 再把 Odin 打进满员的左路」被判已满。
+   现按执行顺序先校验移动并更新空位；提示词说明移走的格子本回合可以出牌。
+3. **夜魔侠第 5 回合观察**：观察期间按钮是「WAITING… 5/6」，放牌会被拒。我方有已揭示的 Daredevil 时，第 5 回合先等 END TURN 出现，
+   再重读局面（对手本回合出牌已可见）后决策（`location_rules.daredevil_watch()` + `main.py`）。
+4. 后期回合大模型截止 35s → 50s（三次 T6 超时被规则 AI 接手）。
+
 ## M5 面板
 
 - 出征准备：模式（排位 / 竞技场）、「门票不足时用金块购买」勾选框、场数。

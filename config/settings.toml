@@ -86,7 +86,7 @@ effort_timed = "low"          # 有回合计时的对局：实测 sol low 中位
 verbosity = "low"             # 实测（tools/bench_decision.py，18 回合）：中位 7.9→6.6s、p90 14.6→11.6s，决策质量不变
 deadline_s = 40               # 无计时：最多等 40s
 deadline_timed_s = 25         # 有计时 T1-T4：回合 33–57s，回合计时预算（剩余 − 7s）兜底；16s 时模型常超时被规则 AI 接手
-deadline_late_s = 35          # 有计时 T5 起：实战 T5/T6 回合 66–85s，且回合计时预算（剩余 − 7s）会再收紧；离线实测后期 20–25s 常见
+deadline_late_s = 50          # 有计时 T5 起：实战 T5/T6 回合 66–85s，回合计时预算（剩余 − 7s）兜底；2026-11-09 竞技场 T6 三次超 35s 被规则 AI 接手（47s / 60s），放宽到 50s
 late_from_turn = 5
 # 读到回合倒计时（内存 TurnTimer）时：大模型截止 = min(上面的截止, 剩余 − timer_reserve_s)；
 # 预算 < min_llm_s 直接用规则 AI（上回合没出牌时下回合时间会极短，见 2026-11-07 b03082ae）
