@@ -23,8 +23,8 @@ def test_loss_rules_hp_then_halved_overflow():
     assert loss_value(M, 4, 6, 4) == pytest.approx(value(M, 4, 2))
     # 血量恰好扣到 0：本场结束，不没收
     assert loss_value(M, 12, 4, 4) == pytest.approx(M.terminal(12))
-    # 剩 1 血输 8：超出 7，最多没收赌注一半 4（用户例子：扣 4 分）
-    assert loss_value(M, 12, 1, 8) == pytest.approx(M.terminal(8))
+    # 剩 1 血输 8：超出 7 全额没收（实测对局 6961a4a4：积分 12 → 5）
+    assert loss_value(M, 12, 1, 8) == pytest.approx(M.terminal(5))
     # 剩 6 血输 8：超出 2，全额没收 2（实测对局 9de0c74b：积分 10 → 8）
     assert loss_value(M, 10, 6, 8) == pytest.approx(M.terminal(8))
 
@@ -34,10 +34,12 @@ def test_win_reaching_cap_ends_run():
 
 
 def test_low_hp_makes_snap_cheaper():
-    full = ArenaContext(score=4, hp=10).breakeven(4, 8)
-    low = ArenaContext(score=4, hp=1).breakeven(4, 8)
+    full = ArenaContext(score=4, hp=10).breakeven(2, 4)
+    low = ArenaContext(score=4, hp=1).breakeven(2, 4)
     assert low < full
-    assert low == pytest.approx(M.snap_floor)     # 绝境：门槛降到下限
+    assert low == pytest.approx(M.snap_floor)     # 绝境且积分少（没什么可被没收）：门槛降到下限
+    # 积分多时超额全额没收很疼：剩 1 血、12 分时 2→4 的门槛反而高
+    assert ArenaContext(score=12, hp=1).breakeven(2, 4) > full
 
 
 def test_tier_awareness_near_threshold():

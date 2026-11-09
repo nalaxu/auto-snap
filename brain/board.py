@@ -156,4 +156,36 @@ def _actionable_notes(state: GameState, db: knowledge.GameDB) -> list[str]:
                 moves.setdefault(to, []).append(f"{c.id}@地点{loc.idx}")
     for to, cards in moves.items():
         out.append(f"【可移动·本回合】可把我方牌移到 {_where(to, state.locations[to].name)}：{', '.join(cards)}（写进 moves）")
+    out += _move_benefit_notes(state, db)
+    return out
+
+
+# 「移动时触发」：when/after … moves|moved、moved this turn、moves here/to；不含「move it」这类强制移动（如 Spider Island）
+_MOVE_TRIGGER = re.compile(r"\b(?:when|after|each time)\b[^.]*\bmove[sd]\b|\bmoved this turn\b|\bmoves (?:here|to)\b", re.I)
+
+
+def _move_benefit_notes(state: GameState, db: knowledge.GameDB) -> list[str]:
+    """可移动的牌，如果移动本身有收益（牌面 / 目标场地 / 我方其他场上牌写着「移动时」加成），提示每回合都移、把收益叠满。
+    用户经验（2026-11-09）：Cap's Shield 每回合都能移，移到 Cap 所在地点 Cap +2，能移就要反复移。"""
+    from .location_rules import move_targets
+
+    out = []
+    watchers = [(c.id, db.ability(c.id)) for l in state.locations for c in l.my_cards
+                if _MOVE_TRIGGER.search(db.ability(c.id) or "")]
+    for loc in state.locations:
+        for c in loc.my_cards:
+            targets = move_targets(state, c, loc.idx)
+            if not targets:
+                continue
+            gains = []
+            if _MOVE_TRIGGER.search(db.ability(c.id) or ""):
+                gains.append(f"牌面「{db.ability(c.id)}」")
+            for to in targets:
+                eff = state.locations[to].effect or (db.location_effect(state.locations[to].name) if state.locations[to].name else "")
+                if eff and _MOVE_TRIGGER.search(eff):
+                    gains.append(f"{_where(to, state.locations[to].name)}「{eff}」")
+            gains += [f"{wid}「{ab}」" for wid, ab in watchers if wid != c.id]
+            if gains:
+                out.append(f"【移动收益】{c.id}@地点{loc.idx} 移动会触发：{'；'.join(gains)}。能移就移、每回合都移，把收益叠满"
+                           "（只在移到某地点才触发的，交替移开 / 移回）")
     return out

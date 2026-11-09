@@ -24,8 +24,8 @@ def st(**kw) -> ArenaState:
 
 
 def test_game_record_forfeit():
-    rec = game_record(st(score=12, hp=1), st(score=8, hp=0, games=3), "loss", 8)
-    assert rec["overflow"] == 7 and rec["forfeit"] == 4
+    rec = game_record(st(score=12, hp=1), st(score=5, hp=0, games=3), "loss", 8)
+    assert rec["overflow"] == 7 and rec["forfeit"] == 7
     rec = game_record(st(score=4, hp=10), st(score=4, hp=6, games=3), "loss", 4)
     assert rec["forfeit"] is None and rec["overflow"] is None
 

@@ -65,3 +65,14 @@ def test_daredevil_watch_only_turn5_revealed():
     st.turn = 5
     st.locations[1].my_cards[0].turn_played = 5      # 本回合才打出：不触发
     assert not daredevil_watch(st)
+
+
+def test_move_benefit_note_for_caps_shield():
+    from brain.board import _actionable_notes
+    from brain.knowledge import default_db
+
+    st = kunlun_t6()
+    st.locations[0].my_cards.pop(0)          # 左路留个空位，Shield 也能移回
+    notes = [n for n in _actionable_notes(st, default_db()) if n.startswith("【移动收益】")]
+    assert notes and "CapsShield" in notes[0] and "Cap +2" in notes[0] and "每回合都移" in notes[0]
+    assert not any("Wolverine@" in n for n in notes)
