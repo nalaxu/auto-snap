@@ -23,6 +23,12 @@ from .memory.snap import NotInGame, SnapMemoryReader, to_game_state
 
 log = logging.getLogger(__name__)
 
+ARENA_LEAGUE_ID = 10052   # Game.LeagueDefId 枚举值 = NetEaseArena（2026-11-09 实测；排位 / 新手局不同）
+
+
+def is_arena_game(snap: dict | None) -> bool:
+    return bool(snap) and snap.get("league_id") == ARENA_LEAGUE_ID
+
 
 class MemoryStateSource:
     def __init__(self, client="SnapCN.exe", reattach_cooldown_s: float = 15.0):
@@ -38,6 +44,8 @@ class MemoryStateSource:
         self.deck: list[str] = []
         self.last_snapshot: dict | None = None
         self.gate = TurnGate()
+        self._arena = None
+        self.arena_mode = False   # main.auto --game-mode arena 时置 True
 
     # ------------------------------------------------------------ 连接管理
     def _ensure_reader(self) -> SnapMemoryReader | None:
@@ -80,10 +88,29 @@ class MemoryStateSource:
             return None
         if snap["game_id"] != self._deck_game_id:  # 新对局：重新读取当前卡组
             self._deck_game_id = snap["game_id"]
-            self.deck_name, self.deck = load_current_deck(self.states_dir) if self.states_dir else load_current_deck()
+            # 竞技场局：LeagueDefId 识别；竞技场模式下（arena_mode）兜底——整场进行中开的局都按竞技卡组
+            arena = self.arena_state() if (is_arena_game(snap) or self.arena_mode) else None
+            if arena and len(arena.deck) == arena.config.deck_size:   # 竞技场：卡组来自本场组卡结果
+                self.deck_name, self.deck = "竞技卡组", list(arena.deck)
+            else:
+                self.deck_name, self.deck = load_current_deck(self.states_dir) if self.states_dir else load_current_deck()
             log.info("新对局 %s，卡组「%s」%d 张", snap["game_id"][:8], self.deck_name, len(self.deck))
         self.last_snapshot = snap
         return snap
+
+    def arena_state(self):
+        """竞技场状态（perception.arena.ArenaState）；没附加 / 竞技场界面从未打开过返回 None。"""
+        reader = self._ensure_reader()
+        if not reader:
+            return None
+        try:
+            if self._arena is None or self._arena.p is not reader.p:
+                from .arena import ArenaReader
+                self._arena = ArenaReader(reader)
+            return self._arena.read()
+        except Exception as e:  # noqa: BLE001
+            log.warning("读取竞技场状态失败：%r", e)
+            return None
 
     def tutorial_running(self) -> bool:
         reader = self._ensure_reader()

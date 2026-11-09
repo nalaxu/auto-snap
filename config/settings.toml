@@ -3,6 +3,7 @@
 # 也可用命令行 --client 或环境变量 SNAP_CLIENT 临时切换；python main.py clients 查看各客户端状态
 client = "cn_official"
 default_client = "cn_official"   # auto 且都没运行时用这个
+mode = "ranked"                  # auto 模式默认玩法：ranked（排位）| arena（国服竞技场）；命令行 --game-mode 覆盖
 
 # 两个国服版进程都叫 SnapCN.exe：用安装目录里的标志文件区分（Steam 渠道带 NtUniSdkSteam.dll）。
 # 也可以填 install_dir 精确指定安装目录。templates_dir 放该客户端专用的界面模板，缺的按钮回落到 data/templates/ui。
@@ -35,6 +36,11 @@ states_subdir = "Standalone/States/nvprod"
 templates_dir = "data/templates/ui_global"
 region = "global"
 verified = false
+
+[arena]                       # 国服竞技场（Game Modes → Arena Mode），见 docs/arena-mode-plan.md
+buy_ticket_with_gold = false  # 门票不足时用金块购买（150 金块 / 张）；有门票时总是先用门票
+max_runs = 0                  # 打完 N 场竞技后停止（0 = 不限）；命令行 --max-runs 覆盖
+swap_threshold = 1.0          # 换牌：最佳候选比卡组最弱一张提升超过该值才换（M2 前为规则占位打分）
 
 [display]
 resolution = [1920, 1080]     # 建议固定窗口化分辨率

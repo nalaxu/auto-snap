@@ -411,6 +411,8 @@ class SnapMemoryReader:
             "game_id": self.game_id,
             "turn": turn,
             "total_turns": il.get_int(g, "TotalTurns"),
+            # LeagueDefId 在内存里是枚举值（结算文件里才是字符串）：竞技场 "NetEaseArena" = 10052（2026-11-09 实测）
+            "league_id": il.get_int(g, "LeagueDefId"),
             "cube_value": il.get_int(g, "CubeValue"),
             "timer": self.turn_timer() if not self._finished(g) else None,
             "read_at": time.monotonic(),

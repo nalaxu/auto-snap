@@ -52,6 +52,21 @@ def hint_to_slot(hint: tuple[float, float], cards: list[tuple[int, int]], tol: f
     return best
 
 
+# ---------------------------------------------------------------- 竞技场（tests/fixtures/arena/，2000×1125）
+ARENA_DRAFT_SELECT = [(0.4215, 0.391), (0.500, 0.391), (0.5785, 0.391)]   # 组卡三张候选的 Select
+ARENA_SWAP_SELECT = [(0.4825, 0.352), (0.5375, 0.352), (0.593, 0.352)]    # 整场界面换牌候选的 Select
+ARENA_SWAP_REFRESH = (0.6075, 0.182)                                       # 换牌面板右上刷新（放弃本次换牌）
+# 卡组 2 行 × 6 列。界面顺序 = 内存 PickedCards 顺序（按费用排序；2026-11-09 实战两次换牌都换下了目标牌）
+ARENA_DECK_X = (0.3965, 0.4385, 0.479, 0.520, 0.561, 0.602)
+ARENA_DECK_Y = (0.524, 0.627)
+
+
+def arena_deck_pos(index: int) -> tuple[float, float]:
+    if not 0 <= index < 12:
+        raise IndexError(f"arena deck index {index} out of range")
+    return (ARENA_DECK_X[index % 6], ARENA_DECK_Y[index // 6])
+
+
 HAND_CENTER_X = 0.4963
 HAND_SPACING = 0.0731
 HAND_Y = 0.876

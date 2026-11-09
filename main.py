@@ -105,7 +105,7 @@ def observe(settings: dict, interval: float = 0.5, client=None) -> None:
 
 
 def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = False, max_games: int = 0,
-         client=None, events: bool = False) -> None:
+         client=None, events: bool = False, game_mode: str = "ranked", max_runs: int | None = None) -> None:
     """自动对局：感知 -> 决策 -> 执行 -> 结束回合；对局外按界面识别处理 结算(Collect Rewards) -> 奖励(Next) -> 主界面(Play)。
 
     events=True：向 stdout 输出结构化事件并从 stdin 接收控制命令（外部面板 ui/server 启动时使用，见 gamelog/live.py）。
@@ -114,6 +114,7 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
     from brain.knowledge import default_db
     from brain.validator import validate
     from executor.actions import ActionFailed, Executor, GameOver, PlayRejected
+    from executor.arena_flow import ArenaStop
     from executor.mouse import Aborted, check_abort, request_abort
     from gamelog.live import Control, LiveBus, decision_payload, state_payload
     from perception import make_state_source
@@ -138,6 +139,16 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
     board = BoardTracker()                 # 场上要点（消息栈）：每回合重建
     decide, decider = make_decider(settings)
     ex = Executor(source.snapshot, client, dry_run=not live)
+    arena_flow = None
+    from perception.memory_source import is_arena_game
+    if game_mode == "arena":
+        source.arena_mode = True
+        from executor.arena_flow import ArenaFlow, ArenaOptions
+        acfg = settings.get("arena", {})
+        arena_flow = ArenaFlow(ex, source.arena_state, ArenaOptions(
+            buy_ticket_with_gold=bool(acfg.get("buy_ticket_with_gold", False)),
+            max_runs=int(max_runs if max_runs is not None else acfg.get("max_runs", 0)),
+            swap_threshold=float(acfg.get("swap_threshold", 1.0))), emit=bus.emit, live=live)
     snap_enabled = bool(settings.get("brain", {}).get("snap", True))
     activated_cards: set[tuple] = set()
     opp_seen: dict[str, list[str]] = {}    # game_id -> 对手揭示过的牌（卡组原型识别 + 赛后样本）
@@ -253,8 +264,21 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
         return m.name
 
     def back_to_menu(timeout_s: float = 90) -> None:
-        """对局结束后：Collect Rewards -> Next，直到回到主界面（不点 Play）。"""
+        """对局结束后：Collect Rewards -> Next，直到回到主界面（不点 Play）；竞技场模式回到竞技场界面。"""
         end = time.time() + timeout_s
+        if arena_flow is not None:
+            while time.time() < end:
+                try:
+                    name = arena_flow.step(press_play=False)
+                except ActionFailed as e:
+                    print(f"  ⚠ 界面操作失败：{e}")
+                    name = None
+                if name in ("arena_board", "arena_ready", "arena_landing", "main_menu"):
+                    print("  已回到竞技场界面")
+                    return
+                time.sleep(1)
+            print("  ⚠ 未能回到竞技场界面（可能出现了未识别的弹窗），请手动处理")
+            return
         while time.time() < end:
             try:
                 screen_name = menu_step(press_play=False)
@@ -280,7 +304,7 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
              decider="llm" if decider is not None else "rule_based",
              model=f"{decider.task.model}" if decider is not None else "规则 AI",
              effort=(decider.effort_timed or decider.task.effort) if decider is not None else None,
-             max_games=max_games, max_turns=max_turns, snap=snap_enabled, retreat=retreat_enabled)
+             max_games=max_games, max_turns=max_turns, snap=snap_enabled, retreat=retreat_enabled, game_mode=game_mode)
     announced_games: set[str] = set()
 
     def log_event(kind: str, **data) -> None:
@@ -296,7 +320,7 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                         "bias": info.bias_at(st.turn, st.max_turn) if info else 0,
                         "source": info.source if info else None, "effect": info.effect if info else None})
         return out
-    if live and want_more() and not skip_current:
+    if live and want_more() and not skip_current and arena_flow is None:
         # 先点 PLAY（只需截图识别，不读内存），附加进程 / 扫描内存放到匹配等待期间做
         try:
             m0 = ex.screen()
@@ -327,8 +351,10 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                 from brain.calibration import default_calibrator
                 default_calibrator().refresh()   # 新对局结果进入胜率校准样本
                 final_opp = [c.get("id") for l in snap["locations"] for c in l["opp_cards"] if c.get("id")]
-                arche = decks.default_kb().record_game(snap["game_id"], opp_seen.get(snap["game_id"], []) + final_opp,
-                                                       summary.get("result"))
+                arche = None
+                if not is_arena_game(snap) and arena_flow is None:   # 竞技场对手是随机组卡，不进对手原型库
+                    arche = decks.default_kb().record_game(snap["game_id"], opp_seen.get(snap["game_id"], []) + final_opp,
+                                                           summary.get("result"))
                 if arche:
                     print(f"  对手卡组：{decks.default_kb().opponents[arche].get('name', arche)}（已记入样本）")
                 print(f"对局 {snap['game_id'][:8]} 结束：{summary.get('result')}（场地 {summary.get('my_locations_won')}:"
@@ -340,6 +366,10 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                 bus.set_phase("menu")
                 if live:
                     back_to_menu()
+                if arena_flow is not None and arena_flow.reached_max_runs():
+                    print("按 --max-runs 停止")
+                    stop_reason = f"已打完 {arena_flow.opt.max_runs} 场竞技"
+                    return
                 if reached_max():
                     print("按 --max-games 停止")
                     stop_reason = f"已打完 {max_games} 局"
@@ -362,7 +392,14 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                 if live and not in_game and time.time() - last_menu_check > 2:
                     last_menu_check = time.time()
                     try:
-                        menu_step(press_play=want_more())
+                        if arena_flow is not None:
+                            arena_flow.step(press_play=want_more() and not arena_flow.reached_max_runs())
+                            if arena_flow.reached_max_runs():
+                                print("按 --max-runs 停止")
+                                stop_reason = f"已打完 {arena_flow.opt.max_runs} 场竞技"
+                                return
+                        else:
+                            menu_step(press_play=want_more())
                     except ActionFailed as e:
                         print(f"  ⚠ 界面操作失败：{e}（稍后重试）")
                         last_menu_check = time.time() + 5
@@ -569,6 +606,9 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                 print(f"已执行 {turns} 个回合，按 --max-turns 停止")
                 stop_reason = f"已执行 {turns} 个回合"
                 return
+    except ArenaStop as e:
+        stop_reason = f"竞技场：{e}"
+        print(f"  ■ {stop_reason}")
     except Aborted as e:
         stop_reason = str(e) or "F8 中止"
         print(f"{stop_reason}：已中止")
@@ -592,6 +632,8 @@ def main() -> None:
     ap.add_argument("--live", action="store_true", help="auto 模式下真正操作鼠标（默认演练）")
     ap.add_argument("--max-turns", type=int, default=0, help="auto 模式执行 N 个回合后停止（0 = 不限）")
     ap.add_argument("--max-games", type=int, default=0, help="auto 模式打完 N 局后停止（0 = 不限）")
+    ap.add_argument("--game-mode", choices=["ranked", "arena"], help="auto 模式：排位（默认）或竞技场（覆盖 config [game].mode）")
+    ap.add_argument("--max-runs", type=int, help="竞技场：打完 N 场竞技后停止（覆盖 config [arena].max_runs，0 = 不限）")
     ap.add_argument("--skip-current", action="store_true", help="auto 模式跳过当前回合，从下一回合开始接管")
     ap.add_argument("--decider", choices=["llm", "rule_based"], help="覆盖 config 中的 brain.decider")
     ap.add_argument("--events", action="store_true", help="auto 模式输出结构化事件、从 stdin 接收控制命令（外部面板使用）")
@@ -613,7 +655,8 @@ def main() -> None:
     client = select_client(settings, args.client)
     if args.mode == "auto":
         auto(settings, live=args.live, max_turns=args.max_turns, skip_current=args.skip_current, max_games=args.max_games,
-             client=client, events=args.events)
+             client=client, events=args.events,
+             game_mode=args.game_mode or settings.get("game", {}).get("mode", "ranked"), max_runs=args.max_runs)
     else:
         observe(settings, client=client)
 

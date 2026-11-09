@@ -91,7 +91,7 @@
 | `ArenaDeckId` | 卡池定义 | ArenaDeckS28 |
 
   卡片是 `ArenaDealCard.Card.CardDefId`，与国服卡牌库 / 对局内存的 CardDefId 一致，直接关联。
-- 对局中：`Game.LeagueDefId == "NetEaseArena"` 识别竞技场局（现有 `find_games` 已读 `league`）；
+- 对局中：`Game.LeagueDefId`（枚举值）== 10052 识别竞技场局；
   每个玩家的 `LimitedEventMatchInfo.ArenaModeGameInfo.HealthPoint` 是该玩家血量（对手血量也在这里，待在对局中验证）。
 - 状态文件：没有竞技场专用文件；`GameState.json` 只在结算后写入上一局（含 `LeagueDefId`、`FinalCubeValue`、双方 `ArenaModeGameInfo`），可作赛后核对。
 - 待验证：组卡进行中（第 n/12 轮）的读数、血量扣减与折半没收后的数值变化。
@@ -116,6 +116,25 @@
 - 设置 `[arena]`：`buy_ticket_with_gold = false`、`max_runs`、`concede_run = false`（主动结束整场，默认不用）。
 - **对局中不能重启游戏 / 退出**（会按撤退扣血）：竞技场模式下，现有异常恢复只在对局外执行；
   对局中出问题只做「等待 + 截图告警」，不重启。
+
+### M1 实现状态（2026-11-09）
+
+- `perception/arena.py`：`ArenaReader` / `ArenaState`（phase none/draft/run、换牌进度、规则参数），管理器地址按进程缓存（首次约 8s，之后 2ms）。
+- `executor/screens.py`：`arena_screen()` + 5 个模板（`arena_header` / `arena_play` / `arena_tickets` / `game_modes` / `modes_arena`）。
+- `executor/arena_flow.py`：`ArenaFlow.step()`——主界面 → Game Modes → Arena → 门票开场 → 组卡（内存确认卡组 +1）→
+  换牌（长按卡组牌 + Select，或刷新放弃；内存确认 DataVersion 变化）→ PLAY；单局结算 Collect Rewards / Next。
+  未识别弹窗（买票、整场结算）截图后 `ArenaStop` 停下。
+- `brain/arena_draft.py`：组卡 / 换牌**规则占位**（身材 + 低费曲线），M2 替换。
+- `main.py auto --game-mode arena [--max-runs N]`；`[arena]` 设置：`buy_ticket_with_gold`、`max_runs`、`swap_threshold`。
+- 竞技场对局：卡组取本场 `PickedCards`；不写入对手原型库。对局内 Snap / 撤退暂时沿用排位逻辑（M3 改）。
+- 实机演练（不动鼠标）：在整场界面识别为 `arena_board`，读数正确，下一步会点竞技场 PLAY。
+- **实战 1 局（2026-11-09，对局 26ab287c）**：竞技场 PLAY → 匹配 → 6 回合 → Collect Rewards / Next → 回到竞技场全流程跑通；
+  输 4 魔方，血量 10 → 6，获得 2 次换牌，两次换牌（长按卡组牌 + Select）都换下了目标牌。
+  - 发现并修复：`Game.LeagueDefId` 在内存里是**枚举值**，竞技场 = 10052（结算文件里才是字符串 "NetEaseArena"），
+    导致这局沿用了排位卡组 loki 推算剩余牌库，且对手卡组被写进 `unmatched.jsonl`（已删除）。现按 `league_id == 10052` 识别，
+    竞技场模式下另有兜底：整场进行中开的局一律用竞技卡组。
+  - 卡组列表按费用排序，换进来的牌会插到对应费用位置（界面顺序与内存一致）；换牌核对改为按张数。
+- 待实机验证：组卡点击（下一场）；买票弹窗、整场结算界面（遇到时截图）。
 
 ## M2 组卡与换牌决策
 

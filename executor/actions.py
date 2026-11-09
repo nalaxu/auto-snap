@@ -155,6 +155,19 @@ class Executor:
         time.sleep(0.1 if was_fg else 0.6)
         mouse.click(pos)
 
+    def press_rel(self, rel: tuple[float, float], what: str = "", hold_s: float = 1.0) -> None:
+        """长按（竞技场换牌时选中卡组里的牌）。"""
+        assert self.rect is not None
+        pos = self.rect.to_px(*rel)
+        log.info("长按 %s %s %.1fs", what, pos, hold_s)
+        if self.dry_run:
+            return
+        was_fg = is_foreground(self.hwnd)
+        if not wait_foreground(self.hwnd):
+            raise ActionFailed("游戏窗口未能切到前台")
+        time.sleep(0.1 if was_fg else 0.6)
+        mouse.press(pos, hold_s=hold_s)
+
     # ------------------------------------------------------------ 动作
     def play(self, card_id: str, location: int) -> None:
         s = _live(self.snapshot())

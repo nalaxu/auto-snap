@@ -167,6 +167,51 @@ def retreat_later(img) -> Match:
     return Match("retreat_later", float(score), ((x0 + loc[0] + tw / 2) / W, (y0 + loc[1] + th / 2) / H))
 
 
+# ---------------------------------------------------------------- 竞技场（国服 Arena Mode）
+# 模板取自 tests/fixtures/arena/（2000×1125）。交叉验证：自身 ≥ 0.92，其他界面 ≤ 0.62。
+# 不放进 ROIS：竞技场弹窗左下都有「Esc Close」，current() 会把它们认成 card_detail，竞技场流程先用 arena_screen() 判断。
+ARENA_ROIS = {
+    "arena_header": (0.35, 0.00, 0.65, 0.09),    # 竞技场弹窗标题「ARENA MODE」（主页 / 组卡 / 整场进行中）
+    "arena_play": (0.38, 0.70, 0.62, 0.92),      # 组卡 / 整场界面的 PLAY
+    "arena_tickets": (0.38, 0.75, 0.62, 0.90),   # 竞技场主页「Arena Tickets」开始按钮（没票时点击弹买票）
+    "game_modes": (0.25, 0.06, 0.55, 0.16),      # 主界面「GAME MODES」
+    "modes_arena": (0.35, 0.10, 0.70, 0.30),     # 模式弹窗里的「ARENA MODE」入口
+}
+
+
+def arena_detect(img) -> dict[str, Match]:
+    arr = _board(img)
+    H, W = arr.shape[:2]
+    out: dict[str, Match] = {}
+    for name, (x0, y0, x1, y1) in ARENA_ROIS.items():
+        t = _template(name)
+        if t is None:
+            continue
+        roi = arr[int(y0 * H):int(y1 * H), int(x0 * W):int(x1 * W)]
+        _, score, _, loc = cv2.minMaxLoc(cv2.matchTemplate(roi, t, cv2.TM_CCOEFF_NORMED))
+        out[name] = Match(name, float(score), ((int(x0 * W) + loc[0] + t.shape[1] / 2) / W,
+                                               (int(y0 * H) + loc[1] + t.shape[0] / 2) / H))
+    return out
+
+
+def arena_screen(img) -> tuple[str | None, dict[str, Match]]:
+    """竞技场相关界面：arena_landing（有门票按钮）/ arena_board（组卡或整场，有 PLAY）/ arena_popup（只有标题）/
+    game_modes（模式弹窗）/ main_menu（主界面）；都不是返回 None。同时返回各按钮匹配。"""
+    d = arena_detect(img)
+    ok = {k for k, m in d.items() if m.found}
+    if "arena_header" in ok:
+        if "arena_tickets" in ok:
+            return "arena_landing", d
+        if "arena_play" in ok:
+            return "arena_board", d
+        return "arena_popup", d
+    if "modes_arena" in ok:
+        return "game_modes", d
+    if "game_modes" in ok:
+        return "main_menu", d
+    return None, d
+
+
 BLUR_THRESHOLD = 50.0  # 实测：指引遮罩时棋盘区清晰度 ≈ 2，正常画面 ≥ 867
 
 
