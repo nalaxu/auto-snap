@@ -8,6 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from brain.arena_links import default_links
 from brain.arena_ratings import TAGS, Ratings, card_pool
 from brain.knowledge import default_db
 
@@ -45,7 +46,8 @@ def create_router(path=None) -> APIRouter:
                 continue
             rows.append({"id": cid, "name": name, "cost": c.get("cost"), "power": c.get("power"),
                          "ability": c.get("ability") or "", "rating": e.get("rating"), "tags": e.get("tags") or [],
-                         "note": e.get("note") or "", "source": e.get("source")})
+                         "note": e.get("note") or "", "source": e.get("source"),
+                         "creates": default_links().token_info(cid)})
         rows.sort(key=lambda x: (-(x["rating"] if x["rating"] is not None else -1), x["id"]))
         counts = {"total": len(pool), "rated": len(rt.items),
                   "manual": sum(1 for e in rt.items.values() if e.get("source") == "manual")}

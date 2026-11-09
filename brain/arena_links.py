@@ -66,16 +66,21 @@ class CardLinks:
                         "ability": c.get("ability") or "无能力"})
         return out
 
+    def link_pairs(self, deck: list[str], cid: str) -> list[tuple[str, str]]:
+        """cid 与卡组其他牌的点名联系：[(对方 id, "out" 点名对方 | "in" 被对方点名)]，同一张牌只算一次。"""
+        out: list[tuple[str, str]] = []
+        for d in dict.fromkeys(deck):
+            if d == cid:
+                continue
+            if d in self.reach(cid):
+                out.append((d, "out"))
+            if cid in self.reach(d):
+                out.append((d, "in"))
+        return out
+
     def deck_links(self, deck: list[str], cid: str) -> list[str]:
         """cid 与卡组其他牌的点名联系（双向），用于提示。"""
-        others = [d for d in deck if d != cid]
-        out = []
-        for d in others:
-            if d in self.reach(cid):
-                out.append(f"点名卡组里的 {d}")
-            if cid in self.reach(d):
-                out.append(f"被卡组里的 {d} 点名")
-        return out
+        return [f"点名卡组里的 {d}" if k == "out" else f"被卡组里的 {d} 点名" for d, k in self.link_pairs(deck, cid)]
 
     def linked(self, a: str, b: str) -> bool:
         return a != b and (b in self.reach(a) or a in self.reach(b))

@@ -83,7 +83,13 @@ export type ExecT = {
   error?: string;
 };
 
-export type ArenaCardT = { id: string; name: string; cost: number | null; power: number | null; rating: number | null };
+export type TokenT = { name: string; cost: number | null; power: number | null; ability: string };
+/** 点名联系：out = 这张牌（或其衍生牌）点名对方；in = 被对方点名。 */
+export type CardLinkT = { id: string; name: string; dir: "out" | "in" };
+export type ArenaCardT = {
+  id: string; name: string; cost: number | null; power: number | null; rating: number | null;
+  creates?: TokenT[]; links?: CardLinkT[];
+};
 
 export type ArenaT = {
   run_id?: string;

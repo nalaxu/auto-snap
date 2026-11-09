@@ -275,6 +275,10 @@
 （换下前看它带走的衍生牌、组件、赋予的能力）；规则打分 `synergy` 每个点名联系 +1.0（`SYNERGY_LINK`）；
 `tools/build_arena_ratings.py` 生成评分时也附衍生牌（现有评分表未重跑）。
 
+面板：`arena_state` 的每张卡带 `creates` / `links`（候选按「换进后」算联系）。实时竞技场面板的小卡片上有衍生（✦）/ 联系（🔗）
+标记，悬停看详情；卡组下方「衍生牌与点名联系」分候选 / 本场卡组两块列出。知识库 → 竞技场评分的列表与编辑弹窗显示衍生牌身材和能力。
+浏览器验证：注入测试状态（Sam Wilson / Cannonball / Beta Ray Bill 卡组 + Thor / Spider-Man / Korg 候选）与评分页搜索 Captain。
+
 验证：`tools/arena_draft_trial.py --replay-swaps 6a5974d8` 按记录重放第二场 6 次换牌——前后决策基本一致；
 Sam Wilson → Kate Bishop 这次大模型明确提到放弃「护盾组合」（★6.5 换 ★9），属于看清代价后的取舍，不做硬限制。
 「your Cap」这类昵称不解析，交给大模型看衍生牌文字判断。

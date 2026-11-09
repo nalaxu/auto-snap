@@ -108,3 +108,18 @@ def test_ratings_api_list_and_put(ratings_client):
     assert e == {"rating": 7.5, "tags": ["tech"], "note": "人工", "source": "manual"}
     assert c.put("/api/arena/ratings/Leader", json={"rating": 5, "tags": ["bogus"], "note": ""}).status_code == 400
     assert c.get("/api/arena/ratings", params={"source": "manual"}).json()["matched"] == 1
+
+
+def test_state_payload_creates_and_links():
+    p = state_payload(st(deck=["SamWilson", "MaryJane"], candidates=["SpiderMan", "Korg", "Thor"]))
+    sam = p["deck"][0]
+    assert sam["creates"][0]["name"] == "Cap's Shield" and sam["links"] == []
+    spidey = p["candidates"][0]
+    assert spidey["links"] == [{"id": "MaryJane", "name": "Mary Jane", "dir": "in"}]
+
+
+def test_ratings_api_lists_creates(ratings_client):
+    c, _ = ratings_client
+    rows = c.get("/api/arena/ratings", params={"q": "Cap's Shield"}).json()["rows"]
+    sam = next(r for r in rows if r["id"] == "SamWilson")
+    assert sam["creates"][0]["name"] == "Cap's Shield"

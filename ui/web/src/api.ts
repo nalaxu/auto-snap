@@ -67,6 +67,7 @@ export type ArenaStats = {
 export type RatingRow = {
   id: string; name: string; cost: number | null; power: number | null; ability: string;
   rating: number | null; tags: string[]; note: string; source: "auto" | "manual" | null;
+  creates?: { name: string; cost: number | null; power: number | null; ability: string }[];
 };
 export type RatingsResp = { rows: RatingRow[]; matched: number; counts: { total: number; rated: number; manual: number }; tags: string[] };
 

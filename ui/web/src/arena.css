@@ -21,6 +21,18 @@
 .ar-card .co-s,.ar-card .pw-s{width:20px;height:20px;font-size:14px}
 .ar-name{font-size:12px;white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis}
 .ar-rate{font-family:var(--f-display);font-size:14px;color:var(--gold);padding:0 4px;border:1px solid rgba(255,198,61,.35)}
+.ar-card.linked{border-color:rgba(143,208,255,.45)}
+.ar-ico{font-size:13px;color:#8fd0ff}
+.ar-rel{padding:10px 16px 0}
+.ar-rel-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;padding:5px 0;font-size:12px;border-bottom:1px solid rgba(150,128,255,.08)}
+.ar-rel-row b{font-weight:500;min-width:110px}
+.ar-rel-row .tok,.ar-rel-row .lk{display:inline-flex;align-items:baseline;gap:4px;color:var(--dim);min-width:0}
+.ar-rel-row .tok{color:var(--gold)}
+.ar-rel-row .tok small{color:var(--mute)}
+.ar-rel-row .tok .ab{color:var(--dim);font-size:11.5px}
+.ar-rel-row .lk{color:#8fd0ff}
+.rt-tok{font-size:12px;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rt-tok .t{color:var(--dim)}
 .mode-tag{font-size:10px;padding:1px 6px;margin-left:8px;border:1px solid rgba(143,208,255,.45);color:#8fd0ff;font-style:normal}
 
 /* 战绩：竞技场 */

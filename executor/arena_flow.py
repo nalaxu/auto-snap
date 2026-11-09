@@ -32,21 +32,28 @@ class ArenaOptions:
     swap_threshold: float = 1.0          # 换牌规则兜底的提升阈值
 
 
-def _card(cid: str) -> dict:
+def _card(cid: str, deck: list[str] | None = None) -> dict:
+    """面板卡牌：名字 / 费用 / 战力 / 评分 + 衍生牌（creates）+ 与本场卡组的点名联系（links）。"""
+    from brain.arena_links import default_links
     from brain.arena_ratings import default_ratings
     from brain.knowledge import default_db
 
-    c = default_db().card(cid)
+    db = default_db()
+    c = db.card(cid)
+    lk = default_links()
     return {"id": cid, "name": c.get("name") or cid, "cost": c.get("cost"), "power": c.get("power"),
-            "rating": default_ratings().rating(cid)}
+            "rating": default_ratings().rating(cid), "creates": lk.token_info(cid),
+            "links": [{"id": d, "name": db.card(d).get("name") or d, "dir": k} for d, k in lk.link_pairs(deck or [], cid)]}
 
 
 def state_payload(st: ArenaState) -> dict:
-    """面板用的竞技场状态：数值 + 卡牌（名字 / 费用 / 战力 / 评分）+ 档位进度。"""
+    """面板用的竞技场状态：数值 + 卡牌（名字 / 费用 / 战力 / 评分 / 衍生牌 / 点名联系）+ 档位进度。
+    候选的联系按「换进 / 选进卡组后」算。"""
     from gamelog.arena_stats import TIERS
 
     nxt = next((t for t in TIERS if t > st.score), None)
-    return {**st.summary(), "deck": [_card(c) for c in st.deck], "candidates": [_card(c) for c in st.candidates],
+    return {**st.summary(), "deck": [_card(c, st.deck) for c in st.deck],
+            "candidates": [_card(c, st.deck) for c in st.candidates],
             "max_hp": st.config.max_hp, "max_score": st.config.max_score, "score_per_swap": st.config.score_per_swap,
             "next_tier": nxt, "run_id": st.run_id}
 

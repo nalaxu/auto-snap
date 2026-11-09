@@ -29,6 +29,9 @@ function RatingEditor({ row, tags, onClose, onSaved }: { row: RatingRow; tags: s
     <Modal title={`${row.name}（${row.id}）`} onClose={onClose} wide>
       <div className="rt-edit">
         <div className="ab">{row.cost ?? "?"} 费 {row.power ?? "?"} 力 · {row.ability || "（白板）"}</div>
+        {(row.creates ?? []).map((t) => (
+          <div key={t.name} className="ab rt-tok"><i className="ti ti-sparkles" aria-hidden="true" /> 衍生 {t.name}（{t.cost ?? "?"} 费 {t.power ?? "?"} 力）<span className="t">· {t.ability}</span></div>
+        ))}
         <div className="field">
           <label>竞技场评分：{rating}（1–10，随机组卡环境下的期望强度）</label>
           <input type="range" min={1} max={10} step={0.5} value={rating} onChange={(e) => setRating(Number(e.target.value))} />
@@ -95,6 +98,9 @@ export function Ratings({ toast }: { toast: (m: string) => void }) {
               <span className="nt">{r.note || <span style={{ color: "var(--mute)" }}>（没有要点）</span>}</span>
               <span className="rt-tags">{r.tags.map((t) => <em key={t} className={tagCls(t)}>{tagLabel(t)}</em>)}</span>
               <span className="ab">{r.ability || "（白板）"}</span>
+              {(r.creates ?? []).map((t) => (
+                <span key={t.name} className="rt-tok" title={t.ability}><i className="ti ti-sparkles" aria-hidden="true" /> 衍生 {t.name} {t.cost ?? "?"}/{t.power ?? "?"}<span className="t"> · {t.ability}</span></span>
+              ))}
             </span>
             {r.source === "manual" ? <span className="flag hot">人工</span> : <span />}
           </button>
