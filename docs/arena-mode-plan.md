@@ -156,6 +156,19 @@
   提升超过阈值才换，否则刷新放弃。
 - 组卡结束后生成「本场卡组要点」（曲线、核心牌、出牌思路），对局中代替排位的 `data/decks/mine.json` 注入。
 
+### M2 实现状态（2026-11-09）
+
+- `data/arena/ratings.json` + `brain/arena_ratings.py`：评分表 489 张（国服卡池 = 国服客户端有、国际服资料为已发布可收集），
+  `tools/build_arena_ratings.py` 用 `[llm.tasks.review]`（gpt-6.1-sol high）每批 25 张、并发 4，约 5.5 分钟生成，全部 `source=auto`。
+  分布：1–3 分 93 张、4–6 分 213 张、7–8 分 170 张、9–10 分 13 张。人工复核后改 `manual`（重跑不覆盖）。
+- `brain/arena_draft.py`：规则打分 = 评分 + 曲线（权重随轮次 0.3 → 1.0）+ 配合（needs/enabler 同体系）；
+  换牌枚举「换下 × 换进」，整副卡组得分（评分 + 曲线偏差 + 配合）提升超过 `swap_threshold` 才换。
+- `brain/llm/arena_decider.py`：大模型组卡 / 换牌（`[llm.tasks.arena]`，gpt-6.1-sol medium），提示词只放通用原则，
+  只注入候选与卡组涉及卡的评分 / 标签 / 要点，规则分作参考；失败或越界用规则兜底。`[arena].draft_decider = "llm" | "rule"`。
+- `tools/arena_draft_trial.py`：模拟 12 轮组卡（大模型 vs 规则对照）、`--live-swap` 读当前整场给换牌建议。
+  试跑（seed 7）：12 轮中 10 轮两者一致，大模型在后两轮更看重单卡强度（Elsa、Nebula），两副卡组曲线都贴近目标。
+- 待做：面板里复核评分表（M5）；组卡完成后的「本场卡组要点」注入对局决策（并入 M3）。
+
 ## M3 对局内调整
 
 ### 卡组已知

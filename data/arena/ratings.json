@@ -1,0 +1,4756 @@
+{
+  "_meta": {
+    "doc": "竞技场评分表，见 brain/arena_ratings.py"
+  },
+  "items": {
+    "Leader": {
+      "rating": 8.5,
+      "tags": [
+        "enabler:summon",
+        "standalone"
+      ],
+      "note": "自带六力，复制对手终回合大牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Magneto": {
+      "rating": 8.5,
+      "tags": [
+        "enabler:move",
+        "standalone"
+      ],
+      "note": "高身材兼扰阵，注意拉人后战力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Shocker": {
+      "rating": 4.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "仅能填补曲线，身材收益偏低",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Kingpin": {
+      "rating": 4.5,
+      "tags": [
+        "enabler:debuff",
+        "needs:move",
+        "tech"
+      ],
+      "note": "基础身材普通，收益依赖敌方移动",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "MariaHill": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:lowcost",
+        "standalone"
+      ],
+      "note": "低费补充手牌，有助填补费用曲线",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Isca": {
+      "rating": 8.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "提前投入劣势路，多次翻倍收益高",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "AuntMay": {
+      "rating": 5.5,
+      "tags": [
+        "enabler:buff",
+        "needs:move"
+      ],
+      "note": "基础身材合格，额外收益依赖移动",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Ultron": {
+      "rating": 8.5,
+      "tags": [
+        "enabler:lowcost",
+        "enabler:summon",
+        "standalone"
+      ],
+      "note": "单卡跨路铺场，预留空位收益极高",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Odin": {
+      "rating": 5.5,
+      "tags": [
+        "enabler:onreveal",
+        "needs:onreveal"
+      ],
+      "note": "裸打身材偏低，需优质揭示配合",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Elektra": {
+      "rating": 6.0,
+      "tags": [
+        "tech"
+      ],
+      "note": "低费灵活，但依赖对方一费目标",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Hazmat": {
+      "rating": 3.5,
+      "tags": [
+        "enabler:debuff"
+      ],
+      "note": "无配合时双方同减，难获稳定收益",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Wiccan": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:energy",
+        "enabler:ramp"
+      ],
+      "note": "满费曲线难保证，触发后收益很高",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "CosmicGhostRider": {
+      "rating": 5.5,
+      "tags": [
+        "tech"
+      ],
+      "note": "前排消文有针对性，身材偏低",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Cosmo": {
+      "rating": 6.0,
+      "tags": [
+        "tech"
+      ],
+      "note": "封锁揭示，也会限制己方出牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Crossbones": {
+      "rating": 8.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "领先一路即可打出优质身材",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Crystal": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:deck",
+        "standalone"
+      ],
+      "note": "身材优秀，双方过牌收益对称",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "CullObsidian": {
+      "rating": 4.0,
+      "tags": [
+        "needs:lowcost"
+      ],
+      "note": "身材超模，但必须先有一费牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Cyclops": {
+      "rating": 6.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "稳定三费五力，补充中期曲线",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Dagger": {
+      "rating": 2.0,
+      "tags": [
+        "needs:move"
+      ],
+      "note": "没有移动手段就是零战力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Daken": {
+      "rating": 6.0,
+      "tags": [
+        "enabler:summon"
+      ],
+      "note": "补充两张衍生牌，收益看其效果",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Danger": {
+      "rating": 8.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "提前落地，可稳定威胁中小身材",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Daredevil": {
+      "rating": 8.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "身材合格，第五回合信息极强",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Darkhawk": {
+      "rating": 6.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "通常终局七力，无需组件也能用",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Dazzler": {
+      "rating": 5.0,
+      "tags": [
+        "needs:lowcost"
+      ],
+      "note": "至少填满一路才有合格收益",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Deadpool": {
+      "rating": 1.5,
+      "tags": [
+        "needs:destroy"
+      ],
+      "note": "需反复摧毁，单独只是一费一力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "DeafeningChord": {
+      "rating": 4.5,
+      "tags": [
+        "enabler:debuff",
+        "tech"
+      ],
+      "note": "低费消文针对牌，空放收益很低",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Death": {
+      "rating": 2.0,
+      "tags": [
+        "needs:destroy"
+      ],
+      "note": "缺少大量摧毁时根本无法打出",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "DeathFracturedFrontier": {
+      "rating": 5.0,
+      "tags": [
+        "enabler:graveyard",
+        "needs:destroy"
+      ],
+      "note": "基础身材一般，复活依赖摧毁积累",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Deathlok": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:destroy",
+        "standalone"
+      ],
+      "note": "空路落地即可获得优质身材",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Debrii": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:summon",
+        "standalone"
+      ],
+      "note": "三费八力很强，注意石头占位",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Destroyer": {
+      "rating": 2.5,
+      "tags": [
+        "enabler:destroy",
+        "needs:destroy"
+      ],
+      "note": "清空己方其他牌，难以赢下两路",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "DevilDinosaur": {
+      "rating": 7.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "保留手牌即可获得可观终局战力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Diamondback": {
+      "rating": 3.5,
+      "tags": [
+        "needs:debuff"
+      ],
+      "note": "自身不施加减益，缺组件很弱",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "DoctorOctopus": {
+      "rating": 5.5,
+      "tags": [
+        "tech"
+      ],
+      "note": "拉低战力牌干扰，但可能帮对手",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "DoctorOctopusFracturedFrontier": {
+      "rating": 5.0,
+      "tags": [
+        "enabler:deck"
+      ],
+      "note": "能调整手牌，但回顶占下次抽牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "DoctorStrange": {
+      "rating": 7.0,
+      "tags": [
+        "enabler:move",
+        "standalone"
+      ],
+      "note": "二费四力扎实，移动可调整分路",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Domino": {
+      "rating": 5.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "保障二费曲线，但身材收益普通",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Abomination": {
+      "rating": 5.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "五费九力扎实，但缺少额外收益",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "AbsorbingMan": {
+      "rating": 4.5,
+      "tags": [
+        "needs:onreveal"
+      ],
+      "note": "需要优质揭示效果，否则身材亏损",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "AdamWarlock": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:deck",
+        "standalone"
+      ],
+      "note": "配合争路可持续抽牌，启动偏慢",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "AdamantiumInfusion": {
+      "rating": 1.5,
+      "tags": [
+        "needs:destroy",
+        "needs:graveyard"
+      ],
+      "note": "没有高战力摧毁目标时几乎白板",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Aero": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:move",
+        "standalone"
+      ],
+      "note": "身材扎实，拉动敌牌扰乱分路",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Agamotto": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:deck",
+        "standalone"
+      ],
+      "note": "四费八力并补法术，单卡收益高",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "AgathaHarkness": {
+      "rating": 1.0,
+      "tags": [],
+      "note": "全程代打严重损失操作与分路",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Agent13": {
+      "rating": 7.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "低费补充选择，方便后续填费",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "AgentCoulson": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:highcost",
+        "standalone"
+      ],
+      "note": "补齐四五费曲线，提升出牌选择",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "AgentVenom": {
+      "rating": 3.5,
+      "tags": [
+        "enabler:buff",
+        "needs:lowcost"
+      ],
+      "note": "自身超模，但容易削废中高费牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Agony": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:buff",
+        "standalone"
+      ],
+      "note": "一费三力且合并让位，灵活高效",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "AirWalker": {
+      "rating": 3.5,
+      "tags": [
+        "needs:destroy"
+      ],
+      "note": "基础身材偏低，需摧毁触发替换",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Ajax": {
+      "rating": 4.0,
+      "tags": [
+        "enabler:ongoing",
+        "needs:debuff"
+      ],
+      "note": "缺少减战力组件时五费七力偏弱",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Alioth": {
+      "rating": 6.5,
+      "tags": [
+        "tech"
+      ],
+      "note": "需抢先手命中关键牌，收益不稳",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "AmericaChavez": {
+      "rating": 8.5,
+      "tags": [
+        "enabler:buff",
+        "standalone"
+      ],
+      "note": "一费提供五点潜在战力，效率高",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Angel": {
+      "rating": 4.5,
+      "tags": [
+        "needs:destroy"
+      ],
+      "note": "裸下身材一般，摧毁触发才赚",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Angela": {
+      "rating": 3.0,
+      "tags": [
+        "needs:lowcost",
+        "needs:move"
+      ],
+      "note": "常规填满也仅三力，成长效率低",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Annihilus": {
+      "rating": 5.0,
+      "tags": [
+        "needs:debuff"
+      ],
+      "note": "裸下五费八力，负战力组件难凑",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "AntMan": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:ongoing",
+        "standalone"
+      ],
+      "note": "填满一路即一费五力，条件易达",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "AntiVenom": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:lowcost",
+        "standalone"
+      ],
+      "note": "身材合格，免费牌收益取决于能力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Apocalypse": {
+      "rating": 4.5,
+      "tags": [
+        "needs:discard"
+      ],
+      "note": "没有弃牌组件时六费九力偏弱",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Arana": {
+      "rating": 7.0,
+      "tags": [
+        "enabler:buff",
+        "enabler:move",
+        "standalone"
+      ],
+      "note": "低费提供加力与右移，需提前部署",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ArchangelHorseman": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:graveyard",
+        "needs:destroy",
+        "standalone"
+      ],
+      "note": "二费四力已合格，摧毁任务难完成",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Ares": {
+      "rating": 10.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "四费十三力无负面，比较赢了更赚",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Arishem": {
+      "rating": 9.5,
+      "tags": [
+        "enabler:deck",
+        "enabler:energy",
+        "enabler:ramp",
+        "standalone"
+      ],
+      "note": "全程多一能量，随机组卡中优势大",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Boomerang": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:bounce",
+        "enabler:debuff",
+        "standalone"
+      ],
+      "note": "自带回手偷战力，低费收益高",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Brood": {
+      "rating": 6.0,
+      "tags": [
+        "enabler:summon",
+        "standalone"
+      ],
+      "note": "三费六力占三格，适合群体增益",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "BruceBanner": {
+      "rating": 5.0,
+      "tags": [
+        "needs:energy"
+      ],
+      "note": "需留能量赌变身，下限很低",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "BuckyBarnes": {
+      "rating": 2.0,
+      "tags": [
+        "needs:destroy"
+      ],
+      "note": "无摧毁手段仅是二费一力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Bullseye": {
+      "rating": 4.0,
+      "tags": [
+        "enabler:debuff",
+        "enabler:discard",
+        "needs:lowcost"
+      ],
+      "note": "需保留低费手牌，否则收益低",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Cable": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:deck",
+        "standalone"
+      ],
+      "note": "合格身材补手牌，方便后续用能",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Caiera": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:ongoing",
+        "standalone",
+        "tech"
+      ],
+      "note": "身材合格，保护效果视对局",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "CalibanHorseman": {
+      "rating": 5.5,
+      "tags": [
+        "enabler:debuff",
+        "needs:highcost"
+      ],
+      "note": "需三张高费在场，兑现偏慢",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Cannonball": {
+      "rating": 7.5,
+      "tags": [
+        "standalone",
+        "tech"
+      ],
+      "note": "移走大牌抢一路，满场还能摧毁",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "CaptainAmerica": {
+      "rating": 4.0,
+      "tags": [
+        "enabler:buff",
+        "enabler:ongoing",
+        "needs:ongoing"
+      ],
+      "note": "缺少同路持续牌时身材偏弱",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "CaptainCarter": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:buff",
+        "enabler:ongoing",
+        "standalone"
+      ],
+      "note": "前排站位给后排加力，吃自身增益",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "CaptainMarvel": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:move",
+        "standalone"
+      ],
+      "note": "终局自动补位，降低分路失误",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Carnage": {
+      "rating": 4.0,
+      "tags": [
+        "enabler:destroy",
+        "needs:destroy"
+      ],
+      "note": "缺少可牺牲目标时身材亏损",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "CassandraNova": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:debuff",
+        "standalone"
+      ],
+      "note": "三回合打出身材好，还削弱后续牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Cerebro": {
+      "rating": 3.5,
+      "tags": [
+        "enabler:buff",
+        "enabler:ongoing"
+      ],
+      "note": "随机身材难统一，通常只加三力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Chamber": {
+      "rating": 7.0,
+      "tags": [
+        "needs:highcost"
+      ],
+      "note": "手中保留高费牌即可高效成长",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Chameleon": {
+      "rating": 4.5,
+      "tags": [
+        "needs:lowcost",
+        "needs:onreveal"
+      ],
+      "note": "需同回合先出好效果，难稳定赚取",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Clea": {
+      "rating": 5.5,
+      "tags": [
+        "needs:buff"
+      ],
+      "note": "基础身材合格，改战力后补衍生牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Cloak": {
+      "rating": 7.0,
+      "tags": [
+        "enabler:move",
+        "standalone"
+      ],
+      "note": "二费四力高效，注意对手也能移动",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Cobra": {
+      "rating": 5.0,
+      "tags": [
+        "tech"
+      ],
+      "note": "多为二费三力，偶能夺取衍生物",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ColleenWing": {
+      "rating": 3.5,
+      "tags": [
+        "enabler:discard",
+        "needs:discard"
+      ],
+      "note": "仅多一点身材，弃牌代价偏大",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ColonelAmerica": {
+      "rating": 3.5,
+      "tags": [
+        "enabler:buff",
+        "enabler:discard",
+        "enabler:ongoing",
+        "needs:discard"
+      ],
+      "note": "单次弃牌收益有限，需持续弃牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Colossus": {
+      "rating": 6.0,
+      "tags": [
+        "enabler:ongoing",
+        "standalone"
+      ],
+      "note": "身材合格，可稳站负面区域",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Copycat": {
+      "rating": 6.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "免费偷取能力，但随机效果不稳定",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "CorvusGlaive": {
+      "rating": 5.5,
+      "tags": [
+        "enabler:discard",
+        "enabler:ramp",
+        "needs:highcost"
+      ],
+      "note": "跳费有价值，但弃两张易断资源",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Armor": {
+      "rating": 6.5,
+      "tags": [
+        "standalone",
+        "tech"
+      ],
+      "note": "标准身材，兼具保护与摧毁针对",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ArnimZola": {
+      "rating": 4.5,
+      "tags": [
+        "enabler:destroy",
+        "enabler:summon",
+        "needs:highcost"
+      ],
+      "note": "需大身材目标，还要预留复制空间",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Askanison": {
+      "rating": 8.5,
+      "tags": [
+        "enabler:summon",
+        "standalone"
+      ],
+      "note": "抢先占优，激活免费补出高费牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "AstralProjection": {
+      "rating": 4.0,
+      "tags": [
+        "needs:onreveal"
+      ],
+      "note": "零身材，强度取决于手中揭示牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Attuma": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:destroy",
+        "standalone"
+      ],
+      "note": "单路独放赚身材，避免误吃友军",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Aurora": {
+      "rating": 6.0,
+      "tags": [
+        "needs:activate",
+        "needs:ongoing",
+        "needs:onreveal"
+      ],
+      "note": "多路多能力铺场后才有可观收益",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "AwesomeAndy": {
+      "rating": 7.0,
+      "tags": [
+        "enabler:buff",
+        "standalone"
+      ],
+      "note": "提前落地，跨两路加攻赚取收益",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "BaronMordo": {
+      "rating": 6.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "身材合格，暂时卡住对手抽牌费用",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "BaronZemo": {
+      "rating": 9.0,
+      "tags": [
+        "enabler:summon",
+        "standalone"
+      ],
+      "note": "高效补场，顺带偷走对手牌库资源",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Bast": {
+      "rating": 3.0,
+      "tags": [
+        "enabler:buff"
+      ],
+      "note": "随机手牌容易误伤高战力大牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Bastion": {
+      "rating": 5.5,
+      "tags": [
+        "enabler:lowcost"
+      ],
+      "note": "复制补资源，优先复制实用能力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Batroc": {
+      "rating": 2.5,
+      "tags": [
+        "needs:move"
+      ],
+      "note": "无人移动时仅一力，单卡收益低",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Beast": {
+      "rating": 4.5,
+      "tags": [
+        "enabler:bounce",
+        "needs:lowcost"
+      ],
+      "note": "回手损失场面，需要低费重打收益",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "BetaRayBill": {
+      "rating": 6.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "基础身材尚可，额外收益依赖抽锤",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Bishop": {
+      "rating": 7.0,
+      "tags": [
+        "needs:lowcost",
+        "standalone"
+      ],
+      "note": "尽早登场，正常出牌即可持续成长",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "BlackBolt": {
+      "rating": 7.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "身材尚可，弃掉对手资源制造干扰",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "BlackCat": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:discard",
+        "standalone"
+      ],
+      "note": "一费四力高效，抽到宜及时打出",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "BlackKnight": {
+      "rating": 3.0,
+      "tags": [
+        "needs:discard"
+      ],
+      "note": "缺少主动弃牌时只是一费二力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "BlackPanther": {
+      "rating": 7.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "独立五费十力，无需组件也能用",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "BlackSwan": {
+      "rating": 5.5,
+      "tags": [
+        "enabler:lowcost",
+        "needs:lowcost"
+      ],
+      "note": "基础身材合格，多张一费才赚减费",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "BlackWidow": {
+      "rating": 7.0,
+      "tags": [
+        "enabler:junk",
+        "standalone"
+      ],
+      "note": "塞入寡妇蛰，干扰抽牌与场地空间",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Blade": {
+      "rating": 4.5,
+      "tags": [
+        "enabler:discard"
+      ],
+      "note": "弃牌可控，但裸用容易损失资源",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Blink": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:deck",
+        "needs:highcost"
+      ],
+      "note": "低费换高费，需留牌库大牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Blob": {
+      "rating": 7.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "吞并牌库赚战力，剩余总战力关键",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "BlueMarvel": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:buff",
+        "standalone"
+      ],
+      "note": "正常铺场就有收益，跨路补强灵活",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Doom2099": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:summon",
+        "standalone"
+      ],
+      "note": "单卡出牌即可持续铺场，收益高",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Dormammu": {
+      "rating": 2.5,
+      "tags": [
+        "needs:ramp"
+      ],
+      "note": "仪式细节未明，本体难直接打出",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "DrDoom": {
+      "rating": 4.0,
+      "tags": [
+        "enabler:summon"
+      ],
+      "note": "六费合计仅七战力，胜在跨区",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Dracula": {
+      "rating": 4.5,
+      "tags": [
+        "enabler:discard",
+        "needs:highcost"
+      ],
+      "note": "随机弃牌难控制，收益不稳定",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "DragonLord": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:highcost",
+        "needs:highcost"
+      ],
+      "note": "拉出手牌省费用，高费牌越多越强",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "DragonOfTheMoon": {
+      "rating": 7.0,
+      "tags": [
+        "enabler:debuff",
+        "standalone"
+      ],
+      "note": "身材合格，偷取敌方手牌可赚差值",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Drax": {
+      "rating": 6.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "命中即四费九力，落点需预判",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "DraxAvatarOfLife": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:move",
+        "standalone"
+      ],
+      "note": "对手正常出牌即可推动自身成长",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "EbonyMaw": {
+      "rating": 6.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "一费七力超模，但封路风险很高",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Echo": {
+      "rating": 5.5,
+      "tags": [
+        "tech"
+      ],
+      "note": "低费占场合格，封持续收益随缘",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Electro": {
+      "rating": 5.0,
+      "tags": [
+        "enabler:energy",
+        "enabler:ramp",
+        "needs:highcost"
+      ],
+      "note": "提前出大牌，但单卡限制容易卡费",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Elixir": {
+      "rating": 4.0,
+      "tags": [
+        "enabler:graveyard",
+        "needs:destroy"
+      ],
+      "note": "无摧毁时仅白板，复活时机苛刻",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ElsaBloodstone": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:buff",
+        "needs:lowcost"
+      ],
+      "note": "填满一路即可回本，铺场越多越赚",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "EnSabahNur": {
+      "rating": 6.0,
+      "tags": [
+        "needs:lowcost"
+      ],
+      "note": "基础身材尚可，变身收益未明确",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Enchantress": {
+      "rating": 6.5,
+      "tags": [
+        "tech"
+      ],
+      "note": "身材可用，命中关键持续额外赚",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "EsmeCuckoo": {
+      "rating": 8.5,
+      "tags": [
+        "enabler:deck",
+        "standalone"
+      ],
+      "note": "三费五力补手牌，还能保留复制能力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Eson": {
+      "rating": 3.5,
+      "tags": [
+        "enabler:summon",
+        "needs:summon"
+      ],
+      "note": "依赖手牌造物，无组件时身材亏",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "EzekielSims": {
+      "rating": 5.5,
+      "tags": [
+        "enabler:move",
+        "standalone"
+      ],
+      "note": "成长数值未明，暂按易触发保守估分",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Falcon": {
+      "rating": 4.0,
+      "tags": [
+        "enabler:bounce",
+        "needs:lowcost"
+      ],
+      "note": "回收一费常亏节奏，需要重打收益",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "FallenOne": {
+      "rating": 3.5,
+      "tags": [
+        "enabler:energy",
+        "enabler:ramp",
+        "needs:buff"
+      ],
+      "note": "原始战力不加速，须先获得增益",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "FanFei": {
+      "rating": 7.0,
+      "tags": [
+        "enabler:buff",
+        "enabler:move",
+        "standalone"
+      ],
+      "note": "群体加力兼转场，普通铺场也能赚",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Fantasticar": {
+      "rating": 5.5,
+      "tags": [
+        "enabler:buff"
+      ],
+      "note": "基础身材一般，增益目标较受限",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Fantomex": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:debuff",
+        "needs:destroy",
+        "needs:discard",
+        "standalone"
+      ],
+      "note": "四费八力可直接用，附加效果难成",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "FastballSpecial": {
+      "rating": 2.5,
+      "tags": [
+        "enabler:debuff",
+        "enabler:destroy",
+        "needs:destroy"
+      ],
+      "note": "牺牲战力换等量削弱，裸用亏费用",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "FenrisWolf": {
+      "rating": 4.5,
+      "tags": [
+        "enabler:graveyard",
+        "needs:destroy",
+        "needs:discard",
+        "tech"
+      ],
+      "note": "对手未弃未毁时，只有白板身材",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Groot": {
+      "rating": 6.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "猜中落点即赚，空放身材偏低",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Gwenpool": {
+      "rating": 9.0,
+      "tags": [
+        "enabler:buff",
+        "standalone"
+      ],
+      "note": "高效手牌增益，后续打出即可兑现",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Havok": {
+      "rating": 5.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "末期落地高效，过早使用严重锁能",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Hawkeye": {
+      "rating": 7.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "顺势续牌即可获得一费四力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Headpool": {
+      "rating": 4.0,
+      "tags": [
+        "enabler:buff",
+        "needs:destroy"
+      ],
+      "note": "无摧毁仅白板，增益数值未知",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Heimdall": {
+      "rating": 6.0,
+      "tags": [
+        "enabler:move"
+      ],
+      "note": "身材尚可，群体左移需规划站位",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Hela": {
+      "rating": 2.0,
+      "tags": [
+        "enabler:graveyard",
+        "needs:discard"
+      ],
+      "note": "没有弃牌组件时只是六费六力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Helicarrier": {
+      "rating": 4.0,
+      "tags": [
+        "enabler:summon",
+        "needs:discard"
+      ],
+      "note": "裸打偏弱，弃掉才能兑现铺场",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Hellcow": {
+      "rating": 3.0,
+      "tags": [
+        "enabler:discard",
+        "needs:discard"
+      ],
+      "note": "身材亏费，无弃牌收益可不激活",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "HellcowFracturedFrontier": {
+      "rating": 4.0,
+      "tags": [
+        "enabler:debuff",
+        "enabler:destroy"
+      ],
+      "note": "减益阈值未知，同路友军有风险",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Hellion": {
+      "rating": 7.0,
+      "tags": [
+        "enabler:move",
+        "standalone"
+      ],
+      "note": "身材合格，末回合可调动其他路",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Herbie": {
+      "rating": 5.5,
+      "tags": [
+        "enabler:activate"
+      ],
+      "note": "基础身材合格，具体激活收益未知",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Hercules": {
+      "rating": 6.0,
+      "tags": [
+        "enabler:move",
+        "needs:move"
+      ],
+      "note": "裸打身材尚可，额外移动依赖组件",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "HighEvolutionary": {
+      "rating": 3.5,
+      "tags": [
+        "needs:deck"
+      ],
+      "note": "依赖潜能卡，随机组卡难保收益",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "HitMonkey": {
+      "rating": 6.5,
+      "tags": [
+        "needs:lowcost"
+      ],
+      "note": "搭配低费同回合出牌才够高效",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Hobgoblin": {
+      "rating": 7.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "独立制造八点差，避开满场位置",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Hood": {
+      "rating": 3.0,
+      "tags": [
+        "enabler:highcost",
+        "needs:destroy"
+      ],
+      "note": "补充高费选择，但负战力拖累场面",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "HopeSummers": {
+      "rating": 8.5,
+      "tags": [
+        "enabler:energy",
+        "enabler:ramp",
+        "standalone"
+      ],
+      "note": "正常出牌即可加能，显著改善曲线",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "HowardTheDuck": {
+      "rating": 4.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "身材普通，预知牌顶收益有限",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Hulk": {
+      "rating": 7.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "稳定十四力，可靠的终局大牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Hulkbuster": {
+      "rating": 5.5,
+      "tags": [
+        "enabler:buff"
+      ],
+      "note": "合体节省格子，但基础效率普通",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Hulkling": {
+      "rating": 6.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "十二力保底，随机文本可能有负面",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "HumanTorch": {
+      "rating": 2.5,
+      "tags": [
+        "needs:move"
+      ],
+      "note": "没有移动组件时仅一费一力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "HumanTorchFirstSteps": {
+      "rating": 8.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "尽早落地，择机满场翻倍",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "HydraBob": {
+      "rating": 8.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "一费五力极赚，注意爆点后的移位",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "HydraStomper": {
+      "rating": 3.0,
+      "tags": [
+        "needs:move"
+      ],
+      "note": "缺少移动组件时仅为三费三力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "HydroMan": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:deck",
+        "enabler:highcost",
+        "standalone"
+      ],
+      "note": "身材扎实，但减费也可能资敌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Iceman": {
+      "rating": 8.0,
+      "tags": [
+        "standalone",
+        "tech"
+      ],
+      "note": "低费干扰，容易破坏对手曲线",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Ikari": {
+      "rating": 2.0,
+      "tags": [
+        "needs:debuff"
+      ],
+      "note": "没有敌方减攻就无法打出",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Infinaut": {
+      "rating": 5.0,
+      "tags": [
+        "needs:ramp"
+      ],
+      "note": "跳过五回合代价大，容易亏节奏",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "InfinityUltron": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:summon",
+        "standalone"
+      ],
+      "note": "响指减费，补充两张衍生牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "InvisibleWoman": {
+      "rating": 6.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "身材优秀，但会延迟揭示收益",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "InvisibleWomanFirstSteps": {
+      "rating": 4.0,
+      "tags": [],
+      "note": "缺少回合结束效果时收益低",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "IronFist": {
+      "rating": 5.5,
+      "tags": [
+        "enabler:move"
+      ],
+      "note": "低费移动组件，也能调整站位",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "IronLad": {
+      "rating": 7.5,
+      "tags": [
+        "needs:deck",
+        "standalone"
+      ],
+      "note": "基础身材合格，复制效果看牌库",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "IronMan": {
+      "rating": 8.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "普通铺场即可支撑强力翻倍",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "IronPatriot": {
+      "rating": 8.5,
+      "tags": [
+        "enabler:highcost",
+        "standalone"
+      ],
+      "note": "补牌兼减费，抢下领先收益极高",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Ironheart": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:buff",
+        "standalone"
+      ],
+      "note": "凑齐三个目标即可高效分散加攻",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "JJonahJameson": {
+      "rating": 5.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "表情效果不提供实战收益",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "JackFlag": {
+      "rating": 1.5,
+      "tags": [
+        "enabler:buff",
+        "needs:buff"
+      ],
+      "note": "零基础战力，极度依赖加攻组件",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "JaneFoster": {
+      "rating": 6.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "五费九力可用，抽零费通常落空",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "JaneFosterFracturedFrontier": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:buff",
+        "enabler:debuff",
+        "standalone"
+      ],
+      "note": "审判双方均赚战力，快抽再增益",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "JeanGrey": {
+      "rating": 6.0,
+      "tags": [
+        "tech"
+      ],
+      "note": "限制落点，但也会束缚自己",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "JeffTheBabyDolphin": {
+      "rating": 8.5,
+      "tags": [
+        "enabler:buff",
+        "enabler:move",
+        "standalone"
+      ],
+      "note": "持续加攻且能两次移动补位",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "JeffTheBabyLandShark": {
+      "rating": 10.0,
+      "tags": [
+        "enabler:move",
+        "standalone"
+      ],
+      "note": "超模身材兼自由进场移动",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "JenniferKale": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:energy",
+        "enabler:ramp",
+        "standalone"
+      ],
+      "note": "提前部署，额外能量改善出牌曲线",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "JessicaJones": {
+      "rating": 8.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "换路出牌即可获得四费九力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "JimHammond": {
+      "rating": 2.5,
+      "tags": [
+        "needs:energy",
+        "needs:ramp"
+      ],
+      "note": "没有额外能量时只有一费一力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "JoaquinTorres": {
+      "rating": 4.0,
+      "tags": [
+        "enabler:onreveal",
+        "needs:lowcost",
+        "needs:onreveal"
+      ],
+      "note": "依赖一费揭示牌，裸下身材偏弱",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Jocasta": {
+      "rating": 3.0,
+      "tags": [
+        "enabler:activate",
+        "needs:activate"
+      ],
+      "note": "没有其他激活牌时只是三费三力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "FinFangFoom": {
+      "rating": 2.0,
+      "tags": [
+        "needs:ramp"
+      ],
+      "note": "七费难打出，极度依赖加能量",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Firehair": {
+      "rating": 3.0,
+      "tags": [
+        "enabler:onreveal",
+        "needs:destroy",
+        "needs:onreveal"
+      ],
+      "note": "白板身材差，需摧毁揭示牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Firelord": {
+      "rating": 4.5,
+      "tags": [
+        "needs:graveyard"
+      ],
+      "note": "基础身材一般，复活条件较窄",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Forge": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:buff",
+        "standalone"
+      ],
+      "note": "稳定转移战力，强化后续出牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "FrankieRaye": {
+      "rating": 8.0,
+      "tags": [
+        "needs:highcost",
+        "standalone"
+      ],
+      "note": "基础身材优秀，接六费收益高",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Frigga": {
+      "rating": 5.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "复制好牌补资源，但当回合亏力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Galacta": {
+      "rating": 9.0,
+      "tags": [
+        "enabler:buff",
+        "standalone"
+      ],
+      "note": "持续强化后续出牌，泛用性极强",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Galactus": {
+      "rating": 3.0,
+      "tags": [
+        "enabler:destroy"
+      ],
+      "note": "独占且领先难兼顾，裸打不稳",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "GalactusFirstSteps": {
+      "rating": 9.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "基础战力合格，早上手成长可观",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Gambit": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:destroy",
+        "enabler:discard"
+      ],
+      "note": "弃一换随机摧毁，收益有波动",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "GambitHorseman": {
+      "rating": 3.5,
+      "tags": [
+        "enabler:destroy",
+        "needs:summon"
+      ],
+      "note": "衍生牌费用难凑，任务不稳定",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Gamora": {
+      "rating": 7.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "猜中即高战力，后期命中较易",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Ghost": {
+      "rating": 3.5,
+      "tags": [
+        "tech"
+      ],
+      "note": "针对面窄，未命中时身材偏弱",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "GhostRider": {
+      "rating": 3.5,
+      "tags": [
+        "needs:discard",
+        "needs:graveyard"
+      ],
+      "note": "没有弃牌配合时只是低效白板",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "GhostSpider": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:move",
+        "standalone"
+      ],
+      "note": "一费高效，兼顾战力与调位",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "GhostTheFirstRider": {
+      "rating": 4.5,
+      "tags": [
+        "enabler:discard"
+      ],
+      "note": "弃牌还扣自身战力，裸打不稳",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Giganto": {
+      "rating": 8.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "十六战力扎实，但只能争左路",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Gilgamesh": {
+      "rating": 5.0,
+      "tags": [
+        "needs:buff"
+      ],
+      "note": "无强化铺垫时，五费九力偏弱",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Gladiator": {
+      "rating": 7.0,
+      "tags": [
+        "enabler:destroy",
+        "standalone"
+      ],
+      "note": "三费八力超模，拉大牌有风险",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Goliath": {
+      "rating": 2.5,
+      "tags": [
+        "needs:ongoing"
+      ],
+      "note": "依赖多张持续牌，单卡身材差",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Goose": {
+      "rating": 5.0,
+      "tags": [
+        "needs:lowcost",
+        "tech"
+      ],
+      "note": "封锁大牌，也限制自己出牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Gorgon": {
+      "rating": 4.5,
+      "tags": [
+        "tech"
+      ],
+      "note": "身材普通，对衍生牌针对较窄",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Gorr": {
+      "rating": 7.5,
+      "tags": [
+        "needs:onreveal"
+      ],
+      "note": "双方揭示均计数，通常战力可观",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "GrandMaster": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:move",
+        "enabler:onreveal",
+        "needs:onreveal"
+      ],
+      "note": "重触发揭示兼调位，需预留中路",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "GreenGoblin": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:junk",
+        "standalone"
+      ],
+      "note": "稳定压低敌方战力并占格",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Jubilee": {
+      "rating": 4.5,
+      "tags": [
+        "enabler:deck",
+        "enabler:summon",
+        "needs:highcost"
+      ],
+      "note": "随机拉牌不稳，高费多时更强",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "JubileeSilverSurfer": {
+      "rating": 5.5,
+      "tags": [
+        "enabler:buff"
+      ],
+      "note": "四费落地偏慢，后续抽牌获益",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Juggernaut": {
+      "rating": 8.5,
+      "tags": [
+        "enabler:move",
+        "standalone"
+      ],
+      "note": "移走当回合敌牌，抢点能力强",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "JuggernautHorseman": {
+      "rating": 3.5,
+      "tags": [
+        "enabler:move"
+      ],
+      "note": "目标参数缺失，按低身材估值",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "KaZar": {
+      "rating": 5.0,
+      "tags": [
+        "enabler:buff",
+        "enabler:ongoing",
+        "needs:lowcost"
+      ],
+      "note": "需要足量一费牌才能赚取收益",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Kahhori": {
+      "rating": 8.5,
+      "tags": [
+        "enabler:buff",
+        "standalone"
+      ],
+      "note": "手牌直接转战力，通常高效",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Kang": {
+      "rating": 5.0,
+      "tags": [],
+      "note": "随机文本扩牌，强度与曲线不稳",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "KarenPage": {
+      "rating": 4.5,
+      "tags": [
+        "enabler:buff"
+      ],
+      "note": "增益数值缺失，保守估值",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "KarimaShapandar": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:activate",
+        "enabler:debuff",
+        "standalone"
+      ],
+      "note": "提前部署可稳定削弱敌方大牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "KateBishop": {
+      "rating": 9.0,
+      "tags": [
+        "enabler:lowcost",
+        "standalone"
+      ],
+      "note": "身材合格，箭牌补足费用曲线",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Khonshu": {
+      "rating": 2.0,
+      "tags": [
+        "enabler:graveyard",
+        "needs:discard",
+        "needs:graveyard"
+      ],
+      "note": "无弃牌组件时仅六费五力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "KidOmega": {
+      "rating": 3.0,
+      "tags": [
+        "enabler:activate",
+        "enabler:destroy",
+        "needs:destroy"
+      ],
+      "note": "吞牌本身不赚战力，依赖组件",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Killmonger": {
+      "rating": 5.5,
+      "tags": [
+        "enabler:destroy",
+        "tech"
+      ],
+      "note": "清理敌方一费，也会误伤己方",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "KingEitri": {
+      "rating": 7.0,
+      "tags": [
+        "enabler:activate",
+        "enabler:deck",
+        "standalone"
+      ],
+      "note": "一费三力合格，抽牌视组件而定",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "KittyPryde": {
+      "rating": 5.0,
+      "tags": [
+        "enabler:bounce"
+      ],
+      "note": "成长数值不明，反复回手耗能",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Klaw": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:ongoing",
+        "standalone"
+      ],
+      "note": "五费十一总战力，可跨区支援",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Knull": {
+      "rating": 2.0,
+      "tags": [
+        "enabler:ongoing",
+        "needs:destroy"
+      ],
+      "note": "没有摧毁积累，六费几乎白板",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Korg": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:junk",
+        "standalone"
+      ],
+      "note": "低费补曲线，石头偶尔卡抽牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Kraglin": {
+      "rating": 9.5,
+      "tags": [
+        "enabler:deck",
+        "enabler:energy",
+        "enabler:ramp",
+        "standalone"
+      ],
+      "note": "三费六力，额外跳费或抽牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Kraven": {
+      "rating": 3.0,
+      "tags": [
+        "needs:move"
+      ],
+      "note": "无移动配合时仅二费二力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "LadyBullseye": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:debuff",
+        "standalone"
+      ],
+      "note": "基础收益尚可，剩余能量补伤害",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "LadyDeathstrike": {
+      "rating": 7.0,
+      "tags": [
+        "enabler:destroy",
+        "standalone",
+        "tech"
+      ],
+      "note": "身材尚可，清小牌需避开友军",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "LadySif": {
+      "rating": 3.5,
+      "tags": [
+        "enabler:discard",
+        "needs:discard"
+      ],
+      "note": "身材收益有限，弃掉大牌很伤",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Lasher": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:activate",
+        "enabler:debuff",
+        "standalone"
+      ],
+      "note": "提前部署可赚战力，受增益放大",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Laufey": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:debuff",
+        "standalone"
+      ],
+      "note": "对面越拥挤，偷取战力越赚",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Morph": {
+      "rating": 6.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "三费博高费，收益不稳定",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "MotherAskani": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:buff",
+        "standalone"
+      ],
+      "note": "定向减费加攻复制，收益扎实",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "MrFantastic": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:ongoing",
+        "standalone"
+      ],
+      "note": "站中路即三费七力，跨路补点",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "MrFantasticFirstSteps": {
+      "rating": 8.5,
+      "tags": [
+        "enabler:buff",
+        "enabler:energy",
+        "standalone"
+      ],
+      "note": "越早落地，减费加攻收益越高",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "MrNegative": {
+      "rating": 1.5,
+      "tags": [
+        "enabler:deck",
+        "needs:deck"
+      ],
+      "note": "随机牌组反转常亏，自身负战力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "MrSinister": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:summon",
+        "standalone"
+      ],
+      "note": "稳定二费四力，但占两个位置",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "MsMarvel": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:ongoing",
+        "standalone"
+      ],
+      "note": "邻路错费铺牌，条件满足收益高",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "MultipleMan": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:summon",
+        "needs:move"
+      ],
+      "note": "裸打身材合格，能移动才出彩",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Muse": {
+      "rating": 3.0,
+      "tags": [
+        "needs:destroy"
+      ],
+      "note": "没有摧毁配合时仅三费二力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Mysterio": {
+      "rating": 7.0,
+      "tags": [
+        "enabler:lowcost",
+        "standalone"
+      ],
+      "note": "二费五力高效，幻象挤占格子",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Mystique": {
+      "rating": 2.5,
+      "tags": [
+        "enabler:ongoing",
+        "needs:ongoing"
+      ],
+      "note": "缺少优质持续目标便是白板",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Nakia": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:buff",
+        "standalone"
+      ],
+      "note": "手牌两端都能打出便赚四力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Namor": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:ongoing",
+        "standalone"
+      ],
+      "note": "独占一路身材高，后续补牌受限",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Namora": {
+      "rating": 8.5,
+      "tags": [
+        "enabler:buff",
+        "standalone"
+      ],
+      "note": "提前布置两路独苗，爆发极高",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Namorita": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:deck",
+        "standalone"
+      ],
+      "note": "身材合格，可换手也可能洗掉好牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Nebula": {
+      "rating": 8.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "早下持续成长，迫使对手跟牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "NegasonicTeenageWarhead": {
+      "rating": 7.5,
+      "tags": [
+        "standalone",
+        "tech"
+      ],
+      "note": "有先手时威慑强，可封锁关键落点",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "NicholasScratch": {
+      "rating": 4.5,
+      "tags": [],
+      "note": "基础身材普通，技能成长难触发",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "NickFury": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:highcost",
+        "standalone"
+      ],
+      "note": "补足终结牌选择，注意手牌空间",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "NicoMinoru": {
+      "rating": 8.5,
+      "tags": [
+        "enabler:buff",
+        "enabler:deck",
+        "enabler:destroy",
+        "standalone"
+      ],
+      "note": "一费多用途，择机施法收益高",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Nightcrawler": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:move",
+        "standalone"
+      ],
+      "note": "低费灵活补点，可进入难落牌区域",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Nightmare": {
+      "rating": 2.5,
+      "tags": [],
+      "note": "身材差，随机改写手牌容易亏损",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Nimrod": {
+      "rating": 3.0,
+      "tags": [
+        "enabler:summon",
+        "needs:destroy"
+      ],
+      "note": "裸打五费六力，依赖主动摧毁",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Nocturne": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:location",
+        "enabler:move",
+        "standalone"
+      ],
+      "note": "优质身材兼顾移动与换地形",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Nova": {
+      "rating": 2.5,
+      "tags": [
+        "enabler:buff",
+        "needs:destroy"
+      ],
+      "note": "不被摧毁就只有一费一力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "MaryJane": {
+      "rating": 3.0,
+      "tags": [
+        "enabler:buff",
+        "needs:move"
+      ],
+      "note": "基础身材偏弱，依赖移动增益",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "MasterMold": {
+      "rating": 3.5,
+      "tags": [
+        "enabler:junk",
+        "tech"
+      ],
+      "note": "身材偏低，塞哨兵干扰不稳定",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Maverick": {
+      "rating": 7.0,
+      "tags": [
+        "enabler:activate",
+        "enabler:buff",
+        "standalone"
+      ],
+      "note": "提前部署，激活后稳定转移战力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Maximus": {
+      "rating": 7.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "末回合高效补战力，避免送抽牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Medusa": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:onreveal",
+        "standalone"
+      ],
+      "note": "中路稳定二费五力，效率优秀",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Mercury": {
+      "rating": 3.5,
+      "tags": [
+        "enabler:move",
+        "enabler:ongoing",
+        "tech"
+      ],
+      "note": "身材过低，锁移动针对面窄",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Merlin": {
+      "rating": 7.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "尽早登场，持续补充咒语资源",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Miek": {
+      "rating": 2.5,
+      "tags": [
+        "enabler:move",
+        "needs:discard"
+      ],
+      "note": "没有弃牌组件时仅一费一力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "MilesMorales": {
+      "rating": 6.0,
+      "tags": [
+        "enabler:move",
+        "needs:move"
+      ],
+      "note": "自带移动，减费仍需其他组件",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Mirage": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:lowcost",
+        "standalone"
+      ],
+      "note": "补充低费强化牌，方便利用余能",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Misery": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:destroy",
+        "enabler:onreveal",
+        "standalone"
+      ],
+      "note": "空路可当白板，重触揭示赚收益",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "MistyKnight": {
+      "rating": 6.0,
+      "tags": [
+        "enabler:lowcost",
+        "standalone"
+      ],
+      "note": "一费三力，稳定填补费用空缺",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "MobiusMMobius": {
+      "rating": 4.0,
+      "tags": [
+        "enabler:ongoing",
+        "tech"
+      ],
+      "note": "身材偏弱，费用针对难稳定获益",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Mockingbird": {
+      "rating": 5.0,
+      "tags": [
+        "needs:summon"
+      ],
+      "note": "无衍生牌时六费十力偏低",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Modok": {
+      "rating": 2.0,
+      "tags": [
+        "enabler:discard",
+        "needs:discard"
+      ],
+      "note": "清空手牌影响终盘，极依赖配合",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "MoiraX": {
+      "rating": 4.5,
+      "tags": [
+        "needs:destroy"
+      ],
+      "note": "白板身材一般，需摧毁换取资源",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Mojo": {
+      "rating": 5.0,
+      "tags": [
+        "enabler:ongoing",
+        "needs:lowcost"
+      ],
+      "note": "双方满路才超模，触发不够稳定",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "MoleMan": {
+      "rating": 7.0,
+      "tags": [
+        "enabler:deck",
+        "enabler:lowcost",
+        "enabler:summon",
+        "standalone"
+      ],
+      "note": "生成强化石块，灵活填补费用",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "MonstroOctopus": {
+      "rating": 7.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "随机减费易有惊喜，留意牌顶变化",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "MoonGirl": {
+      "rating": 5.5,
+      "tags": [
+        "needs:lowcost"
+      ],
+      "note": "复制手牌补资源，但难全部打出",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "MoonKnight": {
+      "rating": 4.5,
+      "tags": [
+        "enabler:discard",
+        "needs:discard",
+        "tech"
+      ],
+      "note": "双向弃牌不稳定，可能误伤终盘",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Moondragon": {
+      "rating": 8.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "按费单卡出牌即可持续成长",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Moonstone": {
+      "rating": 5.0,
+      "tags": [
+        "needs:ongoing"
+      ],
+      "note": "无低费持续组件时仅四费六力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Morbius": {
+      "rating": 1.5,
+      "tags": [
+        "needs:discard"
+      ],
+      "note": "没有弃牌组件几乎没有战力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "MorganLeFay": {
+      "rating": 4.5,
+      "tags": [
+        "enabler:buff",
+        "enabler:graveyard",
+        "needs:destroy",
+        "needs:discard"
+      ],
+      "note": "回收强化很强，但需要墓地资源",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Leech": {
+      "rating": 5.5,
+      "tags": [
+        "tech"
+      ],
+      "note": "连续封手牌，但低身材亏节奏",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Legion": {
+      "rating": 7.0,
+      "tags": [
+        "enabler:location",
+        "standalone"
+      ],
+      "note": "身材合格，可借地形逆转局面",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "LinLie": {
+      "rating": 6.0,
+      "tags": [
+        "enabler:summon"
+      ],
+      "note": "跨区召唤，收益取决于剑的效果",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "LivingTribunal": {
+      "rating": 3.5,
+      "tags": [
+        "needs:buff",
+        "needs:ongoing"
+      ],
+      "note": "均摊不增加总战力，需巨量增益",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Lizard": {
+      "rating": 7.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "低费高战力，尽量避开对手满路",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Lockheed": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:debuff",
+        "standalone"
+      ],
+      "note": "移动灵活且能反复减益，数值未明",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Lockjaw": {
+      "rating": 4.0,
+      "tags": [
+        "enabler:deck",
+        "needs:highcost",
+        "needs:lowcost"
+      ],
+      "note": "需低费换高费，随机卡组难稳定",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Loki": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:energy",
+        "standalone"
+      ],
+      "note": "整手减费能改善后续能量利用",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "LukeCage": {
+      "rating": 4.0,
+      "tags": [
+        "tech"
+      ],
+      "note": "无减益时身材差，针对收益不稳",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "LunaSnow": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:ramp",
+        "enabler:summon",
+        "standalone"
+      ],
+      "note": "身材合格，冰块加速也惠及对手",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "MBaku": {
+      "rating": 6.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "终局自动补弱路，留库收益更高",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "MadThinker": {
+      "rating": 4.5,
+      "tags": [],
+      "note": "手牌费用全异才成长，数值未明",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "MadameWeb": {
+      "rating": 5.5,
+      "tags": [
+        "enabler:move"
+      ],
+      "note": "转移战力很灵活，但自身身材低",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Magik": {
+      "rating": 4.0,
+      "tags": [
+        "enabler:location",
+        "needs:highcost"
+      ],
+      "note": "延长回合也帮对手，自身亏战力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Magus": {
+      "rating": 2.5,
+      "tags": [
+        "needs:deck",
+        "needs:energy"
+      ],
+      "note": "零战力且复制受费用限制，难稳定",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "MajesticWingbeat": {
+      "rating": 5.5,
+      "tags": [
+        "enabler:buff",
+        "enabler:energy",
+        "needs:highcost"
+      ],
+      "note": "基础收益一般，命中高费才赚",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "MajorVictory": {
+      "rating": 7.0,
+      "tags": [
+        "enabler:summon",
+        "standalone"
+      ],
+      "note": "身材尚可，补两张牌改善后续曲线",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Makkari": {
+      "rating": 8.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "免费提供三战力，但落点不可控",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Malekith": {
+      "rating": 8.5,
+      "tags": [
+        "enabler:deck",
+        "standalone"
+      ],
+      "note": "四费铺出双卡，压缩牌库收益高",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ManSpider": {
+      "rating": 7.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "吞并前牌翻倍，接高战力牌更赚",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ManThing": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:debuff",
+        "standalone"
+      ],
+      "note": "压制低费铺场，注意避开己方小牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Mantis": {
+      "rating": 7.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "零费补战力，猜中还能赚一张牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Marrow": {
+      "rating": 2.5,
+      "tags": [
+        "enabler:debuff",
+        "needs:destroy",
+        "needs:discard"
+      ],
+      "note": "裸下仅一战力，需弃牌或摧毁触发",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Martyr": {
+      "rating": 5.5,
+      "tags": [],
+      "note": "低费超模，但终局可能主动送输",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "MarvelBoy": {
+      "rating": 3.5,
+      "tags": [
+        "enabler:buff",
+        "needs:lowcost"
+      ],
+      "note": "缺少一费铺场时，自身收益极低",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Okoye": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:buff",
+        "standalone"
+      ],
+      "note": "越早打越赚，低费强化后续抽牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "OmegaRed": {
+      "rating": 8.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "守住一路即可高效支援另外两路",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Onslaught": {
+      "rating": 3.0,
+      "tags": [
+        "needs:ongoing"
+      ],
+      "note": "缺少强力持续效果时身材亏损",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Orka": {
+      "rating": 9.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "基础身材强，独占一路更具压制力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Ozymandias": {
+      "rating": 5.0,
+      "tags": [],
+      "note": "效果参数缺失，暂按白板估值",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Patriot": {
+      "rating": 3.0,
+      "tags": [
+        "enabler:buff",
+        "needs:summon"
+      ],
+      "note": "无能力牌难凑，裸下身材极差",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "PeniParker": {
+      "rating": 5.5,
+      "tags": [
+        "enabler:move"
+      ],
+      "note": "衍生牌补资源，减费数值未明",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Phastos": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:buff",
+        "enabler:energy",
+        "standalone"
+      ],
+      "note": "中期强化牌库，减费加攻都有用",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Pixie": {
+      "rating": 5.5,
+      "tags": [
+        "enabler:energy"
+      ],
+      "note": "费用重排波动大，难保证赚费",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Polaris": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:move",
+        "standalone",
+        "tech"
+      ],
+      "note": "身材扎实，拉走敌方低费打乱布局",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "PolarisHorseman": {
+      "rating": 3.0,
+      "tags": [
+        "needs:debuff"
+      ],
+      "note": "缺少减攻组件时任务难完成",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Prodigy": {
+      "rating": 6.5,
+      "tags": [
+        "needs:ongoing",
+        "needs:onreveal"
+      ],
+      "note": "灵活复制强效文本，需安排站位",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ProfessorX": {
+      "rating": 5.5,
+      "tags": [
+        "tech"
+      ],
+      "note": "可提前锁定优势，但身材拖累大",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Prowler": {
+      "rating": 6.0,
+      "tags": [
+        "needs:move"
+      ],
+      "note": "工具补资源，配合移动更省费",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ProximaMidnight": {
+      "rating": 6.0,
+      "tags": [
+        "needs:discard"
+      ],
+      "note": "裸打身材尚可，弃出才有超额收益",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Psylocke": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:energy",
+        "enabler:ramp"
+      ],
+      "note": "小亏身材，换取下回合提前出大牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "PsylockeFracturedFrontier": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:energy",
+        "needs:highcost"
+      ],
+      "note": "手握高费牌可稳定减费提速",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Punisher": {
+      "rating": 7.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "对手正常铺场即可获得合格身材",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "PunisherWarMachine": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:energy",
+        "enabler:ramp",
+        "standalone"
+      ],
+      "note": "身材合格，争夺标记路可赚能量",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Quake": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:location",
+        "standalone",
+        "tech"
+      ],
+      "note": "身材合格，交换区域可逆转局势",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Quicksand": {
+      "rating": 5.5,
+      "tags": [
+        "enabler:energy",
+        "tech"
+      ],
+      "note": "常态只是白板，偷能量机会有限",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Quicksilver": {
+      "rating": 4.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "保障首回合有牌，但挤占优质抽牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Quinjet": {
+      "rating": 3.0,
+      "tags": [
+        "enabler:energy"
+      ],
+      "note": "没有外来手牌时仅一费一战力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "RamaTut": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:onreveal",
+        "standalone"
+      ],
+      "note": "三次揭示收益可观，但随机性较大",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "RavonnaRenslayer": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:energy",
+        "standalone"
+      ],
+      "note": "基础身材合格，低战力牌减费添益",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "RedGuardian": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:debuff",
+        "tech"
+      ],
+      "note": "减攻兼沉默，优先封锁关键能力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "RedHulk": {
+      "rating": 9.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "随机曲线易漏费，成长收益高",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "RedHulkFracturedFrontier": {
+      "rating": 9.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "基础身材超模，优先打敌方空路",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "RedShift": {
+      "rating": 5.5,
+      "tags": [
+        "enabler:discard"
+      ],
+      "note": "身材合格，但随机换牌可能亏损",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "RedSkull": {
+      "rating": 6.0,
+      "tags": [],
+      "note": "避开敌方满场，减少加攻副作用",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "RedWolfFracturedFrontier": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:buff",
+        "needs:buff"
+      ],
+      "note": "增益数值未明，兼顾手牌强化",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Redwing": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:highcost",
+        "enabler:move",
+        "needs:move"
+      ],
+      "note": "裸下身材合格，移动后可拉大牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Rescue": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:buff",
+        "standalone"
+      ],
+      "note": "同路跟牌即可获得五点增益",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Rhino": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:location",
+        "standalone"
+      ],
+      "note": "身材优质兼改地形，衍生物未明",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "RocketAndGroot": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:debuff",
+        "enabler:move",
+        "standalone"
+      ],
+      "note": "自带移动与偷力，偷取数值未明",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "RocketRaccoon": {
+      "rating": 7.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "低费补曲线，后期更容易猜中",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Rockslide": {
+      "rating": 5.5,
+      "tags": [
+        "enabler:junk"
+      ],
+      "note": "身材偏弱，塞岩石收益不稳定",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Rogue": {
+      "rating": 5.5,
+      "tags": [
+        "tech"
+      ],
+      "note": "偷到持续很赚，无目标则偏弱",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Ronan": {
+      "rating": 7.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "对手曲线不顺时可获高额战力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Sabretooth": {
+      "rating": 5.5,
+      "tags": [
+        "needs:destroy"
+      ],
+      "note": "基础身材合格，返场需摧毁配合",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Sage": {
+      "rating": 8.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "后期打拥挤路，低费获取高战力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "SamWilson": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:move",
+        "enabler:summon"
+      ],
+      "note": "开局额外铺场，护盾数值未明",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Sandman": {
+      "rating": 5.5,
+      "tags": [
+        "tech"
+      ],
+      "note": "身材偏低，适合限制末回合多出",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Sandstorm": {
+      "rating": 4.0,
+      "tags": [
+        "enabler:summon",
+        "needs:lowcost"
+      ],
+      "note": "岩石占手占场，需要前排支撑",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Sasquatch": {
+      "rating": 8.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "正常出牌即可减费，双出后更赚",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Sauron": {
+      "rating": 2.5,
+      "tags": [
+        "needs:ongoing"
+      ],
+      "note": "随机卡组易误删有益持续能力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ScarletSpider": {
+      "rating": 8.5,
+      "tags": [
+        "enabler:summon",
+        "standalone"
+      ],
+      "note": "提前落场即可激活，稳定分路十力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ScarletWitch": {
+      "rating": 7.0,
+      "tags": [
+        "enabler:location",
+        "standalone",
+        "tech"
+      ],
+      "note": "低费改地形，能救场但结果随机",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Scorn": {
+      "rating": 3.5,
+      "tags": [
+        "enabler:buff",
+        "needs:discard"
+      ],
+      "note": "无弃牌仅白板，增益数值未明",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Scorpion": {
+      "rating": 8.5,
+      "tags": [
+        "enabler:debuff",
+        "standalone"
+      ],
+      "note": "一费削弱整手，早出收益可观",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ScorpionBrandNewDay": {
+      "rating": 3.5,
+      "tags": [
+        "needs:debuff"
+      ],
+      "note": "依赖减攻组件，裸下身材偏弱",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Scream": {
+      "rating": 3.5,
+      "tags": [
+        "needs:move",
+        "tech"
+      ],
+      "note": "依赖敌方移动，收益难以保证",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "SebastianShaw": {
+      "rating": 4.5,
+      "tags": [
+        "needs:buff"
+      ],
+      "note": "没有永久增益时只是三费四力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Selene": {
+      "rating": 4.5,
+      "tags": [
+        "enabler:debuff"
+      ],
+      "note": "双方同时减攻，净收益不稳定",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "SeleneHorseman": {
+      "rating": 3.5,
+      "tags": [],
+      "note": "白板任务难凑，基础身材偏弱",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Sentinel": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:lowcost",
+        "standalone"
+      ],
+      "note": "持续补充二费牌，稳定填满曲线",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Sentry": {
+      "rating": 4.0,
+      "tags": [
+        "needs:destroy"
+      ],
+      "note": "虚无拖累右路，需处理负战力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Sera": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:lowcost",
+        "standalone"
+      ],
+      "note": "末回合降费，便于多牌爆发",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Sersi": {
+      "rating": 8.0,
+      "tags": [
+        "needs:lowcost",
+        "standalone"
+      ],
+      "note": "将低费铺场转为更高费战力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ShadowKing": {
+      "rating": 5.0,
+      "tags": [
+        "tech"
+      ],
+      "note": "低费清除增益，但目标不稳定",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ShadowlandsDaredevil": {
+      "rating": 4.0,
+      "tags": [],
+      "note": "关键文本与数值缺失，保守估分",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ShangChi": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:destroy",
+        "tech"
+      ],
+      "note": "大身材常见，摧毁可逆转一路",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ShangChiMasterOfTheRings": {
+      "rating": 6.0,
+      "tags": [
+        "enabler:move"
+      ],
+      "note": "十环详情缺失，暂按中等估分",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Shanna": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:lowcost",
+        "enabler:summon",
+        "standalone"
+      ],
+      "note": "单卡铺开四体，注意随机负效果",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "SheHulk": {
+      "rating": 7.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "将上回合闲置能量转成降费",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ShouLao": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:buff",
+        "needs:lowcost"
+      ],
+      "note": "需多次双出，才能获得高收益",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Shuri": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:buff",
+        "standalone"
+      ],
+      "note": "翻倍后续大牌，组件要求宽松",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Silk": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:move",
+        "standalone"
+      ],
+      "note": "二费五力高效，但落点难控制",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "SilverSable": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:debuff",
+        "standalone"
+      ],
+      "note": "一费三力，兼有牌库减攻收益",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "SilverSamurai": {
+      "rating": 4.0,
+      "tags": [
+        "enabler:discard",
+        "tech"
+      ],
+      "note": "对称弃牌，自身身材不足",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "SilverSurfer": {
+      "rating": 3.5,
+      "tags": [
+        "enabler:buff"
+      ],
+      "note": "依赖三费数量，裸下收益很低",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "SilverSurferFirstSteps": {
+      "rating": 6.0,
+      "tags": [
+        "needs:onreveal",
+        "standalone"
+      ],
+      "note": "三费五力合格，复制揭示难兑现",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "SinisterSix": {
+      "rating": 7.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "六费十二扎实，合体任务难成",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Skaar": {
+      "rating": 2.5,
+      "tags": [
+        "needs:highcost"
+      ],
+      "note": "无十力组件时，七费难以打出",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Snowguard": {
+      "rating": 7.0,
+      "tags": [
+        "enabler:location",
+        "standalone",
+        "tech"
+      ],
+      "note": "补充曲线选择，兼具地形应对",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Sparky": {
+      "rating": 3.0,
+      "tags": [
+        "enabler:buff",
+        "enabler:move",
+        "needs:move"
+      ],
+      "note": "缺少移动组件时仅二费一力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Spectrum": {
+      "rating": 4.5,
+      "tags": [
+        "enabler:buff",
+        "needs:ongoing"
+      ],
+      "note": "需要多张持续牌才能补足身材",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Speed": {
+      "rating": 8.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "正常按费出牌即可获得高战力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "SpiderHam": {
+      "rating": 7.0,
+      "tags": [
+        "standalone",
+        "tech"
+      ],
+      "note": "低费干扰手牌，但随机且需等待",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "SpiderMan": {
+      "rating": 9.0,
+      "tags": [
+        "enabler:move",
+        "standalone",
+        "tech"
+      ],
+      "note": "超模身材兼具两次移动干扰",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "SpiderMan2099": {
+      "rating": 5.0,
+      "tags": [
+        "enabler:destroy",
+        "needs:move"
+      ],
+      "note": "无法自行移动，裸打收益有限",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "SpiderManBrandNewDay": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:buff",
+        "enabler:move",
+        "standalone"
+      ],
+      "note": "自带两次移动，增益数值未明",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "SpiderManNoir": {
+      "rating": 5.5,
+      "tags": [
+        "enabler:buff",
+        "enabler:deck",
+        "enabler:summon"
+      ],
+      "note": "强化下次抽牌，费用达标可赚召唤",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "SpiderPunk": {
+      "rating": 6.0,
+      "tags": [
+        "enabler:debuff",
+        "enabler:move",
+        "standalone"
+      ],
+      "note": "窃取数值未明，暂估中等强度",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "SpiderSense": {
+      "rating": 1.5,
+      "tags": [
+        "tech"
+      ],
+      "note": "仅保护蜘蛛英雄，随机组卡难用",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "SpiderWoman": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:debuff",
+        "standalone"
+      ],
+      "note": "敌方铺场越多，单卡收益越高",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "SquirrelGirl": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:lowcost",
+        "enabler:summon",
+        "standalone"
+      ],
+      "note": "一费四点总战力，但占三个格子",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Starbrand": {
+      "rating": 6.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "单路身材高，另两路各送三点",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Stardust": {
+      "rating": 5.0,
+      "tags": [
+        "tech"
+      ],
+      "note": "身材普通，封锁召唤的收益不稳",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Starhawk": {
+      "rating": 7.0,
+      "tags": [
+        "enabler:buff",
+        "standalone"
+      ],
+      "note": "按回合选择增益边路，后期更赚",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Starlord": {
+      "rating": 5.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "命中收益尚可，空放身材偏低",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "StarlordMasterOfTheSun": {
+      "rating": 6.0,
+      "tags": [
+        "enabler:energy",
+        "enabler:ramp"
+      ],
+      "note": "利用此前剩余能量，五回合打出",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Stature": {
+      "rating": 6.0,
+      "tags": [
+        "needs:discard"
+      ],
+      "note": "常态五费九力，减费难稳定",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Stegron": {
+      "rating": 7.0,
+      "tags": [
+        "enabler:move",
+        "standalone",
+        "tech"
+      ],
+      "note": "身材合格，右移敌牌扰乱布局",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Stick": {
+      "rating": 2.0,
+      "tags": [
+        "enabler:buff"
+      ],
+      "note": "只强化两张指定牌，裸打偏弱",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Storm": {
+      "rating": 6.0,
+      "tags": [
+        "enabler:location",
+        "tech"
+      ],
+      "note": "可提前争夺一路，但自身战力低",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "StormHorseman": {
+      "rating": 4.0,
+      "tags": [
+        "enabler:buff",
+        "needs:energy"
+      ],
+      "note": "连续留能代价高，增益启动慢",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "StrangeSupreme": {
+      "rating": 2.5,
+      "tags": [
+        "needs:summon"
+      ],
+      "note": "没有衍生牌可融合时身材很差",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "StrongGuy": {
+      "rating": 3.5,
+      "tags": [
+        "needs:discard",
+        "needs:lowcost"
+      ],
+      "note": "随机曲线难清手，需要低费配合",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Stryfe": {
+      "rating": 5.5,
+      "tags": [
+        "enabler:deck",
+        "enabler:onreveal",
+        "needs:onreveal"
+      ],
+      "note": "需凑三次揭示，收益还看手牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ZombieScarletWitch": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:move",
+        "standalone"
+      ],
+      "note": "可移动补位，连续下牌强化尸群",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ZombieSentry": {
+      "rating": 6.0,
+      "tags": [
+        "enabler:summon"
+      ],
+      "note": "身材尚可，感染目标需谨慎选择",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "SubMariner": {
+      "rating": 8.0,
+      "tags": [
+        "needs:buff",
+        "standalone"
+      ],
+      "note": "一费三力扎实，强化后补牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Sunspot": {
+      "rating": 7.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "吸收闲置能量，弥补随机曲线",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "SuperAdaptoid": {
+      "rating": 6.5,
+      "tags": [
+        "standalone",
+        "tech"
+      ],
+      "note": "身材合格，偶尔偷取激活能力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "SuperSkrull": {
+      "rating": 4.5,
+      "tags": [
+        "tech"
+      ],
+      "note": "身材亏损，收益全看对手持续",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Supergiant": {
+      "rating": 4.5,
+      "tags": [
+        "tech"
+      ],
+      "note": "延迟揭示难稳定获利，身材偏低",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "SuperiorSpiderMan": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:energy",
+        "enabler:ramp",
+        "needs:buff"
+      ],
+      "note": "需强化启动，回能数值未明",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Surge": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:buff",
+        "enabler:deck",
+        "standalone"
+      ],
+      "note": "连续减费加力，改善后续曲线",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Surtur": {
+      "rating": 5.0,
+      "tags": [
+        "needs:buff",
+        "needs:highcost"
+      ],
+      "note": "裸打偏弱，依赖十力大牌成长",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Swarm": {
+      "rating": 3.5,
+      "tags": [
+        "needs:discard"
+      ],
+      "note": "裸打普通，弃牌复制费用未明",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "SwordMaster": {
+      "rating": 6.0,
+      "tags": [
+        "enabler:discard",
+        "standalone"
+      ],
+      "note": "身材超模，需管理奇数费手牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "SymbioteSpiderMan": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:onreveal",
+        "standalone"
+      ],
+      "note": "身材扎实，可重触低费揭示",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Tarantula": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:buff",
+        "standalone"
+      ],
+      "note": "维持单卡最高力可滚动强化",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Taskmaster": {
+      "rating": 3.5,
+      "tags": [
+        "needs:buff",
+        "needs:highcost"
+      ],
+      "note": "缺少高力前置时五费收益低",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "TechnoOrganicVirus": {
+      "rating": 2.0,
+      "tags": [],
+      "note": "零战力且抹除己方文本，涨费未明",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Terrax": {
+      "rating": 5.0,
+      "tags": [
+        "enabler:junk"
+      ],
+      "note": "领先塞石干扰，落后污染己方",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ThaddeusRoss": {
+      "rating": 4.5,
+      "tags": [
+        "enabler:deck",
+        "needs:highcost"
+      ],
+      "note": "需备十力牌，抽牌还看对手余能",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Thanos": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:deck",
+        "enabler:lowcost",
+        "standalone"
+      ],
+      "note": "稳定大终结，宝石补充低费曲线",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ThanosFracturedFrontier": {
+      "rating": 6.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "射击细节未明，暂按身材保守评",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "TheAncientOne": {
+      "rating": 7.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "合格身材补资源，复制优质小牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "TheCollector": {
+      "rating": 3.5,
+      "tags": [
+        "needs:bounce"
+      ],
+      "note": "普通抽牌无效，依赖额外入手",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "TheHunger": {
+      "rating": 1.5,
+      "tags": [
+        "needs:summon"
+      ],
+      "note": "依赖尸群组件，单卡零战力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ThePhoenixForce": {
+      "rating": 4.0,
+      "tags": [
+        "enabler:graveyard",
+        "enabler:move",
+        "needs:destroy"
+      ],
+      "note": "无摧毁目标仅五力，难稳定复活",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "TheThing": {
+      "rating": 6.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "四费七力朴实，补曲线可用",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "TheThingFirstSteps": {
+      "rating": 8.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "五回合下场可达十力，满路带杀",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Thena": {
+      "rating": 7.0,
+      "tags": [
+        "needs:lowcost"
+      ],
+      "note": "双卡回合可成长，需低费支撑",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Wave": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:highcost",
+        "enabler:ramp",
+        "standalone"
+      ],
+      "note": "身材扎实，可提前打出高费牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "WeaponH": {
+      "rating": 5.5,
+      "tags": [
+        "needs:discard"
+      ],
+      "note": "无弃牌组件时只是六费十二力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "WeaponXWolverine": {
+      "rating": 3.0,
+      "tags": [
+        "enabler:buff",
+        "needs:destroy",
+        "needs:discard"
+      ],
+      "note": "基础身材差，依赖弃摧触发",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "WebSling": {
+      "rating": 2.0,
+      "tags": [
+        "enabler:move",
+        "needs:move"
+      ],
+      "note": "自身零战力，移动收益依赖配合",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "WerewolfByNight": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:move",
+        "needs:onreveal"
+      ],
+      "note": "搭配常见揭示牌即可移动成长",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "WhiteQueen": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:deck",
+        "standalone"
+      ],
+      "note": "侦察整副牌库并补充高费资源",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "WhiteTiger": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:summon",
+        "standalone"
+      ],
+      "note": "单卡十战力，还能支援难进区域",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "WhiteWidow": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:junk",
+        "standalone"
+      ],
+      "note": "占用对方格子，低费干扰站位",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "WildChild": {
+      "rating": 3.0,
+      "tags": [
+        "needs:destroy",
+        "needs:discard"
+      ],
+      "note": "无弃摧时仅一力，组件要求高",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "WilsonFisk": {
+      "rating": 5.5,
+      "tags": [],
+      "note": "争最高单卡战力，实际费用不稳",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Wolfsbane": {
+      "rating": 7.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "后置到人多区域，轻松打出高战力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Wolverine": {
+      "rating": 5.0,
+      "tags": [
+        "needs:destroy",
+        "needs:discard"
+      ],
+      "note": "裸下身材普通，弃摧后才有优势",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "WolverineHorseman": {
+      "rating": 3.5,
+      "tags": [
+        "enabler:buff",
+        "needs:buff",
+        "needs:destroy",
+        "needs:discard"
+      ],
+      "note": "基础身材亏，需增益完成任务",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Wong": {
+      "rating": 4.5,
+      "tags": [
+        "enabler:onreveal",
+        "needs:onreveal"
+      ],
+      "note": "裸下严重亏模，依赖优质揭示牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "X23": {
+      "rating": 5.5,
+      "tags": [
+        "enabler:energy",
+        "enabler:ramp",
+        "needs:destroy",
+        "needs:discard"
+      ],
+      "note": "一费二力保底，弃摧后提供能量",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Xorn": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:move",
+        "standalone"
+      ],
+      "note": "二费四力扎实，移动兼具干扰",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Yellowjacket": {
+      "rating": 7.0,
+      "tags": [
+        "enabler:lowcost",
+        "standalone"
+      ],
+      "note": "先下空路，零费补充两点战力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Yondu": {
+      "rating": 4.5,
+      "tags": [],
+      "note": "身材普通，还可能帮对手滤牌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Zabu": {
+      "rating": 4.5,
+      "tags": [
+        "enabler:energy",
+        "enabler:highcost",
+        "needs:highcost"
+      ],
+      "note": "需要足够四费牌才能赚回投入",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Zero": {
+      "rating": 6.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "身材优秀，但须规避误删技能",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ZombieCaptainMarvel": {
+      "rating": 4.0,
+      "tags": [
+        "enabler:destroy",
+        "needs:destroy"
+      ],
+      "note": "吞噬友军换力效率低，容易误伤",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ZombieGalacti": {
+      "rating": 1.0,
+      "tags": [
+        "needs:ramp"
+      ],
+      "note": "七费难落地，转化收益也很低",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ZombieGiantMan": {
+      "rating": 3.5,
+      "tags": [
+        "enabler:summon",
+        "needs:summon"
+      ],
+      "note": "本体偏弱，依赖尸群积累战力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ZombieMisterFantastic": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:buff",
+        "enabler:summon",
+        "standalone"
+      ],
+      "note": "自带尸群，激活还能强化衍生物",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ZombiePowerMan": {
+      "rating": 3.5,
+      "tags": [
+        "enabler:discard",
+        "needs:discard"
+      ],
+      "note": "领先就持续弃牌，容易耗空资源",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Thor": {
+      "rating": 6.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "身材合格，抽到雷神锤额外赚取战力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Titania": {
+      "rating": 6.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "末回合补五力，注意出牌触发易主",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Tombstone": {
+      "rating": 3.5,
+      "tags": [
+        "enabler:destroy",
+        "needs:destroy"
+      ],
+      "note": "容易误杀己方，缺摧毁收益时慎选",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Topaz": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:move",
+        "standalone"
+      ],
+      "note": "二费四力扎实，还能输送卡牌到中路",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "ToxieDoxie": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:buff",
+        "standalone"
+      ],
+      "note": "低费提供四点增益，注意下回合禁打",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Toxin": {
+      "rating": 6.0,
+      "tags": [
+        "enabler:bounce",
+        "needs:lowcost"
+      ],
+      "note": "回收低费涨身材，需预留重打费用",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Triton": {
+      "rating": 6.0,
+      "tags": [
+        "enabler:buff",
+        "standalone"
+      ],
+      "note": "双方通常同时受益，主要看基础身材",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "TyphoidMary": {
+      "rating": 8.0,
+      "tags": [
+        "standalone"
+      ],
+      "note": "少铺同路即可保住高额身材",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "USAgent": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:debuff",
+        "tech"
+      ],
+      "note": "低费压制高费大牌，己方注意分路",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Uatu": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:lowcost",
+        "standalone"
+      ],
+      "note": "零费补点，并提前获知地形避险",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "UncleBen": {
+      "rating": 4.0,
+      "tags": [
+        "needs:destroy"
+      ],
+      "note": "裸下仅一费二力，摧毁产物未知",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Valentina": {
+      "rating": 8.0,
+      "tags": [
+        "enabler:highcost",
+        "standalone"
+      ],
+      "note": "合格身材附送折扣大牌，补充曲线",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Valkyrie": {
+      "rating": 6.5,
+      "tags": [
+        "enabler:debuff",
+        "needs:lowcost",
+        "tech"
+      ],
+      "note": "重置敌方大牌，己方需铺场破平局",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Venom": {
+      "rating": 5.0,
+      "tags": [
+        "enabler:destroy",
+        "needs:destroy"
+      ],
+      "note": "吞牌保留战力，但缺组件时收益有限",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Venus": {
+      "rating": 3.0,
+      "tags": [
+        "enabler:buff",
+        "needs:buff"
+      ],
+      "note": "没有额外强化来源时仅三费三力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "VictoriaHand": {
+      "rating": 4.5,
+      "tags": [
+        "enabler:buff",
+        "needs:summon"
+      ],
+      "note": "依赖手牌生成组件，裸下只是白板",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Viper": {
+      "rating": 4.0,
+      "tags": [
+        "needs:junk"
+      ],
+      "note": "缺垃圾组件时，送牌反而资敌",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Vision": {
+      "rating": 8.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "九力可自由转线，终局争路极灵活",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Viv": {
+      "rating": 8.5,
+      "tags": [
+        "enabler:buff",
+        "standalone"
+      ],
+      "note": "领先持续强化手牌，落后可移动",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Vulture": {
+      "rating": 3.0,
+      "tags": [
+        "needs:move"
+      ],
+      "note": "没有移动组件时仅三费三力",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "WadeWilson": {
+      "rating": 1.5,
+      "tags": [
+        "enabler:lowcost",
+        "needs:destroy"
+      ],
+      "note": "不被摧毁就没有战力，严重依赖组件",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "WarMachine": {
+      "rating": 7.0,
+      "tags": [
+        "standalone",
+        "tech"
+      ],
+      "note": "身材尚可，无视地形限制提高容错",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Warlock": {
+      "rating": 7.5,
+      "tags": [
+        "enabler:energy",
+        "standalone"
+      ],
+      "note": "把闲置能量变成折扣，改善后续曲线",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Warpath": {
+      "rating": 6.5,
+      "tags": [
+        "standalone"
+      ],
+      "note": "四费十力诱人，但空一路限制争夺",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    },
+    "Wasp": {
+      "rating": 5.5,
+      "tags": [
+        "enabler:lowcost",
+        "standalone"
+      ],
+      "note": "零费灵活补点，但单卡战力贡献低",
+      "source": "auto",
+      "model": "gpt-6.1-sol"
+    }
+  }
+}

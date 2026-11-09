@@ -28,13 +28,15 @@ class ArenaStop(RuntimeError):
 class ArenaOptions:
     buy_ticket_with_gold: bool = False   # 门票不足时用金块买（150 金块 / 张）
     max_runs: int = 0                    # 打完 N 场竞技后停止（0 = 不限）
-    swap_threshold: float = 1.0          # 换牌提升阈值（M2 前的规则占位）
+    swap_threshold: float = 1.0          # 换牌规则兜底的提升阈值
 
 
 class ArenaFlow:
     def __init__(self, ex, read_arena: Callable[[], ArenaState | None], options: ArenaOptions | None = None,
-                 emit: Callable[..., None] | None = None, live: bool = True):
+                 emit: Callable[..., None] | None = None, live: bool = True, decider=None):
+        """decider：brain.llm.arena_decider.ArenaDecider（大模型组卡 / 换牌）；None 用规则打分。"""
         self.ex = ex
+        self.decider = decider
         self.read_arena = read_arena
         self.opt = options or ArenaOptions()
         self.emit = emit or (lambda *a, **k: None)
@@ -135,10 +137,12 @@ class ArenaFlow:
     def _draft(self, st: ArenaState) -> str:
         if len(st.candidates) < 3:
             return "arena_draft_wait"
-        pick = arena_draft.choose_pick(st.deck, st.candidates[:3], st.config.deck_size)
-        print(f"  组卡 {st.draft_round}/{st.config.deck_size}：{st.candidates[:3]} → {pick.card}（{pick.reason}）")
-        self.emit("arena_pick", round=st.draft_round, candidates=st.candidates[:3], pick=pick.card,
-                  scores=[round(x, 2) for x in pick.scores], reason=pick.reason)
+        cands = st.candidates[:3]
+        pick = (self.decider.pick(st.deck, cands, st.config.deck_size) if self.decider
+                else arena_draft.choose_pick(st.deck, cands, st.config.deck_size))
+        print(f"  组卡 {st.draft_round}/{st.config.deck_size}：{cands} → {pick.card}（{pick.source}：{pick.reason}）")
+        self.emit("arena_pick", round=st.draft_round, candidates=cands, pick=pick.card,
+                  scores=[round(x, 2) for x in pick.scores], reason=pick.reason, source=pick.source)
         n = len(st.deck)
         self.ex.click_rel(ARENA_DRAFT_SELECT[pick.index], f"Select {pick.card}")
         if not self.live:
@@ -154,15 +158,18 @@ class ArenaFlow:
     def _swap(self, st: ArenaState) -> str:
         if len(st.candidates) < 3 or len(st.deck) < st.config.deck_size:
             return "arena_swap_wait"
-        sw = arena_draft.choose_swap(st.deck, st.candidates[:3], self.opt.swap_threshold)
+        cands = st.candidates[:3]
+        ctx = {"score": st.score, "hp": st.hp, "games": st.games, "swaps_left": st.swaps_left}
+        sw = (self.decider.swap(st.deck, cands, ctx) if self.decider
+              else arena_draft.choose_swap(st.deck, cands, self.opt.swap_threshold))
         ver = st.version
         if sw.out_index is None:
-            print(f"  换牌：候选 {st.candidates[:3]} 都不值得换（{sw.reason}），刷新放弃")
-            self.emit("arena_swap", candidates=st.candidates[:3], out=None, inc=None, reason=sw.reason)
+            print(f"  换牌：候选 {cands} 都不值得换（{sw.source}：{sw.reason}），刷新放弃")
+            self.emit("arena_swap", candidates=cands, out=None, inc=None, reason=sw.reason, source=sw.source)
             self.ex.click_rel(ARENA_SWAP_REFRESH, "刷新（放弃换牌）")
         else:
-            print(f"  换牌：{sw.out_card} → {sw.in_card}（{sw.reason}）")
-            self.emit("arena_swap", candidates=st.candidates[:3], out=sw.out_card, inc=sw.in_card, reason=sw.reason)
+            print(f"  换牌：{sw.out_card} → {sw.in_card}（{sw.source}：{sw.reason}）")
+            self.emit("arena_swap", candidates=cands, out=sw.out_card, inc=sw.in_card, reason=sw.reason, source=sw.source)
             self.ex.press_rel(arena_deck_pos(sw.out_index), f"选中 {sw.out_card}", hold_s=1.0)
             time.sleep(0.5)
             self.ex.click_rel(ARENA_SWAP_SELECT[sw.in_index], f"Select {sw.in_card}")

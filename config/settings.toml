@@ -40,7 +40,8 @@ verified = false
 [arena]                       # 国服竞技场（Game Modes → Arena Mode），见 docs/arena-mode-plan.md
 buy_ticket_with_gold = false  # 门票不足时用金块购买（150 金块 / 张）；有门票时总是先用门票
 max_runs = 0                  # 打完 N 场竞技后停止（0 = 不限）；命令行 --max-runs 覆盖
-swap_threshold = 1.0          # 换牌：最佳候选比卡组最弱一张提升超过该值才换（M2 前为规则占位打分）
+swap_threshold = 1.0          # 换牌规则兜底：整副卡组得分（评分表 + 曲线 + 配合）提升超过该值才换
+draft_decider = "llm"         # 组卡 / 换牌：llm（大模型，规则分作参考与兜底）| rule
 
 [display]
 resolution = [1920, 1080]     # 建议固定窗口化分辨率
@@ -92,6 +93,11 @@ extra_body = { thinking = { type = "disabled" } }
 model = "deepseek-v4-pro"
 effort = "off"
 verbosity = ""
+
+[llm.tasks.arena]             # 竞技场组卡 / 换牌（无时间限制，失败用规则打分兜底）
+model = "gpt-6.1-sol"
+effort = "medium"
+timeout_s = 120
 
 [llm.tasks.review]            # 赛后复盘 / 离线维护场地知识库
 model = "gpt-6.1-sol"

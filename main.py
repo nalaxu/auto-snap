@@ -143,12 +143,17 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
     from perception.memory_source import is_arena_game
     if game_mode == "arena":
         source.arena_mode = True
+        from brain.llm import make_arena_decider
         from executor.arena_flow import ArenaFlow, ArenaOptions
         acfg = settings.get("arena", {})
         arena_flow = ArenaFlow(ex, source.arena_state, ArenaOptions(
             buy_ticket_with_gold=bool(acfg.get("buy_ticket_with_gold", False)),
             max_runs=int(max_runs if max_runs is not None else acfg.get("max_runs", 0)),
-            swap_threshold=float(acfg.get("swap_threshold", 1.0))), emit=bus.emit, live=live)
+            swap_threshold=float(acfg.get("swap_threshold", 1.0))), emit=bus.emit, live=live,
+            decider=make_arena_decider(settings) if acfg.get("draft_decider", "llm") == "llm" else None)
+        print(f"竞技场：组卡 / 换牌 {'大模型 ' + arena_flow.decider.task.model if arena_flow.decider else '规则打分'}；"
+              f"买票 {'允许' if arena_flow.opt.buy_ticket_with_gold else '不允许'}；"
+              f"场数上限 {arena_flow.opt.max_runs or '不限'}")
     snap_enabled = bool(settings.get("brain", {}).get("snap", True))
     activated_cards: set[tuple] = set()
     opp_seen: dict[str, list[str]] = {}    # game_id -> 对手揭示过的牌（卡组原型识别 + 赛后样本）

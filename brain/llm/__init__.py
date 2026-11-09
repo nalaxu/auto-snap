@@ -19,6 +19,8 @@ PROVIDERS = ("openai", "anthropic")
 DEFAULT_TASKS = {
     "decision": TaskConfig(model="gpt-6.1-sol", effort="medium", max_output_tokens=8000, timeout_s=45, max_retries=0),
     "review": TaskConfig(model="gpt-6.1-sol", effort="high", timeout_s=300),
+    # arena：竞技场组卡 / 换牌（无时间限制）
+    "arena": TaskConfig(model="gpt-6.1-sol", effort="medium", timeout_s=120, max_retries=1),
 }
 
 __all__ = ["LLMClient", "LLMError", "LLMRefusal", "TaskConfig", "LocationAnalyst",
@@ -112,3 +114,14 @@ def make_decider(settings: dict):
                       late_from_turn=int(t.get("late_from_turn", 5)),
                       timer_reserve_s=float(t.get("timer_reserve_s", 7)),
                       min_llm_s=float(t.get("min_llm_s", 5)))
+
+
+def make_arena_decider(settings: dict):
+    """竞技场组卡 / 换牌大模型决策；未配置密钥返回 None（流程改用规则打分）。"""
+    from .arena_decider import ArenaDecider
+
+    client = make_client(settings)
+    if not client:
+        return None
+    return ArenaDecider(client, task_config(settings, "arena"),
+                        swap_threshold=float((settings.get("arena", {}) or {}).get("swap_threshold", 1.0)))
