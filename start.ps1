@@ -57,7 +57,31 @@ if ($needBuild) {
     } finally { Pop-Location }
 }
 
-# 4. 启动面板
+# 4. 端口被占：是旧的 Auto-Snap 面板就连同它启动的机器人一起停掉（重启语义），否则报出占用进程
+$listen = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+if ($listen) {
+    $all = @(Get-CimInstance Win32_Process)
+    $owner = $all | Where-Object { $_.ProcessId -eq $listen.OwningProcess }
+    if ($owner -and $owner.CommandLine -like "*main.py ui*") {
+        # 旧面板：venv 的 python.exe 是转发壳，真正监听的是子进程；把同端口的面板进程及其所有子孙（机器人）都停掉
+        $roots = @($all | Where-Object { $_.CommandLine -like "*main.py ui*" -and $_.CommandLine -like "*--port $Port*" })
+        $kill = New-Object System.Collections.Generic.HashSet[int]
+        $queue = New-Object System.Collections.Generic.Queue[int]
+        foreach ($r in $roots) { $queue.Enqueue([int]$r.ProcessId) }
+        while ($queue.Count) {
+            $id = $queue.Dequeue()
+            if ($kill.Add($id)) { $all | Where-Object { $_.ParentProcessId -eq $id } | ForEach-Object { $queue.Enqueue([int]$_.ProcessId) } }
+        }
+        Step "端口 $Port 被旧面板占用（pid $($owner.ProcessId)），停掉旧面板及其机器人：$($kill -join ', ')"
+        foreach ($id in $kill) { Stop-Process -Id $id -Force -ErrorAction SilentlyContinue }
+        for ($i = 0; $i -lt 20 -and (Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue); $i++) { Start-Sleep -Milliseconds 250 }
+    } else {
+        $desc = if ($owner) { "pid $($owner.ProcessId) $($owner.CommandLine)" } else { "pid $($listen.OwningProcess)" }
+        throw "端口 $Port 已被其他程序占用：$desc。换端口：.\start.ps1 -Port 8766"
+    }
+}
+
+# 5. 启动面板
 $uiArgs = @("main.py", "ui", "--port", $Port)
 if ($NoBrowser) { $uiArgs += "--no-browser" }
 Step "启动面板 http://127.0.0.1:$Port （Ctrl+C 停止）"
