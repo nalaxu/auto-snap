@@ -45,6 +45,9 @@ draft_decider = "llm"         # 组卡 / 换牌：llm（大模型，规则分作
 # 对局内 Snap / 撤退按整场期望（brain/arena_strategy.py）：档位价值 + 剩余血量 + 折半没收
 game_win_rate = 0.5           # 整场模型里之后每局的胜率（积累竞技场对局后校准）
 retreat_floor = 0.10          # 撤退线下限：胜算很低时即使血少也撤退保分
+retreat_final = 0.40          # 最后一回合胜率低于它撤退（与整场期望线取较高者）
+retreat_opp_snap = 0.60       # 对手已 Snap 时（刚 Snap 的回合与最后一回合）胜率低于它撤退
+retreat_opp_snap_from = 4     # 60% 线从第 N 回合起生效；更早的 Snap 只按整场期望线（前期多为诈唬）
 snap_floor = 0.25             # Snap 门槛下限：绝境 Snap 也要有起码的翻盘机会
 
 [arena.tier_value]            # 宝箱档位价值（用户决定以档位为主）：积分 >= 门槛即得该档；15 神秘变体、30 高级神秘变体、35 新头像

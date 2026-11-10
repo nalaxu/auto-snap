@@ -66,8 +66,35 @@ def test_retreat_check_only_on_final_or_opp_snap():
     ctx = ArenaContext(score=0, hp=10)
     assert retreat_check(make_state(turn=4), 0.05, ctx) == (False, "")
     yes, why = retreat_check(make_state(), 0.05, ctx)
-    assert yes and "整场期望撤退线" in why
+    assert yes and "整场期望" in why
     assert retreat_check(make_state(), 0.9, ctx)[0] is False
+
+
+def test_retreat_fixed_lines_final_40_opp_snap_60():
+    ctx = ArenaContext(score=3, hp=10)            # 满血：整场期望线只有 ≈23%
+    # 最后一回合、对手没 Snap：低于 40% 撤退
+    assert retreat_check(make_state(), 0.39, ctx)[0] is True
+    assert retreat_check(make_state(), 0.41, ctx)[0] is False
+    # 最后一回合、对手已 Snap（对局 e4971723：校准胜率 39.5% 当时没撤）：低于 60% 撤退
+    assert retreat_check(make_state(opp_snapped=True, opp_snap_turn=5), 0.395, ctx)[0] is True
+    assert retreat_check(make_state(opp_snapped=True, opp_snap_turn=3), 0.59, ctx)[0] is True
+    assert retreat_check(make_state(opp_snapped=True, opp_snap_turn=5), 0.61, ctx)[0] is False
+    # 对手刚 Snap 的中期回合：同样 60%
+    assert retreat_check(make_state(turn=4, cube_stake=2, cube_next=2, opp_snapped=True, opp_snap_turn=4),
+                         0.55, ctx)[0] is True
+    # 对手前 3 回合 Snap（对局 4b495789：T1 Snap，胜率 48%）：只按整场期望线，不撤
+    ctx6 = ArenaContext(score=4, hp=6)
+    yes, why = retreat_check(make_state(turn=1, cube_stake=1, cube_next=2, opp_snapped=True, opp_snap_turn=1), 0.48, ctx6)
+    assert not yes and "只用整场期望" in why
+    assert retreat_check(make_state(turn=3, cube_stake=2, cube_next=2, opp_snapped=True, opp_snap_turn=3),
+                         0.05, ctx6)[0] is True
+    # 对手早先 Snap、中期非刚 Snap 的回合：不判断
+    assert retreat_check(make_state(turn=5, opp_snapped=True, opp_snap_turn=3), 0.1, ctx) == (False, "")
+    # 配置覆盖
+    m = ArenaModel.from_settings({"arena": {"retreat_final": 0.3, "retreat_opp_snap": 0.5}})
+    c2 = ArenaContext(score=3, hp=10, model=m)
+    assert retreat_check(make_state(), 0.35, c2)[0] is False
+    assert retreat_check(make_state(opp_snapped=True, opp_snap_turn=5), 0.45, c2)[0] is True
 
 
 def test_snap_veto():

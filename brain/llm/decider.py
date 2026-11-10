@@ -50,6 +50,8 @@ SYSTEM = """你是《漫威终极逆转》（Marvel Snap 国服）的顶尖玩�
 7. win_probability：本回合出牌后我方最终获胜的概率（0–100）。要现实，考虑对手未揭示的手牌与终局爆发；程序据此计算撤退。
 8. arena（如有，竞技场局）：整场背景。hp / score 是我方本场血量与积分；snap_breakeven 是程序按血量、积分、
    宝箱档位算出的 Snap 胜率门槛（%），你的 win_probability 达不到它时不要 Snap（程序也会否决）。hand_notes 是手牌的竞技场要点。双方卡组都是随机组的，不要套用排位的固定卡组思路。
+   竞技场里对手已 Snap（opp_snapped=true）时，win_probability 必须算上对手本回合的应对：他剩余能量与手牌数够补多少、
+   他只需赢下哪一路就能获胜、Snap 本身说明他有把握；把这些都算进去后再给胜率（第 4 回合起胜率低于 60% 程序会撤退，最后一回合低于 40% 撤退）。
 
 只输出 JSON。card 用 hand 中的 id，location 用场地 idx（0/1/2）。文字用中文且简短：effect / why ≤ 20 字，plan、reason ≤ 40 字。"""
 
