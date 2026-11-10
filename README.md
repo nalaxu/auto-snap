@@ -42,6 +42,8 @@ python main.py auto --live --decider rule_based --max-games 1   # 只用规则 A
 
 ### 外部面板
 
+一键启动：双击 `start.bat`（或 `.\start.ps1 [-Rebuild] [-NoBrowser] [-Port 8765]`）——按需创建 `.venv`、在 requirements.txt 变化时重装依赖、前端源码有改动时重新构建，然后启动面板。手动步骤：
+
 ```bash
 cd ui/web && npm install && npm run build && cd ../..   # 首次：构建前端（需要 Node 18+）
 python main.py ui                                       # 打开 http://127.0.0.1:8765
