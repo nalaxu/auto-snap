@@ -33,11 +33,11 @@ class ArenaModel:
     # 下限（用户经验）：档位是阶梯，算出来的线在某些点会接近 0；胜算很低时即使血少也撤退保分，绝境 Snap 也要有起码的翻盘机会
     retreat_floor: float = 0.10
     snap_floor: float = 0.25
-    # 撤退线（用户决定，2026-11-10）：整场期望算出的线满血时只有 ≈23%，实战中明显不利也不撤；
-    # 最后一回合胜率低于 40% 撤退，对手已 Snap 时低于 60% 撤退（取与整场期望线中较高者）
-    retreat_final: float = 0.40
-    retreat_opp_snap: float = 0.60
-    retreat_opp_snap_from: int = 4     # 60% 线从第 4 回合起生效：前期 Snap 多为诈唬、胜率也估不准，前 3 回合按整场期望线
+    # 撤退线（用户决定，2026-11-10；面板「设置 → 竞技场」可改）：直接按这两条线判断，不再与整场期望线取较高者
+    # 正常（最后一回合）胜率低于 30% 撤退；对手 Snap 的当回合低于 45% 撤退
+    retreat_final: float = 0.30
+    retreat_opp_snap: float = 0.45
+    retreat_opp_snap_from: int = 4     # 对手 Snap 线从第 4 回合起生效：前期 Snap 多为诈唬、胜率也估不准，前 3 回合按整场期望线
 
     @classmethod
     def from_settings(cls, settings: dict | None, max_score: int = 35) -> "ArenaModel":
@@ -47,8 +47,8 @@ class ArenaModel:
         return cls(tiers=tuple(sorted(t.items())), max_score=max_score,
                    win_rate=float(a.get("game_win_rate", 0.5)),
                    retreat_floor=float(a.get("retreat_floor", 0.10)), snap_floor=float(a.get("snap_floor", 0.25)),
-                   retreat_final=float(a.get("retreat_final", 0.40)),
-                   retreat_opp_snap=float(a.get("retreat_opp_snap", 0.60)),
+                   retreat_final=float(a.get("retreat_final", 0.30)),
+                   retreat_opp_snap=float(a.get("retreat_opp_snap", 0.45)),
                    retreat_opp_snap_from=int(a.get("retreat_opp_snap_from", 4)))
 
     # ------------------------------------------------------------ 终局价值
@@ -153,15 +153,14 @@ class ArenaContext:
 
 def retreat_check(state, win_prob: float | None, ctx: ArenaContext, threshold: float | None = None) -> tuple[bool, str]:
     """竞技场版撤退判断：时点与排位相同（对手刚 Snap 的回合、最后一回合）。
-    撤退线 = max(整场期望线, 固定线)：第 retreat_opp_snap_from（4）回合起对手已 Snap 用 retreat_opp_snap（60%），
-    否则最后一回合用 retreat_final（40%）；前 3 回合对手刚 Snap 只用整场期望线。"""
+    对手 Snap 的当回合（刚 Snap，第 retreat_opp_snap_from 回合起）用 retreat_opp_snap（45%）；
+    其余（最后一回合）用 retreat_final（30%）；前 3 回合对手刚 Snap 且不是最后一回合时只用整场期望线。"""
     if win_prob is None:
         return False, ""
     final_turn = state.turn >= state.max_turn
     opp_snap_now = state.opp_snap_turn is not None and state.opp_snap_turn >= state.turn - 1
     if not (final_turn or opp_snap_now):
         return False, ""
-    opp_snapped = opp_snap_now or bool(state.opp_snapped) or state.opp_snap_turn is not None
     s = max(1, state.cube_stake)
     nxt = state.cube_next or s
     f = nxt if final_turn else nxt * 2
@@ -169,19 +168,16 @@ def retreat_check(state, win_prob: float | None, ctx: ArenaContext, threshold: f
     if threshold is not None:
         cut, how = threshold, "固定撤退线"
     else:
-        ev_cut = ctx.retreat_cutoff(s, f)
-        if opp_snapped and state.turn >= m.retreat_opp_snap_from:
-            fixed, label = m.retreat_opp_snap, "对手已 Snap"
+        if opp_snap_now and state.turn >= m.retreat_opp_snap_from:
+            cut, how = m.retreat_opp_snap, f"撤退线（对手 Snap 当回合）{m.retreat_opp_snap:.0%}"
         elif final_turn:
-            fixed, label = m.retreat_final, "最后一回合"
+            cut, how = m.retreat_final, f"撤退线（正常）{m.retreat_final:.0%}"
         else:
-            fixed, label = 0.0, ""
-        cut = max(ev_cut, fixed)
-        how = (f"撤退线 {label} {fixed:.0%} / 整场期望 {ev_cut:.0%} → 取 {cut:.0%}" if label
-               else f"前 {m.retreat_opp_snap_from - 1} 回合只用整场期望撤退线 {ev_cut:.0%}")
+            cut = ctx.retreat_cutoff(s, f)
+            how = f"前 {m.retreat_opp_snap_from - 1} 回合只用整场期望撤退线 {cut:.0%}"
     when = "最后一回合" if final_turn else "对手刚 Snap"
-    if final_turn and opp_snapped:
-        when += "（对手已 Snap）"
+    if final_turn and opp_snap_now:
+        when += "（对手刚 Snap）"
     why = (f"{when}：胜率 {win_prob:.0%}，血量 {ctx.hp} 积分 {ctx.score}，"
            f"撤退输 {s}，打下去 赢/输 {f}，{how}")
     return win_prob < cut, why
