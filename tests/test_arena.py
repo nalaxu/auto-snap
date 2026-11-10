@@ -9,7 +9,8 @@ from PIL import Image
 from brain import arena_draft
 from executor import screens
 from executor.arena_flow import ArenaFlow, ArenaOptions, ArenaStop
-from executor.layout import ARENA_DRAFT_SELECT, ARENA_SWAP_REFRESH, ARENA_SWAP_SELECT, arena_deck_pos
+from executor.layout import (ARENA_DRAFT_SELECT, ARENA_SWAP_REFRESH, ARENA_SWAP_REFRESH_CONFIRM, ARENA_SWAP_SELECT,
+                             arena_deck_pos)
 from perception.arena import ArenaConfig, ArenaState
 
 FIX = Path(__file__).parent / "fixtures" / "arena"
@@ -155,7 +156,8 @@ def test_run_swap_refresh_when_not_worth():
                     swaps_left=1)
     f, ex = flow("run_swap1", st, swap_threshold=999)
     f.step(press_play=True)
-    assert ex.clicks == [(round(ARENA_SWAP_REFRESH[0], 3), round(ARENA_SWAP_REFRESH[1], 3), "刷新（放弃换牌）")]
+    assert ex.clicks == [(round(ARENA_SWAP_REFRESH[0], 3), round(ARENA_SWAP_REFRESH[1], 3), "刷新（放弃换牌）"),
+                         (round(ARENA_SWAP_REFRESH_CONFIRM[0], 3), round(ARENA_SWAP_REFRESH_CONFIRM[1], 3), "确认放弃换牌")]
 
 
 def test_run_without_swaps_presses_play_only_when_allowed():

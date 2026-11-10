@@ -16,7 +16,7 @@ from gamelog.arena_log import ArenaRunLog, game_record
 from perception.arena import ArenaState
 
 from . import screens
-from .layout import ARENA_BUY_CANCEL, ARENA_CHEST, ARENA_DRAFT_SELECT, ARENA_SWAP_REFRESH, ARENA_SWAP_SELECT, arena_deck_pos
+from .layout import ARENA_BUY_CANCEL, ARENA_CHEST, ARENA_DRAFT_SELECT, ARENA_SWAP_REFRESH, ARENA_SWAP_REFRESH_CONFIRM, ARENA_SWAP_SELECT, arena_deck_pos
 
 log = logging.getLogger(__name__)
 
@@ -253,6 +253,9 @@ class ArenaFlow:
             print(f"  换牌：候选 {cands} 都不值得换（{sw.source}：{sw.reason}），刷新放弃")
             self._event("swap", st.run_id, candidates=cands, out=None, inc=None, reason=sw.reason, source=sw.source)
             self.ex.click_rel(ARENA_SWAP_REFRESH, "刷新（放弃换牌）")
+            if self.live:
+                time.sleep(1.0)   # 弹窗「Sure to give up card swap chance and refresh the options?」
+            self.ex.click_rel(ARENA_SWAP_REFRESH_CONFIRM, "确认放弃换牌")
         else:
             print(f"  换牌：{sw.out_card} → {sw.in_card}（{sw.source}：{sw.reason}）")
             self._event("swap", st.run_id, candidates=cands, out=sw.out_card, inc=sw.in_card, reason=sw.reason,
