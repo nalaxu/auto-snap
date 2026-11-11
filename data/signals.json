@@ -24,6 +24,12 @@
       "polarity": "bad",
       "note": "You can't play your first card here each turn.",
       "source": "auto"
+    },
+    "AuntMays": {
+      "scope": "here",
+      "polarity": "good",
+      "note": "The next card you play here gains +3 Power and moves.",
+      "source": "auto"
     }
   },
   "cards": {
@@ -32,6 +38,18 @@
       "polarity": "good",
       "note": "下一张牌打到这一路则战力加倍",
       "source": "复盘 ee4fc27a T5"
+    },
+    "Galacta": {
+      "scope": "global",
+      "polarity": "good",
+      "note": "Each turn, the first card you play at another location reveals with +2 Power.",
+      "source": "auto"
+    },
+    "GrappleArrow": {
+      "scope": "global",
+      "polarity": "good",
+      "note": "On Reveal: After you play your next card, move it to this location.",
+      "source": "auto"
     }
   }
 }
