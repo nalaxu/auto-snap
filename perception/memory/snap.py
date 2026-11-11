@@ -67,6 +67,12 @@ class SnapMemoryReader:
         self._timer = 0                 # CubeUnity.App.Game.TurnTimer 实例（END TURN 按钮外圈的倒计时）
         self._timer_scan = 0.0
         self._timer_thread: threading.Thread | None = None
+        self._timer_misses = 0          # 连续几次扫描都没找到计时器（幽灵对局判据）
+        self._timer_miss_since: float | None = None
+        self.ghost_timer_misses = 3
+        self.ghost_after_s = 25.0
+        self._ghost_ids: dict[str, int] = {}   # 幽灵对局 id -> 判定时的回合
+        self._ghost_cleared: set[str] = set()  # 判过幽灵、后来回合推进了的真对局
 
     def close(self) -> None:
         self.p.close()
@@ -184,6 +190,13 @@ class SnapMemoryReader:
         """
         valid = bool(self.game) and self._is_game(self.game) and self.il.get_str(self.game, "Id") == self.game_id
         now = time.time()
+        if valid and not self._finished(self.game) and self._looks_ghost(now):
+            turn = self.il.get_int(self.game, "Turn")
+            log.warning("对局 %s 停在 T%s，但持续找不到回合计时器（界面不在对局里）：判定为客户端内存残留的幽灵对局，忽略",
+                        (self.game_id or "")[:8], turn)
+            self._ghost_ids[self.game_id] = turn
+            self.game, self.game_id, valid = 0, None, False
+            self._timer_misses, self._timer_miss_since, self._last_scan = 0, None, 0.0
         if valid and not force and not self._finished(self.game):
             self._finished_since, self._seen_live = None, True
             return True
@@ -205,7 +218,7 @@ class SnapMemoryReader:
             self._last_fast = now
             fast = self.find_games(hot_only=True)
             if any(not g["finished"] and g["id"] not in (self._stale_ids or set()) and g["id"] != self.game_id
-                   for g in fast):
+                   and g["id"] not in self._ghost_ids for g in fast):
                 games = fast
                 log.info("快速扫描发现新对局")
         if games is None:
@@ -214,6 +227,12 @@ class SnapMemoryReader:
             self._last_scan = now
             games = self.find_games()
         self._finished_since, self._seen_live = None, False
+        for g in games:   # 幽灵对局的回合推进了 = 其实是真对局（计时器没定位到而误判）：恢复，且之后不再判幽灵
+            if g["id"] in self._ghost_ids and g["turn"] != self._ghost_ids[g["id"]]:
+                log.warning("对局 %s 回合推进到 T%s，取消幽灵判定", g["id"][:8], g["turn"])
+                del self._ghost_ids[g["id"]]
+                self._ghost_cleared.add(g["id"])
+        games = [g for g in games if g["id"] not in self._ghost_ids]
         if not games:
             self.game = 0
             return False
@@ -225,9 +244,19 @@ class SnapMemoryReader:
             reverse=True,
         )
         best = fresh[0]
+        if best["id"] != self.game_id:   # 换了对局：计时器缺席计数重新开始
+            self._timer_misses, self._timer_miss_since = 0, None
         self.game, self.game_id = best["addr"], best["id"]
         self._resolve_local()
         return True
+
+    def _looks_ghost(self, now: float) -> bool:
+        """当前未结束的对局是否是幽灵对局：客户端内存里残留的旧 Game 对象（实测：中途断开的对局停在 T4、永不结束，
+        直到客户端重启）。判据：对局界面一直有 TurnTimer（对手回合 / 揭示中也在），连续多次全堆扫描都找不到
+        且持续够久 -> 界面不在对局里。回合推进过的对局不再判（见 select_game 的恢复逻辑）。"""
+        return (not self._timer and self._timer_misses >= self.ghost_timer_misses
+                and self._timer_miss_since is not None and now - self._timer_miss_since >= self.ghost_after_s
+                and self.game_id not in self._ghost_cleared)
 
     def _known_hand(self, pl: int) -> int:
         """该玩家手牌中 CardDefId 已知的张数。客户端只知道我方手牌，对手手牌读出来是 "None"。"""
@@ -275,6 +304,7 @@ class SnapMemoryReader:
 
     def _scan_timer(self) -> None:
         ks = self.classes.get(("TurnTimer", "CubeUnity.App.Game")) or []
+        started = time.time()
         found: list[int] = []
         for bases in ([self._hot] if self._hot else []) + [None]:   # 先扫热区域（~0.2s），找不到再全堆（~7s）
             hits = self.p.find_u64(ks, bases=bases) if ks else {}
@@ -286,6 +316,12 @@ class SnapMemoryReader:
             if base is not None:
                 self._hot.add(base)
         self._timer = next((a for a in found if self._timer_values(a)["active"]), found[0] if found else 0)
+        if found:
+            self._timer_misses, self._timer_miss_since = 0, None
+        elif ks:   # 类没解析出来时不计（否则真对局也会被判幽灵）
+            self._timer_misses += 1
+            if self._timer_miss_since is None:
+                self._timer_miss_since = started
         log.info("回合计时器%s", f"定位于 {self._timer:#x}（候选 {len(found)}）" if self._timer else "未找到（可能不在对局中）")
 
     def turn_timer(self) -> dict | None:

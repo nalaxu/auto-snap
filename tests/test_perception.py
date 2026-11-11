@@ -142,6 +142,12 @@ def test_stakes_fields_map_to_game_state():
     assert to_game_state(s, DECK).can_snap is False
 
 
+def _no_ghost_state(r, misses=0, miss_since=None):
+    r._timer, r._timer_misses, r._timer_miss_since = 0, misses, miss_since
+    r.ghost_timer_misses, r.ghost_after_s = 3, 25.0
+    r._ghost_ids, r._ghost_cleared = {}, set()
+
+
 def test_reader_holds_finished_game_without_rescanning():
     """对手撤退后：刚结束的对局在 hold 期内直接复用（不做 8-10s 的全堆重扫）。"""
     from perception.memory.snap import SnapMemoryReader
@@ -150,6 +156,7 @@ def test_reader_holds_finished_game_without_rescanning():
     r.game, r.game_id, r._last_scan, r.rescan_interval = 0x1000, "g" * 36, 0.0, 5.0
     r.finished_hold_s, r._finished_since, r._seen_live = 30.0, None, False
     r._hot, r._last_fast, r._stale_ids = set(), 0.0, None
+    _no_ghost_state(r)
     finished = {"v": False}
     r._is_game = lambda g: True
     r._finished = lambda g: finished["v"]
@@ -185,6 +192,7 @@ def test_reader_does_not_hold_game_that_was_already_finished():
     r.game, r.game_id, r._last_scan, r.rescan_interval = 0x1000, "g" * 36, 0.0, 5.0
     r.finished_hold_s, r._finished_since, r._seen_live = 30.0, None, False
     r._hot, r._last_fast, r._stale_ids = set(), 0.0, None
+    _no_ghost_state(r)
     r._is_game = lambda g: True
     r._finished = lambda g: True
     r.il = NS(get_str=lambda obj, name: r.game_id)
@@ -192,3 +200,35 @@ def test_reader_does_not_hold_game_that_was_already_finished():
     r.find_games = lambda: scans.append(1) or []
     r.select_game()
     assert scans
+
+
+def test_reader_ignores_ghost_game_without_turn_timer():
+    """客户端内存残留的未结束旧对局（停在 T4、永不结束）：持续找不到回合计时器 -> 判幽灵、不再选；回合推进则恢复。"""
+    import time as _t
+    from perception.memory.snap import SnapMemoryReader
+
+    ghost, other = "a" * 36, "b" * 36
+    games = {"turn": 4}
+    r = SnapMemoryReader.__new__(SnapMemoryReader)
+    r.game, r.game_id, r._last_scan, r.rescan_interval = 0x1000, ghost, 0.0, 5.0
+    r.finished_hold_s, r._finished_since, r._seen_live = 30.0, None, False
+    r._hot, r._last_fast, r._stale_ids = set(), 0.0, None
+    _no_ghost_state(r, misses=2, miss_since=_t.time() - 60)
+    r._is_game = lambda g: True
+    r._finished = lambda g: g != 0x1000
+    r.il = NS(get_str=lambda obj, name: ghost if obj == 0x1000 else other, get_int=lambda obj, name: games["turn"])
+    r._resolve_local = lambda vote=True: None
+    r.find_games = lambda: [
+        {"addr": 0x1000, "id": ghost, "turn": games["turn"], "finished": False, "client_state": True},
+        {"addr": 0x2000, "id": other, "turn": 6, "finished": True, "client_state": True},
+    ]
+    assert r.select_game() and r.game_id == ghost      # 计时器缺席次数不够：仍是当前对局
+    r._timer_misses = 3
+    assert r.select_game() and r.game_id == other      # 判幽灵：退回已结束的旧局（= 不在对局中）
+    assert ghost in r._ghost_ids
+    games["turn"] = 5                                  # 回合推进：其实是真对局，恢复且不再判
+    r._last_scan = 0.0
+    assert r.select_game() and r.game_id == ghost
+    assert ghost in r._ghost_cleared and not r._ghost_ids
+    r._timer_misses, r._timer_miss_since = 9, _t.time() - 60
+    assert r.select_game() and r.game_id == ghost
