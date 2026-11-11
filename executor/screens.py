@@ -245,3 +245,14 @@ def current(img) -> Match | None:
     """得分最高且过阈值的按钮；都没有返回 None。"""
     found = [m for m in detect(img).values() if m.found]
     return max(found, key=lambda m: m.score) if found else None
+
+
+def out_of_game(img) -> str | None:
+    """画面明确不在对局里（主界面 PLAY / 竞技场各界面 / 模式弹窗）时返回界面名，否则 None。
+    用于和内存交叉验证：内存说「对局进行中」但画面是这些界面 -> 内存里是残留的幽灵对局。
+    对局结算（Collect Rewards / Next）不算：那时对局已结束，内存也会标结束。"""
+    name, _ = arena_screen(img)
+    if name:
+        return name
+    m = current(img)
+    return "play" if m and m.name == "play" else None

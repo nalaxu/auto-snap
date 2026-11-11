@@ -104,6 +104,15 @@ def observe(settings: dict, interval: float = 0.5, client=None) -> None:
             source.close()
 
 
+# 对局外界面（arena_flow.step / menu_step 的返回值）-> 面板里报的名字；不在表里的（点击动作等）不报
+MENU_NAMES = {
+    "play": "主界面（PLAY）", "main_menu": "主界面", "game_modes": "模式选择", "arena_landing": "竞技场主页",
+    "arena_board": "竞技场（组卡 / 整场）", "arena_ready": "竞技场（等待开局）", "arena_loading": "竞技场（读取状态中）",
+    "arena_draft_wait": "竞技场组卡（等待候选）", "arena_swap_wait": "竞技场换牌（等待候选）",
+    "arena_chest": "竞技场宝箱", "arena_claim": "竞技场领奖", "collect_rewards": "对局结算", "next": "对局结算",
+}
+
+
 def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = False, max_games: int = 0,
          client=None, events: bool = False, game_mode: str = "ranked", max_runs: int | None = None) -> None:
     """自动对局：感知 -> 决策 -> 执行 -> 结束回合；对局外按界面识别处理 结算(Collect Rewards) -> 奖励(Next) -> 主界面(Play)。
@@ -180,7 +189,12 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
         if not live:
             return False
         try:
-            m = ex.screen()
+            from executor import screens as _scr
+            img = ex.capture()
+            m = _scr.current(img) if img is not None else None
+            if m and m.name in OVERLAY_CLICKS and _scr.out_of_game(img):
+                # 竞技场弹窗左下也有「Esc Close」，会被认成 card_detail；画面不在对局里时不点（否则会把竞技场界面关掉）
+                return False
             if m and m.name in OVERLAY_CLICKS:
                 print(f"  ☞ 识别到 {m.name}（{m.score:.2f}），点击 {OVERLAY_CLICKS[m.name]}")
                 log_event("overlay", name=m.name, score=round(m.score, 3))
@@ -239,6 +253,61 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                 return None
     last_menu_check = 0.0
     last_overlay_check = 0.0
+    loop_started = time.time()
+    boot_games: set[str] = set()       # 启动时就在内存里的对局（可能是残留的幽灵对局）
+    ghost_watch = {"game": None, "streak": 0, "at": 0.0}
+    menu_watch = {"name": None, "since": time.time(), "warned": 0.0}
+
+    def check_ghost(snap: dict) -> bool:
+        """内存说对局进行中、但还没轮到我方：截图交叉验证。画面连续两次（间隔 ≥ 1.5s）明确是主界面 / 竞技场界面
+        -> 内存里是残留的幽灵对局（如上次中途退出、机器人被停掉），判掉。返回是否判了幽灵。
+        刚开的新对局（T0/T1，匹配界面可能还盖着竞技场页面）不判，除非启动时就已存在；判错的话回合一推进内存层会自动恢复。"""
+        now = time.time()
+        if now - ghost_watch["at"] < 1.5:
+            return False
+        ghost_watch["at"] = now
+        gid = snap["game_id"]
+        if ghost_watch["game"] != gid:
+            ghost_watch["game"], ghost_watch["streak"] = gid, 0
+        if (snap.get("turn") or 0) < 2 and gid not in boot_games:
+            return False
+        try:
+            from executor import screens as _scr
+            img = ex.capture()
+            where = _scr.out_of_game(img) if img is not None else None
+        except Exception as e:  # noqa: BLE001
+            log_event("ghost_check_error", error=repr(e))
+            return False
+        ghost_watch["streak"] = ghost_watch["streak"] + 1 if where else 0
+        if ghost_watch["streak"] < 2:
+            return False
+        ghost_watch["streak"] = 0
+        if source_mark_ghost(gid, f"画面是{where}"):
+            print(f"  ↺ 内存里的对局 {gid[:8]}（T{snap.get('turn')}）是残留的旧对局：画面在{where}，已忽略")
+            log_event("ghost_game", game_id=gid, turn=snap.get("turn"), screen=where)
+            return True
+        return False
+
+    def source_mark_ghost(gid: str, reason: str) -> bool:
+        fn = getattr(source, "mark_ghost", None)
+        return bool(fn and fn(gid, reason))
+
+    def watch_menu(name: str | None) -> None:
+        """对局外界面看门狗：界面变化时在面板里报一句；长时间认不出界面（未知弹窗 / 窗口被挡 / 最小化）就提示并留截图，
+        不再无声地原地打转。"""
+        now = time.time()
+        if name != menu_watch["name"]:
+            if name in MENU_NAMES:
+                print(f"  · 界面：{MENU_NAMES[name]}")
+            menu_watch.update(name=name, since=now)
+            return
+        if name in (None, "unknown", "no_window") and now - menu_watch["since"] > 30 and now - menu_watch["warned"] > 60:
+            menu_watch["warned"] = now
+            path = ex.save_evidence("menu_unknown") if name != "no_window" else None
+            what = "找不到游戏窗口（最小化或被关闭？）" if name == "no_window" else "认不出当前界面"
+            print(f"  ⚠ 已经 {now - menu_watch['since']:.0f}s {what}：请把游戏切到主界面或竞技场界面"
+                  + (f"（截图 {path}）" if path else ""))
+            log_event("menu_stuck", screen=name, seconds=round(now - menu_watch["since"]))
 
     def reached_max() -> bool:
         return bool(max_games) and len(finished_games) >= max_games
@@ -305,6 +374,8 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
 
     finished_games: set[str] = set()
     print(f"自动模式（{'实操' if live else '演练：不动鼠标'}）。按住 F8 随时中止。")
+    if not live:
+        print("  演练模式不会点 PLAY / 进入竞技场 / 组卡：需要手动开局；要自动打，请停止后选「实操」启动")
     if decider is not None:
         print(f"决策：大模型 {decider.client.provider}/{decider.task.model}（含场地分析）；有回合计时 effort={decider.effort_timed}、"
               f"{decider.deadline_timed_s:.0f}s 截止（T{decider.late_from_turn} 起 {decider.deadline_late_s:.0f}s），无计时 effort={decider.task.effort}、{decider.deadline_s:.0f}s 截止；"
@@ -392,10 +463,14 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                     return
                 if control.paused:
                     print("  ⏸ 面板已暂停：停在主界面，等待继续")
+            if snap and time.time() - loop_started < 15:
+                boot_games.add(snap["game_id"])
             if state is None or not snap:
                 if decider is not None and hasattr(decider, "warmup"):
                     decider.warmup()           # 等待期间保持到模型服务的连接（新建连接实测 1.4-5s）
                 in_game = bool(snap) and not snap.get("finished")
+                if in_game and check_ghost(snap):
+                    continue
                 if in_game:
                     bus.set_phase("in_game")
                 elif control.paused:
@@ -409,13 +484,13 @@ def auto(settings: dict, live: bool, max_turns: int = 0, skip_current: bool = Fa
                     last_menu_check = time.time()
                     try:
                         if arena_flow is not None:
-                            arena_flow.step(press_play=want_more() and not arena_flow.reached_max_runs())
+                            watch_menu(arena_flow.step(press_play=want_more() and not arena_flow.reached_max_runs()))
                             if arena_flow.reached_max_runs():
                                 print("按 --max-runs 停止")
                                 stop_reason = f"已打完 {arena_flow.opt.max_runs} 场竞技"
                                 return
                         else:
-                            menu_step(press_play=want_more())
+                            watch_menu(menu_step(press_play=want_more()) or "unknown")
                     except ActionFailed as e:
                         print(f"  ⚠ 界面操作失败：{e}（稍后重试）")
                         last_menu_check = time.time() + 5

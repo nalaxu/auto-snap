@@ -82,3 +82,15 @@ def test_activate_hint_maps_to_iron_lad_slot():
     assert hint_to_slot(hints[0], [(0, 0), (0, 1), (1, 0), (1, 1), (1, 2), (1, 3), (2, 0)]) == (1, 3)
     for name in ("ingame_t4.jpg", "activate_staged.png", "main_menu.jpg"):
         assert screens.activate_hints(Image.open(FIX / name)) == []
+
+
+@pytest.mark.parametrize("fname,expected", [
+    ("main_menu.jpg", "main_menu"), ("arena/main_menu.webp", "main_menu"), ("arena/landing.webp", "arena_landing"),
+    ("arena/run_swap0.webp", "arena_board"), ("arena/game_modes.webp", "game_modes"),
+    ("ingame_t4.jpg", None), ("arena/ingame_t1.webp", None), ("arena/matchmaking.webp", None),
+    ("match_end.jpg", None), ("card_detail.png", None), ("retreat_dialog.png", None),
+])
+def test_out_of_game(fname, expected):
+    """幽灵对局交叉验证：主界面 / 竞技场界面算「不在对局里」；对局中、匹配中、结算都不算。"""
+    img = Image.open(FIX / fname).convert("RGB").resize((2537, 1427))
+    assert screens.out_of_game(img) == expected

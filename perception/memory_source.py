@@ -46,6 +46,9 @@ class MemoryStateSource:
         self.gate = TurnGate()
         self._arena = None
         self.arena_mode = False   # main.auto --game-mode arena 时置 True
+        # 幽灵对局（客户端内存残留的未结束旧局）：放在这里，断开重连换了 reader 也不会重新选回去
+        self.ghost_ids: dict[str, int | None] = {}
+        self.ghost_cleared: set[str] = set()
 
     # ------------------------------------------------------------ 连接管理
     def _ensure_reader(self) -> SnapMemoryReader | None:
@@ -60,6 +63,7 @@ class MemoryStateSource:
         self._next_attach = time.time() + self.reattach_cooldown_s
         try:
             self.reader = SnapMemoryReader(self.client)
+            self.reader._ghost_ids, self.reader._ghost_cleared = self.ghost_ids, self.ghost_cleared
             self.reader.resolve_classes()
             log.info("已附加 %s pid=%s（只读）", self.process_name, self.reader.p.pid)
         except (ProcessNotFound, OSError, RuntimeError) as e:
@@ -97,6 +101,14 @@ class MemoryStateSource:
             log.info("新对局 %s，卡组「%s」%d 张", snap["game_id"][:8], self.deck_name, len(self.deck))
         self.last_snapshot = snap
         return snap
+
+    def mark_ghost(self, game_id: str | None, reason: str) -> bool:
+        """上层（画面交叉验证）确认界面不在这局里：判为幽灵对局，不再选。返回是否生效。"""
+        reader = self.reader
+        if not reader or not reader.mark_ghost(game_id, reason):
+            return False
+        self.last_snapshot = None
+        return True
 
     def arena_state(self):
         """竞技场状态（perception.arena.ArenaState）；没附加 / 竞技场界面从未打开过返回 None。"""

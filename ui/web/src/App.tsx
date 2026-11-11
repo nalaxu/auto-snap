@@ -35,7 +35,10 @@ const WAIT_TEXT: Record<string, [string, string]> = {
 };
 
 function Waiting({ s }: { s: Live }) {
-  const [big, sm] = WAIT_TEXT[s.phase] ?? ["等待中", ""];
+  let [big, sm] = WAIT_TEXT[s.phase] ?? ["等待中", ""];
+  // 演练不动鼠标：主界面不会自己点 PLAY / 进竞技场，说清楚免得以为卡住
+  if (s.phase === "menu" && s.session && !s.session.live && !s.session.demo)
+    [big, sm] = ["演练模式：不会操作游戏", "请在游戏里手动开局（轮到我方时这里显示决策）；要自动开局 / 打竞技场，先停止再选「实操」启动"];
   return (
     <div className="panel board">
       <div className="empty">

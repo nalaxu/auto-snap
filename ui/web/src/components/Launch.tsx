@@ -1,16 +1,28 @@
 import { useEffect, useState } from "react";
 import { api, Options } from "../api";
 
+// 上次启动时的选项（每个浏览器各自记住）：用脚本重启面板后不用重新选，尤其是「实操」——否则默认回到演练，看起来像卡住
+const SAVED_KEY = "autosnap.launch";
+type Saved = Partial<{ client: string; live: boolean; decider: string; max_games: number; skip_current: boolean;
+  game_mode: "ranked" | "arena"; max_runs: number; buy_tickets: boolean }>;
+function loadSaved(): Saved {
+  try { return JSON.parse(localStorage.getItem(SAVED_KEY) || "{}") || {}; } catch { return {}; }
+}
+function saveLaunch(v: Saved) {
+  try { localStorage.setItem(SAVED_KEY, JSON.stringify(v)); } catch { /* 隐私模式等：不记 */ }
+}
+
 /** 机器人没在运行时占据战场区域：选择客户端 / 演练或实操 / 决策器 / 局数，或回放一局历史对局。 */
 export function Launch({ lastStop }: { lastStop?: string }) {
+  const [saved] = useState(loadSaved);
   const [opts, setOpts] = useState<Options | null>(null);
-  const [client, setClient] = useState("");
-  const [live, setLive] = useState(false);
-  const [decider, setDecider] = useState("llm");
-  const [maxGames, setMaxGames] = useState(1);
-  const [gameMode, setGameMode] = useState<"ranked" | "arena">("ranked");
-  const [maxRuns, setMaxRuns] = useState(0);
-  const [buyTickets, setBuyTickets] = useState(false);
+  const [client, setClient] = useState(saved.client ?? "");
+  const [live, setLive] = useState(saved.live ?? false);
+  const [decider, setDecider] = useState(saved.decider ?? "llm");
+  const [maxGames, setMaxGames] = useState(saved.max_games ?? 1);
+  const [gameMode, setGameMode] = useState<"ranked" | "arena">(saved.game_mode ?? "ranked");
+  const [maxRuns, setMaxRuns] = useState(saved.max_runs ?? 0);
+  const [buyTickets, setBuyTickets] = useState(saved.buy_tickets ?? false);
   const [skipCurrent, setSkipCurrent] = useState(false);
   const [demo, setDemo] = useState("");
   const [speed, setSpeed] = useState(2);
@@ -21,10 +33,12 @@ export function Launch({ lastStop }: { lastStop?: string }) {
   const load = () =>
     api.options().then((o) => {
       setOpts(o);
-      setClient((c) => c || o.client);
-      setDecider(o.decider || "llm");
-      setGameMode((m) => (o.game_mode === "arena" ? "arena" : m));
-      if (o.arena) { setBuyTickets(o.arena.buy_tickets); setMaxRuns(o.arena.max_runs); }
+      // 记住的选项优先，没有才用配置文件里的默认值；记住的客户端已不存在时退回默认
+      setClient((c) => (c && o.clients.some((x) => x.key === c) ? c : o.client));
+      if (saved.decider === undefined) setDecider(o.decider || "llm");
+      if (saved.game_mode === undefined) setGameMode((m) => (o.game_mode === "arena" ? "arena" : m));
+      if (o.arena && saved.buy_tickets === undefined) setBuyTickets(o.arena.buy_tickets);
+      if (o.arena && saved.max_runs === undefined) setMaxRuns(o.arena.max_runs);
       setDemo((d) => d || o.games[0]?.file || "");
     }).catch((e) => setErr(`读取配置失败：${e.message}`));
 
@@ -35,6 +49,7 @@ export function Launch({ lastStop }: { lastStop?: string }) {
     setBusy(true);
     try {
       await api.start(body);
+      if (!("demo" in body)) saveLaunch({ ...(body as Saved), max_runs: maxRuns, buy_tickets: buyTickets });
     } catch (e: any) {
       setErr(`启动失败：${e.message}`);
     } finally {

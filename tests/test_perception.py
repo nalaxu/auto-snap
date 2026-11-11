@@ -232,3 +232,28 @@ def test_reader_ignores_ghost_game_without_turn_timer():
     assert ghost in r._ghost_cleared and not r._ghost_ids
     r._timer_misses, r._timer_miss_since = 9, _t.time() - 60
     assert r.select_game() and r.game_id == ghost
+
+
+def test_mark_ghost_from_screen_check_survives_and_recovers():
+    """画面交叉验证判的幽灵（不是当前选中的局，回合未知）：先记下回合，回合推进才恢复。"""
+    from perception.memory.snap import SnapMemoryReader
+
+    ghost = "c" * 36
+    games = {"turn": 3}
+    r = SnapMemoryReader.__new__(SnapMemoryReader)
+    r.game, r.game_id, r._last_scan, r.rescan_interval = 0, None, 0.0, 5.0
+    r.finished_hold_s, r._finished_since, r._seen_live = 30.0, None, False
+    r._hot, r._last_fast, r._stale_ids = set(), 0.0, None
+    _no_ghost_state(r)
+    r._is_game = lambda g: True
+    r._finished = lambda g: False
+    r.il = NS(get_str=lambda obj, name: ghost, get_int=lambda obj, name: games["turn"])
+    r._resolve_local = lambda vote=True: None
+    r.find_games = lambda: [{"addr": 0x1000, "id": ghost, "turn": games["turn"], "finished": False, "client_state": True}]
+    assert r.mark_ghost(ghost, "画面是arena_board") and not r.mark_ghost(ghost, "重复")
+    assert not r.select_game() and r._ghost_ids[ghost] == 3     # 不选，并记下当时回合
+    r._last_scan = 0.0
+    assert not r.select_game()                                 # 回合没变：仍然忽略
+    games["turn"], r._last_scan = 4, 0.0
+    assert r.select_game() and r.game_id == ghost              # 回合推进：恢复
+    assert not r.mark_ghost(ghost, "再判")                      # 恢复过的不再判

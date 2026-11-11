@@ -191,12 +191,8 @@ class SnapMemoryReader:
         valid = bool(self.game) and self._is_game(self.game) and self.il.get_str(self.game, "Id") == self.game_id
         now = time.time()
         if valid and not self._finished(self.game) and self._looks_ghost(now):
-            turn = self.il.get_int(self.game, "Turn")
-            log.warning("对局 %s 停在 T%s，但持续找不到回合计时器（界面不在对局里）：判定为客户端内存残留的幽灵对局，忽略",
-                        (self.game_id or "")[:8], turn)
-            self._ghost_ids[self.game_id] = turn
-            self.game, self.game_id, valid = 0, None, False
-            self._timer_misses, self._timer_miss_since, self._last_scan = 0, None, 0.0
+            self.mark_ghost(self.game_id, "持续找不到回合计时器")
+            valid = False
         if valid and not force and not self._finished(self.game):
             self._finished_since, self._seen_live = None, True
             return True
@@ -227,8 +223,10 @@ class SnapMemoryReader:
             self._last_scan = now
             games = self.find_games()
         self._finished_since, self._seen_live = None, False
-        for g in games:   # 幽灵对局的回合推进了 = 其实是真对局（计时器没定位到而误判）：恢复，且之后不再判幽灵
-            if g["id"] in self._ghost_ids and g["turn"] != self._ghost_ids[g["id"]]:
+        for g in games:   # 幽灵对局的回合推进了 = 其实是真对局（误判）：恢复，且之后不再判幽灵
+            if g["id"] in self._ghost_ids and self._ghost_ids[g["id"]] is None:
+                self._ghost_ids[g["id"]] = g["turn"]
+            elif g["id"] in self._ghost_ids and g["turn"] != self._ghost_ids[g["id"]]:
                 log.warning("对局 %s 回合推进到 T%s，取消幽灵判定", g["id"][:8], g["turn"])
                 del self._ghost_ids[g["id"]]
                 self._ghost_cleared.add(g["id"])
@@ -248,6 +246,20 @@ class SnapMemoryReader:
             self._timer_misses, self._timer_miss_since = 0, None
         self.game, self.game_id = best["addr"], best["id"]
         self._resolve_local()
+        return True
+
+    def mark_ghost(self, game_id: str | None, reason: str) -> bool:
+        """把未结束的对局判为幽灵对局（客户端内存残留、界面并不在这局里）：之后不再选它，回合推进则自动恢复。
+        reason 给日志。判过又恢复的真对局不再判；返回是否生效。"""
+        if not game_id or game_id in self._ghost_cleared or game_id in self._ghost_ids:
+            return False
+        turn = self.il.get_int(self.game, "Turn") if self.game and game_id == self.game_id else None
+        log.warning("对局 %s 停在 T%s，但%s（界面不在对局里）：判定为客户端内存残留的幽灵对局，忽略",
+                    game_id[:8], turn, reason)
+        self._ghost_ids[game_id] = turn
+        if game_id == self.game_id:
+            self.game, self.game_id = 0, None
+            self._timer_misses, self._timer_miss_since, self._last_scan = 0, None, 0.0
         return True
 
     def _looks_ghost(self, now: float) -> bool:
