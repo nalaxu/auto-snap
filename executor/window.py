@@ -69,6 +69,40 @@ def client_rect(hwnd: int) -> Rect:
     return Rect(x, y, r - l, b - t)
 
 
+ASPECT = 16 / 9
+ASPECT_TOLERANCE = 0.015   # 2537×1427 等实测窗口的取整误差远小于此；16:10（1.60）明显超出
+
+
+def aspect_ok(rect: Rect) -> bool:
+    return rect.height > 0 and abs(rect.width / rect.height / ASPECT - 1) <= ASPECT_TOLERANCE
+
+
+def fit_16_9(hwnd: int) -> Rect | None:
+    """把游戏窗口客户区调成工作区内能放下的最大 16:9 并居中，返回新的客户区；失败返回 None。
+
+    模板、地点、手牌坐标全按 16:9 标定。游戏 UI 按高度缩放，窗口一旦不是 16:9（如被拉成铺满 16:10 屏幕），
+    按钮识别得分掉到阈值以下（PLAY 0.99 -> 0.72），对局内落点也会偏。"""
+    if win32gui.IsIconic(hwnd) or win32gui.GetWindowPlacement(hwnd)[1] == win32con.SW_SHOWMAXIMIZED:
+        win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+        time.sleep(0.5)
+    wl, wt, wr, wb = win32gui.GetWindowRect(hwnd)
+    cur = client_rect(hwnd)
+    frame_w, frame_h = (wr - wl) - cur.width, (wb - wt) - cur.height
+    mon = win32api.MonitorFromWindow(hwnd, win32con.MONITOR_DEFAULTTONEAREST)
+    al, at, ar, ab = win32api.GetMonitorInfo(mon)["Work"]
+    max_w, max_h = (ar - al) - frame_w, (ab - at) - frame_h
+    w = min(max_w, round(max_h * ASPECT))
+    h = round(w / ASPECT)
+    if w < 800:
+        return None
+    x = al + ((ar - al) - (w + frame_w)) // 2
+    y = at + ((ab - at) - (h + frame_h)) // 2
+    win32gui.SetWindowPos(hwnd, 0, x, y, w + frame_w, h + frame_h, win32con.SWP_NOZORDER | win32con.SWP_NOACTIVATE)
+    time.sleep(1.0)   # 等 Unity 按新尺寸重新布局
+    new = client_rect(hwnd)
+    return new if aspect_ok(new) else None
+
+
 def is_foreground(hwnd: int) -> bool:
     return win32gui.GetForegroundWindow() == hwnd
 

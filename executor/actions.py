@@ -15,7 +15,7 @@ from pathlib import Path
 
 from . import mouse
 from .layout import END_TURN_BUTTON, LOCATION_DROP, RETREAT_BUTTON, SNAP_BUTTON, Rect, board_slot_pos, hand_card_pos
-from .window import WindowNotFound, client_rect, find_window, is_foreground, wait_foreground
+from .window import WindowNotFound, aspect_ok, client_rect, find_window, fit_16_9, is_foreground, wait_foreground
 
 log = logging.getLogger(__name__)
 
@@ -57,6 +57,7 @@ class Executor:
         self.verify_timeout_s = verify_timeout_s
         self.hwnd = 0
         self.rect: Rect | None = None
+        self._aspect_warned = 0.0
 
     # ------------------------------------------------------------ 窗口
     def _locate(self) -> None:
@@ -64,6 +65,23 @@ class Executor:
             self.hwnd = find_window(self.process_name)
         except WindowNotFound as e:
             raise ActionFailed(str(e)) from e
+
+    def _check_aspect(self) -> None:
+        """窗口不是 16:9 时：实操模式自动调成 16:9；演练模式不动窗口，只提示（每 60s 一次）。"""
+        if self.rect is None or self.rect.width < 400 or aspect_ok(self.rect):
+            return
+        old = self.rect
+        if not self.dry_run:
+            new = fit_16_9(self.hwnd)
+            if new:
+                print(f"  ↔ 游戏窗口客户区 {old.width}×{old.height} 不是 16:9，已调整为 {new.width}×{new.height}")
+                log.info("窗口比例 %d×%d -> %d×%d", old.width, old.height, new.width, new.height)
+                self.rect = new
+                return
+        if time.time() - self._aspect_warned > 60:
+            self._aspect_warned = time.time()
+            print(f"  ⚠ 游戏窗口客户区 {old.width}×{old.height} 不是 16:9，界面识别和落点会失准："
+                  + ("自动调整失败，" if not self.dry_run else "") + "请手动把游戏窗口调成 16:9")
 
     def prepare(self) -> Rect:
         """每回合开始调用：重新定位窗口（可能被移动/缩放/最小化）并切到前台。"""
@@ -74,6 +92,7 @@ class Executor:
         self.rect = client_rect(self.hwnd)      # 切到前台（可能刚从最小化还原）后再取尺寸
         if self.rect.width < 400:
             raise ActionFailed(f"游戏窗口尺寸异常：{self.rect}")
+        self._check_aspect()
         return self.rect
 
     def _guard(self) -> None:
@@ -124,6 +143,7 @@ class Executor:
             self.rect = client_rect(self.hwnd)
             if self.rect.width < 400:
                 return None
+        self._check_aspect()
         return capture_window(self.hwnd, self.rect.width, self.rect.height)
 
     def screen(self):
