@@ -178,12 +178,26 @@
           "LadySif",
           "Ninja"
         ]
+      },
+      {
+        "game_id": "437a916f",
+        "date": "2026-11-14",
+        "result": "win",
+        "cards": [
+          "Apocalypse",
+          "Blade",
+          "ColleenWing",
+          "Helicarrier",
+          "Leader",
+          "Nakia",
+          "TheCollector"
+        ]
       }
     ],
     "seen_cards": {
       "AgathaHarkness": 1,
-      "Blade": 2,
-      "ColleenWing": 1,
+      "Blade": 3,
+      "ColleenWing": 2,
       "Dracula": 1,
       "InvisibleWoman": 1,
       "Jubilee": 1,
@@ -197,7 +211,12 @@
       "Hulk": 1,
       "Infinaut": 1,
       "LadySif": 1,
-      "Ninja": 1
+      "Ninja": 1,
+      "Apocalypse": 1,
+      "Helicarrier": 1,
+      "Leader": 1,
+      "Nakia": 1,
+      "TheCollector": 1
     }
   }
 }

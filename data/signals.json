@@ -30,6 +30,12 @@
       "polarity": "good",
       "note": "The next card you play here gains +3 Power and moves.",
       "source": "auto"
+    },
+    "BlackVortex": {
+      "scope": "here",
+      "polarity": "good",
+      "note": "The next card you play here becomes a random 6-Cost card.",
+      "source": "auto"
     }
   },
   "cards": {
