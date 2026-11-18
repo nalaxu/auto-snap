@@ -56,6 +56,18 @@
       "polarity": "good",
       "note": "On Reveal: After you play your next card, move it to this location.",
       "source": "auto"
+    },
+    "Forge": {
+      "scope": "global",
+      "polarity": "good",
+      "note": "On Reveal: Give the next card you play +2 Power.",
+      "source": "auto"
+    },
+    "NicoMinoru": {
+      "scope": "global",
+      "polarity": "good",
+      "note": "On Reveal: After you play your next card, cast a spell. (The spell changes each turn.)",
+      "source": "auto"
     }
   }
 }
